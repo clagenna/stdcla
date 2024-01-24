@@ -142,6 +142,7 @@ public class GeoScanJpg {
       geo.setLongitude(longitude);
       geo.setLatitude(latitude);
       geo.setSrcGeo(EGeoSrcCoord.foto);
+      geo.setFotoFile(p_jpg);
       geolist.add(geo);
       s_log.debug("Added {}", geo.toString());
     } else {

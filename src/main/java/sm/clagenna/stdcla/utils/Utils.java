@@ -2,6 +2,7 @@ package sm.clagenna.stdcla.utils;
 
 import java.io.File;
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
@@ -17,14 +18,14 @@ import org.xml.sax.SAXParseException;
 
 public class Utils {
 
-  public static double                 DBL_XMAX        = 580.0f;
-  public static double                 DBL_YMAX        = 800.0f;
-  public static double                 F_A4wi          = 2480f;
-  public static double                 F_A4he          = 3508f;
-  public static double                 F_XCharMax      = 150f;
-  public static double                 F_YRigheMax     = 140f;
+  public static double DBL_XMAX    = 580.0f;
+  public static double DBL_YMAX    = 800.0f;
+  public static double F_A4wi      = 2480f;
+  public static double F_A4he      = 3508f;
+  public static double F_XCharMax  = 150f;
+  public static double F_YRigheMax = 140f;
 
-  private final static char[]          hexArray        = "0123456789ABCDEF".toCharArray();
+  private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
   public static final SimpleDateFormat s_fmtY4MDHMSm   = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
   public static final SimpleDateFormat s_fmtY4MDHMS    = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -78,10 +79,20 @@ public class Utils {
     return Utils.isChanged(sz1, sz2);
   }
 
+  public static boolean isChanged(Path p_fi1, Path p_fi2) {
+    String sz1 = null;
+    if (p_fi1 != null)
+      sz1 = p_fi1.toAbsolutePath().toString();
+    String sz2 = null;
+    if (p_fi2 != null)
+      sz2 = p_fi2.toAbsolutePath().toString();
+    return Utils.isChanged(sz1, sz2);
+  }
+
   public static boolean isChanged(String p_szPrimo, String p_szSecondo) {
     if (p_szPrimo == null && p_szSecondo == null)
       return false;
-    if ( (p_szPrimo == null) || (p_szSecondo == null))
+    if (p_szPrimo == null || p_szSecondo == null)
       return true;
     return !p_szPrimo.equals(p_szSecondo);
   }
@@ -143,19 +154,19 @@ public class Utils {
   }
 
   public static boolean isValueEq(Integer p_v1, Integer p_v2) {
-    if ( (p_v1 == null) || (p_v2 == null))
+    if (p_v1 == null || p_v2 == null)
       return false;
     return p_v1.equals(p_v2);
   }
 
   public static boolean isValueEq(String p_v1, String p_v2) {
-    if ( (p_v1 == null) || (p_v2 == null))
+    if (p_v1 == null || p_v2 == null)
       return false;
     return p_v1.equals(p_v2);
   }
 
   public static boolean isValueEq(Date p_v1, Date p_v2) {
-    if ( (p_v1 == null) || (p_v2 == null))
+    if (p_v1 == null || p_v2 == null)
       return false;
     return p_v1.equals(p_v2);
   }

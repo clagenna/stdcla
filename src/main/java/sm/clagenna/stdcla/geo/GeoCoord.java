@@ -1,5 +1,6 @@
 package sm.clagenna.stdcla.geo;
 
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -11,11 +12,12 @@ import lombok.Data;
 public class GeoCoord implements Comparable<GeoCoord> {
   // private static final Logger      s_log     = LogManager.getLogger(GeoCoord.class);
   private static final GeoDistance s_geodist = new GeoDistance();
-  private EGeoSrcCoord             srcGeo;
   private LocalDateTime            tstamp;
   private double                   longitude;
   private double                   latitude;
   private double                   altitude;
+  private EGeoSrcCoord             srcGeo;
+  private Path                     fotoFile;
 
   public GeoCoord() {
     setLatitude(0);
@@ -23,6 +25,7 @@ public class GeoCoord implements Comparable<GeoCoord> {
     setAltitude(0);
     setTstamp(LocalDateTime.now());
     setSrcGeo(EGeoSrcCoord.track);
+    setFotoFile(null);
   }
 
   public GeoCoord(double p_lat, double p_lon) {
@@ -31,6 +34,7 @@ public class GeoCoord implements Comparable<GeoCoord> {
     setAltitude(0);
     setTstamp(LocalDateTime.now());
     setSrcGeo(EGeoSrcCoord.track);
+    setFotoFile(null);
   }
 
   public GeoCoord(LocalDateTime pdt, double p_lat, double p_lon) {
@@ -39,6 +43,7 @@ public class GeoCoord implements Comparable<GeoCoord> {
     setLongitude(p_lon);
     setAltitude(0);
     setSrcGeo(EGeoSrcCoord.track);
+    setFotoFile(null);
   }
 
   public GeoCoord(LocalDateTime pdt, double p_lat, double p_lon, double p_alt) {
@@ -47,6 +52,7 @@ public class GeoCoord implements Comparable<GeoCoord> {
     setLongitude(p_lon);
     setAltitude(p_alt);
     setSrcGeo(EGeoSrcCoord.track);
+    setFotoFile(null);
   }
 
   public GeoCoord(EGeoSrcCoord p_v) {
