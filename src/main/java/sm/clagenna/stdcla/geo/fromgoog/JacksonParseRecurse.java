@@ -108,7 +108,8 @@ public class JacksonParseRecurse {
 
         case VALUE_EMBEDDED_OBJECT:
         case NOT_AVAILABLE:
-          System.out.println("----> Sconosciuto:" + tok.toString());
+          s_log.error("Token sconosciuto: {}", tok.toString());
+          // System.out.println("----> Sconosciuto:" + tok.toString());
           break;
         default:
           break;
@@ -137,7 +138,7 @@ public class JacksonParseRecurse {
           arrIndx++;
           break;
         case END_OBJECT:
-          System.out.println("improbabile !!");
+          s_log.error("Improbabile END-OBJECT");
           arrIndx++;
           break;
         case START_ARRAY:
@@ -171,7 +172,7 @@ public class JacksonParseRecurse {
 
         case VALUE_EMBEDDED_OBJECT:
         case NOT_AVAILABLE:
-          System.out.println("----> Sconosciuto:" + tok.toString());
+          s_log.error("Token Sconosciuto:{}", tok.toString());
           break;
         default:
           break;
@@ -192,7 +193,7 @@ public class JacksonParseRecurse {
     String val = p_Val.toString();
     if (p_pth.contains("E7") //
         || val.matches(".*[0-9]{4}-[0-9]{2}-[0-9]{2}.*")) {
-      System.out.printf("%d) %s=%s\n", m_riga, p_pth, val);
+      // System.out.printf("%d) %s=%s\n", m_riga, p_pth, val);
       m_prw.printf("%d) %s=%s\n", m_riga, p_pth, val);
       gestTtack.gestTrack(p_pth, p_Val);
     }

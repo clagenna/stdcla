@@ -118,11 +118,47 @@ public class GeoCoord implements Comparable<GeoCoord> {
   }
 
   @Override
+  public int hashCode() {
+    return tstamp.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    boolean bRet = false;
+    if (tstamp == null || obj == null)
+      return bRet;
+    if (obj instanceof GeoCoord geo) {
+      if (geo.tstamp == null)
+        return bRet;
+      bRet = tstamp.equals(geo.tstamp);
+    }
+    return bRet;
+  }
+
+  @Override
   public int compareTo(GeoCoord p_o) {
     if (p_o == null || p_o.tstamp == null)
       return -1;
     if (tstamp == null)
       return 1;
     return tstamp.compareTo(p_o.tstamp);
+  }
+
+  public void assignMin(GeoCoord p_e) {
+    if (p_e == null)
+      return;
+    longitude = p_e.getLongitude() < longitude ? p_e.getLongitude() : longitude;
+    latitude = p_e.getLatitude() < latitude ? p_e.getLatitude() : latitude;
+  }
+
+  public void assignMax(GeoCoord p_e) {
+    if (p_e == null)
+      return;
+    longitude = p_e.getLongitude() > longitude ? p_e.getLongitude() : longitude;
+    latitude = p_e.getLatitude() > latitude ? p_e.getLatitude() : latitude;
+  }
+
+  public void altitudeAsDistance(GeoCoord p_prec) {
+    altitude =(int) distance(p_prec);
   }
 }

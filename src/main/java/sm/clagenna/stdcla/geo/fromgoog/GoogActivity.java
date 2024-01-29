@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import lombok.Data;
+import sm.clagenna.stdcla.geo.EGeoSrcCoord;
 import sm.clagenna.stdcla.geo.GeoCoord;
 import sm.clagenna.stdcla.geo.GeoFormatter;
 
@@ -29,9 +30,9 @@ public class GoogActivity implements IGestGoog {
 
   @Override
   public void open() {
-    startLocation = new GeoCoord();
-    endLocation = new GeoCoord();
-    parking = new GeoCoord();
+    startLocation = new GeoCoord(EGeoSrcCoord.google);
+    endLocation = new GeoCoord(EGeoSrcCoord.google);
+    parking = new GeoCoord(EGeoSrcCoord.google);
     waypoints = new ArrayList<>();
   }
 
@@ -167,7 +168,7 @@ public class GoogActivity implements IGestGoog {
     if (waypoints.size() > currIndx)
       currGeo = waypoints.get(currIndx);
     if (currGeo == null) {
-      currGeo = new GeoCoord();
+      currGeo = new GeoCoord(EGeoSrcCoord.google);
       waypoints.add(currIndx, currGeo);
     }
     double dbl = latLon(val);

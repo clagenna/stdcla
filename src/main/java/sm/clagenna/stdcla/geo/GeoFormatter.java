@@ -16,6 +16,7 @@ public class GeoFormatter {
   private static final String LNK_MAPS = "https://www.google.com/maps?z=15&t=h&q=%.8f,%.8f";
   private static boolean      showLink = false;
 
+  public static final DateTimeFormatter s_fmtTimeOf;
   public static final DateTimeFormatter s_fmtTimeZ;
   public static final DateTimeFormatter s_fmt2Y4MD_hms;
   public static final DateTimeFormatter s_fmtmY4MD_hms;
@@ -36,6 +37,7 @@ public class GeoFormatter {
     s_patGradiMinSecNW = Pattern.compile("([+\\-]?[0-9]+).([0-9]+).([0-9,\\.]+)\"([nNeEsSwW])+");
     s_patDecimali = Pattern.compile("[\\+\\-]?[0-9]+\\.[0-9]+");
 
+    s_fmtTimeOf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXXXX");
     s_fmtTimeZ = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
     s_fmt2Y4MD_hms = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss");
     s_fmtmY4MD_hms = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -100,13 +102,24 @@ public class GeoFormatter {
       return tstamp;
     // se date time Zulu -> UTC -> GMT(in disuso)
     try {
+      if (p_sz.contains("+")) {
+        // converto UTC in local datetime con ofset finale
+        ZonedDateTime dtUTC = ZonedDateTime.parse(p_sz, s_fmtTimeOf);
+        tstamp = dtUTC.toLocalDateTime();
+        return tstamp;
+      }
+    } catch (Exception e) {
+      //
+    }
+    
+    try {
       if (p_sz.endsWith("Z")) {
         // converto UTC in local datetime considerando il fuso orario
         ZonedDateTime dtUTC = ZonedDateTime.parse(p_sz, s_dtfmt);
         // questa aggiungeva +2:00 ma l'orario aveva l'ora reale (anche se finiva con 'Z'...?)
-        // ZonedDateTime dtqui = dtUTC.withZoneSameInstant(s_zoneQui);
-        ZonedDateTime dtqui = dtUTC.withZoneSameInstant(s_zoneUTC);
-        tstamp = dtqui.toLocalDateTime();
+        ZonedDateTime dtqui2 = dtUTC.withZoneSameInstant(s_zoneQui);
+        // ZonedDateTime dtqui = dtUTC.withZoneSameInstant(s_zoneUTC);
+        tstamp = dtqui2.toLocalDateTime();
         return tstamp;
       }
     } catch (Exception e) {

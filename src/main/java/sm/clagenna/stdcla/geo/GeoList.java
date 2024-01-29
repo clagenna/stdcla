@@ -2,6 +2,7 @@ package sm.clagenna.stdcla.geo;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -10,28 +11,68 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+@Data
+@EqualsAndHashCode(callSuper = false)
 public class GeoList extends LinkedList<GeoCoord> {
   private static final long   serialVersionUID = 6350913396026124486L;
   private static final Logger s_log            = LogManager.getLogger(GeoList.class);
 
+  private boolean  bUniqueTs;
   private GeoCoord mints;
   private GeoCoord maxts;
+  private GeoCoord mingeo;
+  private GeoCoord maxgeo;
 
   public GeoList() {
     mints = new GeoCoord();
     mints.setTstamp(LocalDateTime.MAX);
+    mingeo = new GeoCoord();
+    mingeo.setLongitude(Double.MAX_VALUE);
+    mingeo.setLatitude(Double.MAX_VALUE);
     maxts = new GeoCoord();
     maxts.setTstamp(LocalDateTime.MIN);
+    maxgeo = new GeoCoord();
+    maxgeo.setLongitude(Double.MIN_VALUE);
+    maxgeo.setLatitude(Double.MIN_VALUE);
   }
 
   @Override
   public boolean add(GeoCoord p_e) {
-    boolean b = super.add(p_e);
+    boolean b = true;
+    if ( !bUniqueTs || !this.contains(p_e)) {
+      b = super.add(p_e);
+      minMax(p_e);
+    }
+    return b;
+  }
+
+  @Override
+  public boolean addAll(Collection<? extends GeoCoord> p_c) {
+    boolean bRet = true;
+    // bRet = super.addAll(p_c);
+    int nScarti = 0;
+    int nRec = 0;
+    for (GeoCoord geo : p_c) {
+      if ( !bUniqueTs || !this.contains(geo)) {
+        bRet &= super.add(geo);
+        minMax(geo);
+      } else if (nScarti++ <= 20)
+        s_log.debug("Al {} Scarto geo={}", nRec, geo.toString());
+      nRec++;
+    }
+    return bRet;
+  }
+
+  private void minMax(GeoCoord p_e) {
     if (p_e != null) {
       mints = p_e.compareTo(mints) < 0 ? p_e : mints;
       maxts = p_e.compareTo(maxts) > 0 ? p_e : maxts;
+      mingeo.assignMin(p_e);
+      maxgeo.assignMax(p_e);
     }
-    return b;
   }
 
   public List<GeoCoord> sortByTStamp() {
@@ -52,6 +93,7 @@ public class GeoList extends LinkedList<GeoCoord> {
   public GeoList filterNearest() {
     GeoCoord prec = null;
     GeoList liNew = new GeoList();
+    liNew.setBUniqueTs(isBUniqueTs());
     for (GeoCoord geo : this) {
       if (prec == null) {
         prec = geo;
@@ -124,9 +166,9 @@ public class GeoList extends LinkedList<GeoCoord> {
       looppa = filtered == null || filtered.size() == 0;
       delta += dltIncr;
       tries++;
-//      if (looppa && s_log.isDebugEnabled()) {
-        s_log.debug("Allargo range a {} secs per il tentativo No {}", delta * 2, tries);
-//      }
+      //      if (looppa && s_log.isDebugEnabled()) {
+      s_log.debug("Allargo range a {} secs per il tentativo No {}", delta * 2, tries);
+      //      }
     } while (looppa && tries < maxTries);
     if (filtered == null || filtered.size() == 0) {
       s_log.error("Non trovo nearest a {}", GeoFormatter.s_fmtmY4MD_hms.format(trova));

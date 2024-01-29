@@ -4,6 +4,7 @@ import java.io.File;
 import java.math.BigInteger;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Properties;
@@ -95,6 +96,22 @@ public class Utils {
     if (p_szPrimo == null || p_szSecondo == null)
       return true;
     return !p_szPrimo.equals(p_szSecondo);
+  }
+
+  public static boolean isChanged(LocalDateTime p_dtVal, LocalDateTime p_dtOld) {
+    if (p_dtOld == null && p_dtVal == null)
+      return false;
+    if (p_dtOld == null || p_dtVal == null)
+      return true;
+    return ! p_dtOld.equals(p_dtVal);
+  }
+
+  public static boolean isChanged(Double p_dtVal, Double p_dtOld) {
+    if (p_dtOld == null && p_dtVal == null)
+      return false;
+    if (p_dtOld == null || p_dtVal == null)
+      return true;
+    return ! p_dtOld.equals(p_dtVal);
   }
 
   public static boolean isChanged(int p_primo, int p_secondo) {

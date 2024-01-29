@@ -52,7 +52,7 @@ public class GeoScanJpg {
 
         @Override
         public FileVisitResult preVisitDirectory(Path p_dir, BasicFileAttributes p_attrs) throws IOException {
-          System.out.printf("preVisitDirectory(%s)\n", p_dir.toString());
+          // System.out.printf("preVisitDirectory(%s)\n", p_dir.toString());
           return FileVisitResult.CONTINUE;
         }
 
@@ -69,14 +69,13 @@ public class GeoScanJpg {
 
         @Override
         public FileVisitResult visitFileFailed(Path p_file, IOException p_exc) throws IOException {
-          System.out.printf("visitFileFailed(%s)\n", p_file.toString());
-
+          // System.out.printf("visitFileFailed(%s)\n", p_file.toString());
           return FileVisitResult.TERMINATE;
         }
 
         @Override
         public FileVisitResult postVisitDirectory(Path p_dir, IOException p_exc) throws IOException {
-          System.out.printf("postVisitDirectory(%s)\n", p_dir.toString());
+          // System.out.printf("postVisitDirectory(%s)\n", p_dir.toString());
           return FileVisitResult.CONTINUE;
         }
 
