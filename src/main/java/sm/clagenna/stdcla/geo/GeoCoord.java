@@ -15,6 +15,7 @@ public class GeoCoord implements Comparable<GeoCoord> {
   private LocalDateTime            tstamp;
   private double                   longitude;
   private double                   latitude;
+  private boolean                  guessed;
   private double                   altitude;
   private EGeoSrcCoord             srcGeo;
   private Path                     fotoFile;
@@ -22,7 +23,7 @@ public class GeoCoord implements Comparable<GeoCoord> {
   public GeoCoord() {
     setLatitude(0);
     setLongitude(0);
-    setAltitude(0);
+    altitude = 0;
     setTstamp(LocalDateTime.now());
     setSrcGeo(EGeoSrcCoord.track);
     setFotoFile(null);
@@ -159,6 +160,11 @@ public class GeoCoord implements Comparable<GeoCoord> {
   }
 
   public void altitudeAsDistance(GeoCoord p_prec) {
-    altitude =(int) distance(p_prec);
+    if (asLonLat())
+      altitude = (int) distance(p_prec);
+  }
+
+  public boolean asLonLat() {
+    return longitude * latitude != 0;
   }
 }

@@ -9,6 +9,8 @@ import java.time.format.DateTimeParseException;
 public class ParseData {
   public static SimpleDateFormat     s_fmtDtDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
   public static DateTimeFormatter    s_fmtDtExif = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss");
+  public static DateTimeFormatter    s_fmtDtFile = DateTimeFormatter.ofPattern("'f'yyyyMMdd'_'HHmmss");
+  
   private static final LocalDateTime s_dtMin;
   private static final LocalDateTime s_dtMax;
 

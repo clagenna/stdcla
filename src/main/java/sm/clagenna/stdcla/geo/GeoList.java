@@ -158,6 +158,7 @@ public class GeoList extends LinkedList<GeoCoord> {
           .stream() //
           .filter( //
               s -> ( //
+              s.asLonLat() && //
               s.getTstamp().isAfter(loMom) //
                   && s.getTstamp().isBefore(hiMom) //
               ) //
