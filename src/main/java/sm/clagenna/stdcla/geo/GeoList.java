@@ -95,7 +95,7 @@ public class GeoList extends LinkedList<GeoCoord> {
     GeoList liNew = new GeoList();
     liNew.setBUniqueTs(isBUniqueTs());
     for (GeoCoord geo : this) {
-      if (prec == null) {
+      if (prec == null || geo.hasFotoFile()) {
         prec = geo;
         liNew.add(geo);
         continue;
@@ -158,8 +158,8 @@ public class GeoList extends LinkedList<GeoCoord> {
           .stream() //
           .filter( //
               s -> ( //
-              s.asLonLat() && //
-              s.getTstamp().isAfter(loMom) //
+              s.hasLonLat() && //
+                  s.getTstamp().isAfter(loMom) //
                   && s.getTstamp().isBefore(hiMom) //
               ) //
           ) //

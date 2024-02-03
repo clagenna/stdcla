@@ -164,7 +164,7 @@ public class GeoScanJpg {
   }
 
   public void cambiaGpsCoordinate(GeoCoord p_geo) {
-    if ( !p_geo.asLonLat() || p_geo.getFotoFile() == null) {
+    if ( !p_geo.hasLonLat() || p_geo.getFotoFile() == null) {
       s_log.debug("Non cambio GPS per {}, ", p_geo.toString());
       return;
     }

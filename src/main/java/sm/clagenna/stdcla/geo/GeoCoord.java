@@ -160,11 +160,15 @@ public class GeoCoord implements Comparable<GeoCoord> {
   }
 
   public void altitudeAsDistance(GeoCoord p_prec) {
-    if (asLonLat())
+    if (hasLonLat())
       altitude = (int) distance(p_prec);
   }
 
-  public boolean asLonLat() {
+  public boolean hasLonLat() {
     return longitude * latitude != 0;
+  }
+
+  public boolean hasFotoFile() {
+    return null != fotoFile;
   }
 }

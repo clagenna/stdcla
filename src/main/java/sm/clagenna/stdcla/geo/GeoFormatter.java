@@ -65,7 +65,7 @@ public class GeoFormatter {
           , p_geo.getLatitude() //
           , p_geo.getLongitude(), p_geo.getAltitude(), szTim);
 
-    } else {
+    } else if (p_geo.hasLonLat()) {
       GMS lonGMS = GeoFormatter.convertWGS84(p_geo.getLongitude(), LONGITUDINE);
       GMS latGMS = GeoFormatter.convertWGS84(p_geo.getLatitude(), LATITUDE);
       szRet = String.format(Locale.US, "(%s,%s)(%.10f,%.10f) (Alt:%.0f m) il %s" //
@@ -73,6 +73,11 @@ public class GeoFormatter {
           , lonGMS != null ? lonGMS.toString() : "*null*" //
           , p_geo.getLatitude() //
           , p_geo.getLongitude(), p_geo.getAltitude(), szTim);
+    } else {
+      szRet = "(0°\"N,0°\"E)(0,0)";
+    }
+    if ( null != p_geo.getFotoFile()) {
+      szRet += String.format("\tfoto=\"%s\"", p_geo.getFotoFile().toString());
     }
     return szRet;
   }
@@ -111,7 +116,7 @@ public class GeoFormatter {
     } catch (Exception e) {
       //
     }
-    
+
     try {
       if (p_sz.endsWith("Z")) {
         // converto UTC in local datetime considerando il fuso orario
