@@ -21,7 +21,6 @@ public class GeoFormatter {
   public static final DateTimeFormatter s_fmt2Y4MD_hms;
   public static final DateTimeFormatter s_fmtmY4MD_hms;
   public static final DateTimeFormatter s_fmtmY4MD_hm;
-  @SuppressWarnings("unused")
   private static final ZoneId           s_zoneQui;
   private static final ZoneId           s_zoneUTC;
   public static final DateTimeFormatter s_dtfmt;
@@ -76,7 +75,7 @@ public class GeoFormatter {
     } else {
       szRet = "(0°\"N,0°\"E)(0,0)";
     }
-    if ( null != p_geo.getFotoFile()) {
+    if (null != p_geo.getFotoFile()) {
       szRet += String.format("\tfoto=\"%s\"", p_geo.getFotoFile().toString());
     }
     return szRet;

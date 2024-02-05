@@ -1,5 +1,6 @@
 package sm.clagenna.stdcla.geo;
 
+import java.io.Serializable;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -9,7 +10,9 @@ import java.time.temporal.ChronoUnit;
 import lombok.Data;
 
 @Data
-public class GeoCoord implements Comparable<GeoCoord> {
+@SuppressWarnings("this-escape")
+public class GeoCoord implements Comparable<GeoCoord>, Serializable {
+  private static final long serialVersionUID = -6542631194264470411L;
   // private static final Logger      s_log     = LogManager.getLogger(GeoCoord.class);
   private static final GeoDistance s_geodist = new GeoDistance();
   private LocalDateTime            tstamp;
@@ -148,8 +151,10 @@ public class GeoCoord implements Comparable<GeoCoord> {
   public void assignMin(GeoCoord p_e) {
     if (p_e == null)
       return;
-    longitude = p_e.getLongitude() < longitude ? p_e.getLongitude() : longitude;
-    latitude = p_e.getLatitude() < latitude ? p_e.getLatitude() : latitude;
+    if (p_e.getLongitude() != 0)
+      longitude = p_e.getLongitude() < longitude ? p_e.getLongitude() : longitude;
+    if (p_e.getLatitude() != 0)
+      latitude = p_e.getLatitude() < latitude ? p_e.getLatitude() : latitude;
   }
 
   public void assignMax(GeoCoord p_e) {
