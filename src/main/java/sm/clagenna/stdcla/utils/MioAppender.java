@@ -23,13 +23,21 @@ import org.apache.logging.log4j.core.layout.PatternLayout;
 @Plugin(name = "MioAppender", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE)
 public class MioAppender extends AbstractAppender {
 
+  private static MioAppender s_inst;
+
   private static List<ILog4jReader> s_logRead;
   private final ReadWriteLock       rwLock   = new ReentrantReadWriteLock();
   private final Lock                readLock = rwLock.readLock();
+  private String                    m_lastMsg;
 
   public MioAppender(String p_name, Filter p_filter, Layout<? extends Serializable> p_layout, boolean p_ignoreExceptions,
       Property[] p_properties) {
     super(p_name, p_filter, p_layout, p_ignoreExceptions, p_properties);
+    s_inst = this;
+  }
+
+  public static MioAppender getInst() {
+    return s_inst;
   }
 
   public static void setLogReader(ILog4jReader p_lr) {
@@ -48,10 +56,14 @@ public class MioAppender extends AbstractAppender {
 
   @PluginFactory
   public static MioAppender createAppender(//
-      @PluginAttribute("name") String name, //
-      @PluginElement("Layout") Layout<? extends Serializable> layout, //
-      @PluginElement("Filter") final Filter filter, //
-      @PluginAttribute("otherAttribute") String otherAttribute) {
+      @PluginAttribute("name")
+      String name, //
+      @PluginElement("Layout")
+      Layout<? extends Serializable> layout, //
+      @PluginElement("Filter")
+      final Filter filter, //
+      @PluginAttribute("otherAttribute")
+      String otherAttribute) {
     if (name == null) {
       LOGGER.error("Non hai fornito nessun nome al appender MioAppender");
       return null;
@@ -72,6 +84,13 @@ public class MioAppender extends AbstractAppender {
       String sz2 = new String(by, "UTF-8");
       String[] arr = sz2.split("\\t");
       // System.out.printf("MioLog:%s:\t%s\n", lev.name(), sz2);
+      m_lastMsg = "";
+      if (arr != null && arr.length > 3) {
+        for (int i = 3; i < arr.length; i++) {
+          m_lastMsg = m_lastMsg.length() > 0 ? m_lastMsg + " " : "";
+          m_lastMsg += arr[i];
+        }
+      }
       broadcast(arr);
     } catch (Exception l_e) {
       l_e.printStackTrace();
@@ -85,6 +104,10 @@ public class MioAppender extends AbstractAppender {
       return;
     for (ILog4jReader lr : s_logRead)
       lr.addLog(p_arr);
+  }
+
+  public String lastMsg() {
+    return m_lastMsg;
   }
 
 }

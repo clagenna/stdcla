@@ -8,10 +8,11 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 
 import lombok.Data;
+import sm.clagenna.stdcla.utils.Utils;
 
 @Data
 @SuppressWarnings("this-escape")
-public class GeoCoord implements Comparable<GeoCoord>, Serializable {
+public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
   private static final long serialVersionUID = -6542631194264470411L;
   // private static final Logger      s_log     = LogManager.getLogger(GeoCoord.class);
   private static final GeoDistance s_geodist = new GeoDistance();
@@ -106,6 +107,35 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable {
     return bRet;
   }
 
+  public boolean isChanged(GeoCoord p_updGeoFmt) {
+    boolean bRet = false;
+    if (null == p_updGeoFmt)
+      return bRet;
+    bRet = !isComplete();
+    if ( !bRet)
+      return bRet;
+    bRet |= tstamp != null ? Utils.isChanged(tstamp, p_updGeoFmt.getTstamp()) : false;
+    if ( !bRet)
+      bRet |= Utils.isChanged(longitude, p_updGeoFmt.getLongitude());
+    if ( !bRet)
+      bRet |= Utils.isChanged(latitude, p_updGeoFmt.getLatitude());
+    if ( !bRet)
+      bRet |= Utils.isChanged(altitude, p_updGeoFmt.getAltitude());
+    if ( !bRet)
+      bRet |= Utils.isChanged(longitude, p_updGeoFmt.getLongitude());
+    if ( !bRet)
+      bRet |= srcGeo != p_updGeoFmt.getSrcGeo();
+    if ( !bRet) {
+      boolean ba = null == fotoFile;
+      boolean bb = null == p_updGeoFmt.getFotoFile();
+      bRet |= ba ^ bb;
+      if (bRet)
+        return bRet;
+      bRet |= !fotoFile.equals(p_updGeoFmt.getFotoFile());
+    }
+    return bRet;
+  }
+
   public boolean isEmpty() {
     boolean bRet = false;
     bRet |= tstamp == null;
@@ -121,6 +151,10 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable {
     return GeoFormatter.format(this);
   }
 
+  public String toStringSimple() {
+    return GeoFormatter.formatSimple(this);
+  }
+
   @Override
   public int hashCode() {
     return tstamp.hashCode();
@@ -129,12 +163,20 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable {
   @Override
   public boolean equals(Object obj) {
     boolean bRet = false;
-    if (tstamp == null || obj == null)
+    if (tstamp == null || obj == null || ! (obj instanceof GeoCoord))
       return bRet;
-    if (obj instanceof GeoCoord geo) {
-      if (geo.tstamp == null)
-        return bRet;
-      bRet = tstamp.equals(geo.tstamp);
+    GeoCoord geo = (GeoCoord) obj;
+    if (geo.tstamp == null)
+      return bRet;
+    bRet = tstamp.equals(geo.tstamp);
+    if (bRet)
+      bRet &= latitude == geo.latitude;
+    if (bRet)
+      bRet &= longitude == geo.longitude;
+    if (bRet)
+      bRet &= altitude == geo.altitude;
+    if (bRet) {
+      bRet &= srcGeo == geo.srcGeo;
     }
     return bRet;
   }
@@ -146,6 +188,18 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable {
     if (tstamp == null)
       return 1;
     return tstamp.compareTo(p_o.tstamp);
+  }
+
+  public void assign(GeoCoord other) {
+    if (null == other)
+      return;
+    tstamp = other.tstamp;
+    longitude = other.longitude;
+    latitude = other.latitude;
+    guessed = other.guessed;
+    altitude = other.altitude;
+    srcGeo = other.srcGeo;
+    fotoFile = other.fotoFile;
   }
 
   public void assignMin(GeoCoord p_e) {
@@ -175,5 +229,18 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable {
 
   public boolean hasFotoFile() {
     return null != fotoFile;
+  }
+
+  @Override
+  public Object clone() throws CloneNotSupportedException {
+    GeoCoord nw = new GeoCoord();
+    nw.tstamp = tstamp;
+    nw.altitude = altitude;
+    nw.longitude = longitude;
+    nw.latitude = latitude;
+    nw.srcGeo = srcGeo;
+    nw.guessed = guessed;
+    nw.fotoFile = fotoFile;
+    return nw;
   }
 }

@@ -8,11 +8,17 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class GeoFormatter {
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-  private static Pattern      s_patNWGradiMinSec;
-  private static Pattern      s_patGradiMinSecNW;
-  private static Pattern      s_patDecimali;
+public class GeoFormatter {
+  private static final Logger s_log = LogManager.getLogger(GeoFormatter.class);
+
+  private static Pattern s_patNWGradiMinSec;
+  private static Pattern s_patGradiMinSecNW;
+  private static Pattern s_patDecimali;
+  private static Pattern s_patWebString;
+
   private static final String LNK_MAPS = "https://www.google.com/maps?z=15&t=h&q=%.8f,%.8f";
   private static boolean      showLink = false;
 
@@ -27,6 +33,7 @@ public class GeoFormatter {
 
   public static final int LATITUDE    = 0;
   public static final int LONGITUDINE = 1;
+  private LocalDateTime   m_dtWebTime;
 
   static {
     // s_patGradiMinSec = Pattern.compile("([+\\-]?[0-9]+). ([0-9]+). ([0-9,\\.]+).*");
@@ -44,6 +51,8 @@ public class GeoFormatter {
     s_zoneQui = ZoneId.of("Europe/Rome");
     s_zoneUTC = ZoneId.of("UTC");
     s_dtfmt = DateTimeFormatter.ISO_DATE_TIME.withZone(s_zoneUTC);
+
+    s_patWebString = Pattern.compile("[^0-9\\-\\+]*([+\\-]?\\d+\\.\\d+)[^0-9\\-\\+]*([+\\-]?\\d+\\.\\d+).*");
   }
 
   public GeoFormatter() {
@@ -76,7 +85,27 @@ public class GeoFormatter {
       szRet = "(0°\"N,0°\"E)(0,0)";
     }
     if (null != p_geo.getFotoFile()) {
-      szRet += String.format("\tfoto=\"%s\"", p_geo.getFotoFile().toString());
+      szRet += String.format(" foto=\"%s\"", p_geo.getFotoFile().toString());
+    }
+    return szRet;
+  }
+
+  public static String formatSimple(GeoCoord p_geo) {
+    String szTim = "";
+    String szRet = "";
+    if (p_geo == null)
+      return szRet;
+    if (p_geo.getTstamp() != null)
+      szTim = s_fmtmY4MD_hms.format(p_geo.getTstamp()) + "; ";
+    if (p_geo.hasLonLat()) {
+      szRet = String.format(Locale.US, "(%.10f,%.10f)\t%s" //
+          , p_geo.getLatitude() //
+          , p_geo.getLongitude(), szTim);
+    } else {
+      szRet = "(0,0)";
+    }
+    if (null != p_geo.getFotoFile()) {
+      szRet += String.format(" foto=\"%s\"", p_geo.getFotoFile().toString());
     }
     return szRet;
   }
@@ -170,8 +199,36 @@ public class GeoFormatter {
   }
 
   public GeoCoord parseLatitude(GeoCoord p_geo, String p_sz) {
-    p_geo.setLongitude(convert(p_sz, LATITUDE));
+    p_geo.setLatitude(convert(p_sz, LATITUDE));
     return p_geo;
+  }
+
+  public GeoCoord parseWeb(GeoCoord coo, String sz) {
+    GeoCoord ret = coo;
+    if (sz == null || sz.length() < 2)
+      return ret;
+    if (ret == null)
+      ret = new GeoCoord();
+    if (null == m_dtWebTime)
+      m_dtWebTime = LocalDateTime.now();
+    String szLon = null;
+    String szLat = null;
+    Matcher mtch = s_patWebString.matcher(sz);
+    if (mtch.find()) {
+      szLat = mtch.group(1);
+      szLon = mtch.group(2);
+      parseLatitude(ret, szLat);
+      parseLongitude(ret, szLon);
+      m_dtWebTime = m_dtWebTime.plusSeconds(5);
+      ret.setTstamp(m_dtWebTime);
+    } else {
+      s_log.warn("Non interpreto : {}", sz);
+    }
+    return ret;
+  }
+
+  public void setWebTime(LocalDateTime pdt) {
+    m_dtWebTime = pdt;
   }
 
   private double convert(String p_sz, int pLatLon) {
@@ -182,6 +239,7 @@ public class GeoFormatter {
     double seco;
 
     // Decimali es: -34.35245572676254
+    p_sz = p_sz.replace(",", ".");
     Matcher res = s_patDecimali.matcher(p_sz);
     if (res.matches()) {
       ret = Double.parseDouble(p_sz);
