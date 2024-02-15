@@ -11,6 +11,8 @@ import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import sm.clagenna.stdcla.utils.Utils;
+
 public class GeoFormatter {
   private static final Logger s_log = LogManager.getLogger(GeoFormatter.class);
 
@@ -217,10 +219,17 @@ public class GeoFormatter {
     if (mtch.find()) {
       szLat = mtch.group(1);
       szLon = mtch.group(2);
+      double oldLat = coo.getLatitude();
+      double oldLon = coo.getLongitude();
       parseLatitude(ret, szLat);
       parseLongitude(ret, szLon);
-      m_dtWebTime = m_dtWebTime.plusSeconds(5);
+
+      if (Utils.isChanged(oldLat, ret.getLatitude()) || //
+          Utils.isChanged(oldLon, ret.getLongitude()))
+        ret.setGuessed(true);
+
       ret.setTstamp(m_dtWebTime);
+      m_dtWebTime = m_dtWebTime.plusSeconds(5);
     } else {
       s_log.warn("Non interpreto : {}", sz);
     }
