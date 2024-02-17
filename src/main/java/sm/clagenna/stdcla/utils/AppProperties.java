@@ -29,11 +29,11 @@ public class AppProperties {
   public static final String CSZ_PROP_POSFRAME_Y = "frame.posy";
 
   public static final String CSZ_PROP_DB_Type    = "DB.Type";
+  public static final String CSZ_PROP_DB_name    = "DB.name";   // name or file
   public static final String CSZ_PROP_DB_Host    = "DB.Host";
-  public static final String CSZ_PROP_DB_name    = "DB.name";
+  public static final String CSZ_PROP_DB_service = "DB.service";
   public static final String CSZ_PROP_DB_user    = "DB.user";
   public static final String CSZ_PROP_DB_passwd  = "DB.passwd";
-  public static final String CSZ_PROP_DB_service = "DB.service";
 
   private Properties         properties;
   private File               propertyFile;
@@ -257,5 +257,4 @@ public class AppProperties {
     getProperties();
     properties.setProperty(CSZ_PROP_LASTDIR, p_last);
   }
-
 }
