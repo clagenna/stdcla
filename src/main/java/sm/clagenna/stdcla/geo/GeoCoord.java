@@ -16,6 +16,7 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
   private static final long serialVersionUID = -6542631194264470411L;
   // private static final Logger      s_log     = LogManager.getLogger(GeoCoord.class);
   private static final GeoDistance s_geodist = new GeoDistance();
+  
   private LocalDateTime            tstamp;
   private double                   longitude;
   private double                   latitude;

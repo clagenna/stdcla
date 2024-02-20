@@ -95,14 +95,17 @@ public class GeoList extends LinkedList<GeoCoord> {
     GeoList liNew = new GeoList();
     liNew.setBUniqueTs(isBUniqueTs());
     for (GeoCoord geo : this) {
-      if (prec == null || geo.hasFotoFile()) {
+      if (prec == null || geo.getSrcGeo() == EGeoSrcCoord.foto) {
         prec = geo;
         liNew.add(geo);
         continue;
       }
-      double dist = prec.distance(geo);
+      double dist = 99999;
+      if (geo.hasLonLat() && prec.hasLonLat())
+        dist = prec.distance(geo);
       long secs = ChronoUnit.SECONDS.between(prec.getTstamp(), geo.getTstamp());
-      if (dist > 2 || secs > 10) {
+      if (dist > 10 || secs > 2) {
+        prec = geo;
         liNew.add(geo);
         if (s_log.isTraceEnabled()) {
           s_log.trace("{}, {} diff={}, dist={}m", //
@@ -111,7 +114,6 @@ public class GeoList extends LinkedList<GeoCoord> {
               secs, dist);
         }
       }
-      prec = geo;
     }
     return liNew;
   }

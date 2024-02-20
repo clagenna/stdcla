@@ -1,5 +1,6 @@
 package sm.clagenna.stdcla.geo;
 
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -16,6 +17,7 @@ import sm.clagenna.stdcla.utils.Utils;
 public class GeoFormatter {
   private static final Logger s_log = LogManager.getLogger(GeoFormatter.class);
 
+  private static DecimalFormat s_fmtLonLat;
   private static Pattern s_patNWGradiMinSec;
   private static Pattern s_patGradiMinSecNW;
   private static Pattern s_patDecimali;
@@ -44,6 +46,7 @@ public class GeoFormatter {
     // es: 17°09'58.3"S 179°02'46.8"W
     s_patGradiMinSecNW = Pattern.compile("([+\\-]?[0-9]+).([0-9]+).([0-9,\\.]+)\"([nNeEsSwW])+");
     s_patDecimali = Pattern.compile("[\\+\\-]?[0-9]+\\.[0-9]+");
+    s_fmtLonLat = new DecimalFormat("0.0#########");
 
     s_fmtTimeOf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXXXX");
     s_fmtTimeZ = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -70,10 +73,11 @@ public class GeoFormatter {
       szTim = s_fmtmY4MD_hms.format(p_geo.getTstamp()) + "; ";
     if (showLink && p_geo.getLatitude() * p_geo.getLongitude() != 0) {
       String szLnk = String.format(Locale.US, LNK_MAPS, p_geo.getLatitude(), p_geo.getLongitude());
-      szRet = String.format(Locale.US, "(%s)(%.10f,%.10f) (Alt:%.0f m) il %s" //
+      szRet = String.format(Locale.US, "(%s)(%s,%s) (Alt:%.0f m) il %s" //
           , szLnk //
-          , p_geo.getLatitude() //
-          , p_geo.getLongitude(), p_geo.getAltitude(), szTim);
+          , s_fmtLonLat.format( p_geo.getLatitude()) //
+          , s_fmtLonLat.format( p_geo.getLongitude()) //
+          , p_geo.getAltitude(), szTim);
 
     } else if (p_geo.hasLonLat()) {
       GMS lonGMS = GeoFormatter.convertWGS84(p_geo.getLongitude(), LONGITUDINE);
@@ -100,9 +104,11 @@ public class GeoFormatter {
     if (p_geo.getTstamp() != null)
       szTim = s_fmtmY4MD_hms.format(p_geo.getTstamp()) + "; ";
     if (p_geo.hasLonLat()) {
-      szRet = String.format(Locale.US, "(%.10f,%.10f)\t%s" //
-          , p_geo.getLatitude() //
-          , p_geo.getLongitude(), szTim);
+      szRet = String.format(Locale.US, "(%s,%s)\t%s %s" //
+          , s_fmtLonLat.format(p_geo.getLatitude()) //
+          , s_fmtLonLat.format(p_geo.getLongitude()) //
+          , szTim
+          , p_geo.hasFotoFile() ? p_geo.getFotoFile().toString() : "");
     } else {
       szRet = "(0,0)";
     }

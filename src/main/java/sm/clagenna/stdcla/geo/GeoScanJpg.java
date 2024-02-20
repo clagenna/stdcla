@@ -140,14 +140,15 @@ public class GeoScanJpg {
       s_log.error("Errore leggi Dt ORIGINAL \"{}\", err={}", szDt, e.getMessage());
     }
 
+    GPSInfo gpsi = null;
     try {
-      GPSInfo gpsi = exif.getGPS();
+      gpsi = exif.getGPS();
       if (gpsi != null) {
         longitude = gpsi.getLongitudeAsDegreesEast();
         latitude = gpsi.getLatitudeAsDegreesNorth();
       }
     } catch (ImageReadException | DateTimeParseException e) {
-      s_log.error("Errore leggi Dt ORIGINAL \"{}\", err={}", szDt, e.getMessage());
+      s_log.error("Errore leggi GPS \"{}\", err={}", p_jpg.getFileName().toString(), e.getMessage());
     }
     if (dtAcquisizione != null /* && longitude * latitude != 0 */) {
       GeoCoord geo = new GeoCoord();
@@ -156,8 +157,12 @@ public class GeoScanJpg {
       geo.setLatitude(latitude);
       geo.setSrcGeo(EGeoSrcCoord.foto);
       geo.setFotoFile(p_jpg);
-      geolist.add(geo);
-      s_log.debug("Added {}", geo.toString());
+      if ( !geolist.contains(geo)) {
+        geolist.add(geo);
+        s_log.debug("Added {}", geo.toStringSimple());
+      } else {
+        s_log.debug("Discarded {}", geo.toStringSimple());
+      }
     } else {
       s_log.debug("No exif info on {}", p_jpg.toAbsolutePath().toString());
     }
@@ -273,7 +278,7 @@ public class GeoScanJpg {
     if (n > 0)
       szExt = szFilNam.substring(n + 1).toLowerCase();
     String szDt = ParseData.s_fmtDtFile.format(p_dt);
-    if ( szFilNam.toLowerCase().contains(szDt)) {
+    if (szFilNam.toLowerCase().contains(szDt)) {
       s_log.debug("No rename of \"{}\" dt={}", szFilNam, szDt);
       return p_pth;
     }
