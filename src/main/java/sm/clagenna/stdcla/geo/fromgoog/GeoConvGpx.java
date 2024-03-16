@@ -109,8 +109,10 @@ public class GeoConvGpx {
       String szOu = creaHead();
       prw.append(szOu);
       for (GeoCoord geo : listGeo) {
-        szOu = creaSeg(geo);
-        prw.append(szOu);
+        if (geo.hasLonLat()) {
+          szOu = creaSeg(geo);
+          prw.append(szOu);
+        }
       }
       szOu = creaEnd();
       prw.append(szOu);

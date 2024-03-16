@@ -104,10 +104,11 @@ public class GeoFormatter {
     if (p_geo.getTstamp() != null)
       szTim = s_fmtmY4MD_hms.format(p_geo.getTstamp()) + "; ";
     if (p_geo.hasLonLat()) {
-      szRet = String.format(Locale.US, "(%s,%s)\t%s %s" //
+      szRet = String.format(Locale.US, "(%s,%s)[%s]\t%s %s" //
           , s_fmtLonLat.format(p_geo.getLatitude()) //
           , s_fmtLonLat.format(p_geo.getLongitude()) //
-          , szTim
+          , p_geo.isGuessed() ? "G" : " " //
+          , szTim //
           , p_geo.hasFotoFile() ? p_geo.getFotoFile().toString() : "");
     } else {
       szRet = "(0,0)";

@@ -3,14 +3,16 @@ package sm.clagenna.stdcla.utils;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 public class ParseData {
-  public static SimpleDateFormat     s_fmtDtDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-  public static DateTimeFormatter    s_fmtDtExif = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss");
-  public static DateTimeFormatter    s_fmtDtFile = DateTimeFormatter.ofPattern("'f'yyyyMMdd'_'HHmmss");
-  
+  public static SimpleDateFormat  s_fmtDtDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+  public static DateTimeFormatter s_fmtDtExif = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss");
+  public static DateTimeFormatter s_fmtDtFile = DateTimeFormatter.ofPattern("'f'yyyyMMdd'_'HHmmss");
+
   private static final LocalDateTime s_dtMin;
   private static final LocalDateTime s_dtMax;
 
@@ -19,10 +21,11 @@ public class ParseData {
     s_dtMax = LocalDateTime.parse("2050:12:31 23:59:59", s_fmtDtExif);
   }
 
-  private static DateTimeFormatter[] s_arrpat = { // 01
-      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"), // 03
-      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"), // 03
-      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"), // 02
+  private static DateTimeFormatter[] s_arrpat = { //
+      s_fmtDtExif, // 00
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"), // 01
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"), // 02
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"), // 03
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"), // 04
       DateTimeFormatter.ofPattern("yyyy-MM-dd"), // 05
       DateTimeFormatter.ofPattern("yy-MM-dd"), // 06
@@ -46,7 +49,8 @@ public class ParseData {
     LocalDateTime dtRet = null;
     if (p_sz == null)
       return null;
-    @SuppressWarnings("unused") int k = 0;
+    @SuppressWarnings("unused")
+    int k = 0;
     for (DateTimeFormatter pat : s_arrpat) {
       try {
         dtRet = LocalDateTime.parse(p_sz, pat);
@@ -71,4 +75,10 @@ public class ParseData {
     return dtRet;
   }
 
+  public OffsetDateTime parseOffsetDateTime(String p_sz, String p_ofs) {
+    ZoneOffset offsZone = ZoneOffset.of(p_ofs);
+    LocalDateTime dt = parseData(p_sz);
+    OffsetDateTime odt = OffsetDateTime.of(dt, offsZone);
+    return odt;
+  }
 }

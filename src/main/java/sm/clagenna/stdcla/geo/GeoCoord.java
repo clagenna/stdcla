@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 
@@ -16,20 +17,22 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
   private static final long serialVersionUID = -6542631194264470411L;
   // private static final Logger      s_log     = LogManager.getLogger(GeoCoord.class);
   private static final GeoDistance s_geodist = new GeoDistance();
-  
-  private LocalDateTime            tstamp;
-  private double                   longitude;
-  private double                   latitude;
-  private boolean                  guessed;
-  private double                   altitude;
-  private EGeoSrcCoord             srcGeo;
-  private Path                     fotoFile;
+
+  private LocalDateTime tstamp;
+  private ZoneOffset    zoneOffset;
+  private double        longitude;
+  private double        latitude;
+  private boolean       guessed;
+  private double        altitude;
+  private EGeoSrcCoord  srcGeo;
+  private Path          fotoFile;
 
   public GeoCoord() {
     setLatitude(0);
     setLongitude(0);
     altitude = 0;
     setTstamp(LocalDateTime.now());
+    setZoneOffset(ZoneOffset.UTC);
     setSrcGeo(EGeoSrcCoord.track);
     setFotoFile(null);
   }
@@ -39,12 +42,14 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     setLongitude(p_lon);
     setAltitude(0);
     setTstamp(LocalDateTime.now());
+    setZoneOffset(ZoneOffset.UTC);
     setSrcGeo(EGeoSrcCoord.track);
     setFotoFile(null);
   }
 
   public GeoCoord(LocalDateTime pdt, double p_lat, double p_lon) {
     setTstamp(pdt);
+    setZoneOffset(ZoneOffset.UTC);
     setLatitude(p_lat);
     setLongitude(p_lon);
     setAltitude(0);
@@ -54,6 +59,7 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
 
   public GeoCoord(LocalDateTime pdt, double p_lat, double p_lon, double p_alt) {
     setTstamp(pdt);
+    setZoneOffset(ZoneOffset.UTC);
     setLatitude(p_lat);
     setLongitude(p_lon);
     setAltitude(p_alt);
@@ -69,9 +75,18 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     longitude = dbl;
   }
 
+  public void parseZoneOffset(String p_sz) {
+    // default Italia
+    zoneOffset = ZoneOffset.ofHours( +2);
+    if (p_sz == null)
+      return;
+    setZoneOffset(ZoneOffset.of(p_sz));
+  }
+
   public GeoCoord parse(String p_szDt, String p_szLat, String p_szLon) {
     GeoFormatter fmt = new GeoFormatter();
     fmt.parseTStamp(this, p_szDt);
+    setZoneOffset(ZoneOffset.UTC);
     fmt.parseLatitude(this, p_szLat);
     fmt.parseLongitude(this, p_szLon);
     return this;
@@ -182,6 +197,20 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     return bRet;
   }
 
+  public boolean equalSolo(Object obj) {
+    boolean bRet = false;
+    if (tstamp == null || obj == null || ! (obj instanceof GeoCoord))
+      return bRet;
+    GeoCoord geo = (GeoCoord) obj;
+    if (geo.tstamp == null)
+      return bRet;
+    bRet = tstamp.equals(geo.tstamp);
+    if (bRet) {
+      bRet &= srcGeo == geo.srcGeo;
+    }
+    return bRet;
+  }
+
   @Override
   public int compareTo(GeoCoord p_o) {
     if (p_o == null || p_o.tstamp == null)
@@ -191,16 +220,22 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     return tstamp.compareTo(p_o.tstamp);
   }
 
+  public void update(GeoCoord other) {
+    if ( null == other )
+      return;
+    setAltitude(other.getAltitude());
+    setLongitude(other.getLongitude());
+    setLatitude(other.getLatitude());
+    setGuessed(other.isGuessed());
+    setFotoFile(other.getFotoFile());
+  }
+
   public void assign(GeoCoord other) {
     if (null == other)
       return;
+    update(other);
     tstamp = other.tstamp;
-    longitude = other.longitude;
-    latitude = other.latitude;
-    guessed = other.guessed;
-    altitude = other.altitude;
     srcGeo = other.srcGeo;
-    fotoFile = other.fotoFile;
   }
 
   public void assignMin(GeoCoord p_e) {

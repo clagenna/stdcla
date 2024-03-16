@@ -13,7 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.LocalDateTime;
@@ -30,6 +29,8 @@ import org.apache.commons.imaging.formats.jpeg.exif.ExifRewriter;
 import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
 import org.apache.commons.imaging.formats.tiff.TiffImageMetadata.GPSInfo;
 import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
+import org.apache.commons.imaging.formats.tiff.constants.TiffDirectoryType;
+import org.apache.commons.imaging.formats.tiff.taginfos.TagInfoAscii;
 import org.apache.commons.imaging.formats.tiff.write.TiffOutputSet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,10 +38,15 @@ import org.apache.logging.log4j.Logger;
 import lombok.Data;
 import sm.clagenna.stdcla.sys.ex.GeoFileException;
 import sm.clagenna.stdcla.utils.ParseData;
+import sm.clagenna.stdcla.utils.Utils;
 
 @Data
 public class GeoScanJpg {
   private static final Logger s_log = LogManager.getLogger(GeoScanJpg.class);
+
+  private static int                TAG_OFFSET_TIME      = 0x9010;
+  private static final TagInfoAscii EXIF_TAG_OFFSET_TIME = new TagInfoAscii("OffsetTime", TAG_OFFSET_TIME, 20,
+      TiffDirectoryType.TIFF_DIRECTORY_ROOT);
 
   private GeoList geolist;
   private Path    startDir;
@@ -109,7 +115,7 @@ public class GeoScanJpg {
     File fi = p_jpg.toFile();
     try {
       metadata = Imaging.getMetadata(fi);
-    } catch (ImageReadException | IOException e) {
+    } catch (IllegalArgumentException | ImageReadException | IOException e) {
       // manda in crisi la pipe in FileSystemVisitatore:34
       // setFileInError(true);
       s_log.error("Errore Lettura metadata:" + fi.getAbsolutePath(), e);
@@ -128,6 +134,7 @@ public class GeoScanJpg {
     if (exif == null)
       return;
     String szDt = null;
+    String szZoneOfset = null;
     try {
       String[] arr = exif.getFieldValue(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
       if (arr != null && arr.length > 0) {
@@ -135,6 +142,15 @@ public class GeoScanJpg {
       }
       if (szDt != null)
         dtAcquisizione = LocalDateTime.from(ParseData.s_fmtDtExif.parse(szDt));
+      arr = exif.getFieldValue(EXIF_TAG_OFFSET_TIME);
+      if (arr != null && arr.length > 0) 
+        szZoneOfset = arr[0];
+//      if (! Utils.isValue(szZoneOfset)) {
+//        if ( arr.length >1 )
+//          szZoneOfset = arr[1];
+//      }
+      if (! Utils.isValue(szZoneOfset)) 
+        szZoneOfset="+01:00";
     } catch (ImageReadException | DateTimeParseException e) {
       // setFileInError(true);
       s_log.error("Errore leggi Dt ORIGINAL \"{}\", err={}", szDt, e.getMessage());
@@ -153,6 +169,7 @@ public class GeoScanJpg {
     if (dtAcquisizione != null /* && longitude * latitude != 0 */) {
       GeoCoord geo = new GeoCoord();
       geo.setTstamp(dtAcquisizione);
+      geo.parseZoneOffset(szZoneOfset);
       geo.setLongitude(longitude);
       geo.setLatitude(latitude);
       geo.setSrcGeo(EGeoSrcCoord.foto);
@@ -180,7 +197,14 @@ public class GeoScanJpg {
     double lon = p_geo.getLongitude();
     double lat = p_geo.getLatitude();
     Path pth = p_geo.getFotoFile();
-
+    try {
+      if (Files.notExists(pth) || Files.size(pth) < 5) {
+        s_log.error("Il file {} non esiste!", pth.toString());
+        return;
+      }
+    } catch (IOException e) {
+      s_log.error("Errore test size di {}, err={}", pth.toString(), e.getMessage());
+    }
     s_log.info("Aggiungo coord. GPS per {}", pth.toString());
     boolean bOk = true;
     Path pthCopy = backupFotoFile(pth);
@@ -190,8 +214,9 @@ public class GeoScanJpg {
     File dst = pth.toFile();
     String szDt = null;
     LocalDateTime dtAcquisizione = null;
+    ZoneOffset zoneOffset = null;
     FileTime timeFi = null;
-    BasicFileAttributeView attr = null;
+
     try (FileOutputStream fos = new FileOutputStream(dst); OutputStream os = new BufferedOutputStream(fos);) {
       TiffOutputSet outputSet = null;
       // note that metadata might be null if no metadata is found.
@@ -220,9 +245,7 @@ public class GeoScanJpg {
       // existing tags.
       if (null == outputSet)
         outputSet = new TiffOutputSet();
-
       if (null != exif) {
-
         try {
           String[] arr = exif.getFieldValue(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
           if (arr != null && arr.length > 0) {
@@ -230,17 +253,21 @@ public class GeoScanJpg {
           }
           if (szDt != null)
             dtAcquisizione = LocalDateTime.from(ParseData.s_fmtDtExif.parse(szDt));
+          arr = exif.getFieldValue(EXIF_TAG_OFFSET_TIME);
+          if (null != arr && arr.length > 0)
+            zoneOffset = ZoneOffset.of(arr[0]);
         } catch (ImageReadException | DateTimeParseException e) {
           // setFileInError(true);
           s_log.error("Errore leggi Dt ORIGINAL \"{}\", err={}", szDt, e.getMessage());
         }
       }
       if (null != dtAcquisizione) {
-        s_log.debug("Foto {} dt acquiziz. {}", pth.toString(), szDt);
-        timeFi = FileTime.from(dtAcquisizione.toInstant(ZoneOffset.UTC));
+        if ( zoneOffset == null)
+          zoneOffset=ZoneOffset.of("+01:00");
+        s_log.debug("Foto {} dt acquiziz. {} {}", pth.toString(), szDt, zoneOffset != null ? zoneOffset.toString() : " - ");
+        // timeFi = FileTime.from(dtAcquisizione.plusHours(1).toInstant(zoneOffset));
+        timeFi = FileTime.from(dtAcquisizione.toInstant(zoneOffset));
       }
-
-      // final TiffOutputDirectory exifDirectory = outputSet.getOrCreateExifDirectory();
       outputSet.setGPSInDegrees(lon, lat);
       new ExifRewriter().updateExifMetadataLossless(jpegImageFile, os, outputSet);
       p_geo.setGuessed(false);
@@ -259,8 +286,7 @@ public class GeoScanJpg {
         Files.delete(pthCopy);
         if (null != dtAcquisizione) {
           Path pthNew = renameFile(pth, dtAcquisizione);
-          attr = Files.getFileAttributeView(pthNew, BasicFileAttributeView.class);
-          attr.setTimes(timeFi, timeFi, timeFi);
+          cambiaAttrFile(pthNew, timeFi);
           p_geo.setFotoFile(pthNew);
         }
       } else
@@ -271,13 +297,18 @@ public class GeoScanJpg {
 
   }
 
-  private Path renameFile(Path p_pth, LocalDateTime p_dt) {
+  public Path renameFile(Path p_pth, LocalDateTime p_dt) {
     String szExt = "jpg";
     String szFilNam = p_pth.toString();
     int n = szFilNam.lastIndexOf(".");
     if (n > 0)
       szExt = szFilNam.substring(n + 1).toLowerCase();
     String szDt = ParseData.s_fmtDtFile.format(p_dt);
+    try {
+      cambiaAttrFile(p_pth, p_dt);
+    } catch (IOException e) {
+      s_log.error("Errore cambia attributi file {}", p_pth.toString());
+    }
     if (szFilNam.toLowerCase().contains(szDt)) {
       s_log.debug("No rename of \"{}\" dt={}", szFilNam, szDt);
       return p_pth;
@@ -292,12 +323,71 @@ public class GeoScanJpg {
     }
     try {
       Files.move(p_pth, pthNew);
+      cambiaAttrFile(pthNew, p_dt);
       s_log.info("Rinominata Foto {} con {}", p_pth.getFileName().toString(), pthNew.getFileName().toString());
     } catch (IOException e) {
       s_log.error("Errore rename da {} a {}", p_pth.toString(), pthNew.toString());
       pthNew = p_pth;
     }
     return pthNew;
+  }
+
+  public void renameFile(GeoCoord p_geo) {
+    if (null == p_geo || !p_geo.hasFotoFile())
+      return;
+    renameFile(p_geo.getFotoFile(), p_geo.getTstamp());
+    //    Path pth = p_geo.getFotoFile();
+    //    File jpegImageFile = p_geo.getFotoFile().toFile();
+    //    String szDt = null;
+    //    LocalDateTime dtAcquisizione = null;
+    //    FileTime timeFi = null;
+    //    ZoneOffset zoneOffset = ZoneOffset.UTC;
+    //    // BasicFileAttributeView attr = null;
+    //
+    //    try {
+    //      // note that metadata might be null if no metadata is found.
+    //      final ImageMetadata metadata = Imaging.getMetadata(jpegImageFile);
+    //      final JpegImageMetadata jpegMetadata = (JpegImageMetadata) metadata;
+    //      TiffImageMetadata exif = null;
+    //      if (null != jpegMetadata) {
+    //        // note that exif might be null if no Exif metadata is found.
+    //        exif = jpegMetadata.getExif();
+    //      }
+    //      if (null != exif) {
+    //        String[] arr = exif.getFieldValue(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
+    //        if (arr != null && arr.length > 0) {
+    //          szDt = arr[0];
+    //        }
+    //        if (szDt != null)
+    //          dtAcquisizione = LocalDateTime.from(ParseData.s_fmtDtExif.parse(szDt));
+    //        arr = exif.getFieldValue(EXIF_TAG_OFFSET_TIME);
+    //        if (null != arr && arr.length > 0)
+    //          zoneOffset = ZoneOffset.of(arr[0]);
+    //      }
+    //
+    //      if (null != dtAcquisizione) {
+    //        // s_log.debug("Foto {} dt acquiziz. {}", pth.toString(), szDt);
+    //        timeFi = FileTime.from(dtAcquisizione.toInstant(zoneOffset));
+    //        Path pthNew = renameFile(pth, dtAcquisizione);
+    //        cambiaAttrFile(pthNew, timeFi);
+    //        p_geo.setFotoFile(pthNew);
+    //      }
+    //    } catch (ImageReadException | DateTimeParseException e) {
+    //      s_log.error("Errore leggi Dt ORIGINAL \"{}\", err={}", szDt, e.getMessage());
+    //    } catch (Exception l_e) {
+    //      s_log.error("Errore rename");
+    //    }
+  }
+
+  private void cambiaAttrFile(Path pthNew, FileTime timeFi) throws IOException {
+    Files.setAttribute(pthNew, "creationTime", timeFi);
+    Files.setAttribute(pthNew, "lastAccessTime", timeFi);
+    Files.setAttribute(pthNew, "lastModifiedTime", timeFi);
+  }
+
+  private void cambiaAttrFile(Path p_pth, LocalDateTime p_dt) throws IOException {
+    FileTime timeFi = FileTime.from(p_dt.toInstant(ZoneOffset.UTC));
+    cambiaAttrFile(p_pth, timeFi);
   }
 
   private Path backupFotoFile(Path pth) {
@@ -313,49 +403,6 @@ public class GeoScanJpg {
       s_log.error("Errore {} backup file per {}", e.getMessage(), pth.toString(), e);
     }
     return pthCopy;
-  }
-
-  public void cambiaNome(GeoCoord p_geo) {
-    if (null == p_geo || !p_geo.hasFotoFile())
-      return;
-    Path pth = p_geo.getFotoFile();
-    File jpegImageFile = p_geo.getFotoFile().toFile();
-    String szDt = null;
-    LocalDateTime dtAcquisizione = null;
-    FileTime timeFi = null;
-    BasicFileAttributeView attr = null;
-
-    try {
-      // note that metadata might be null if no metadata is found.
-      final ImageMetadata metadata = Imaging.getMetadata(jpegImageFile);
-      final JpegImageMetadata jpegMetadata = (JpegImageMetadata) metadata;
-      TiffImageMetadata exif = null;
-      if (null != jpegMetadata) {
-        // note that exif might be null if no Exif metadata is found.
-        exif = jpegMetadata.getExif();
-      }
-      if (null != exif) {
-        String[] arr = exif.getFieldValue(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
-        if (arr != null && arr.length > 0) {
-          szDt = arr[0];
-        }
-        if (szDt != null)
-          dtAcquisizione = LocalDateTime.from(ParseData.s_fmtDtExif.parse(szDt));
-      }
-
-      if (null != dtAcquisizione) {
-        // s_log.debug("Foto {} dt acquiziz. {}", pth.toString(), szDt);
-        timeFi = FileTime.from(dtAcquisizione.toInstant(ZoneOffset.UTC));
-        Path pthNew = renameFile(pth, dtAcquisizione);
-        attr = Files.getFileAttributeView(pthNew, BasicFileAttributeView.class);
-        attr.setTimes(timeFi, timeFi, timeFi);
-        p_geo.setFotoFile(pthNew);
-      }
-    } catch (ImageReadException | DateTimeParseException e) {
-      s_log.error("Errore leggi Dt ORIGINAL \"{}\", err={}", szDt, e.getMessage());
-    } catch (Exception l_e) {
-      s_log.error("Errore rename");
-    }
   }
 
 }
