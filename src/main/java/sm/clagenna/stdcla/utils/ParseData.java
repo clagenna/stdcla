@@ -7,6 +7,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ParseData {
   public static SimpleDateFormat  s_fmtDtDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -45,6 +47,32 @@ public class ParseData {
 
   };
 
+  private static Pattern[] s_arrpatGuess = { //
+      //               .* yyyy-MM-dd?*hh.mm.ss ?*
+      Pattern.compile(".*([0-9]{4})-([0-9]{2})-([0-9]{2}).*([0-9]{2})\\.([0-9]{2})\\.([0-9]{2}).*"), //
+      //               .* yyyyMMdd?hhmmss .*
+      Pattern.compile(".*([0-9]{4})([0-9]{2})([0-9]{2}).([0-9]{2})([0-9]{2})([0-9]{2}).*"), //
+
+      //               .* yyyy-MM-dd?*hh.mm ?*
+      Pattern.compile(".*([0-9]{4})-([0-9]{2})-([0-9]{2}).*([0-9]{2})\\.([0-9]{2})\\.*"), //
+      //               .* yyyy-MM-dd ?*
+      Pattern.compile(".*([0-9]{4})-([0-9]{2})-([0-9]{2})\\.*"), //
+      //               .* yy-MM-dd ?*
+      Pattern.compile(".*([0-9]{2})-([0-9]{2})-([0-9]{2})\\.*"), //
+      //               .* yyyy-MM ?*
+      Pattern.compile(".*([0-9]{4})-([0-9]{2})\\.*"), //
+
+      //               .* yyyyMMdd?hhmm .*
+      Pattern.compile(".*([0-9]{4})([0-9]{2})([0-9]{2}).([0-9]{2})([0-9]{2}).*"), //
+      //               .* yyyyMMdd .*
+      Pattern.compile(".*([0-9]{4})([0-9]{2})([0-9]{2}).*"), //
+      //               .* yyyyMM .*
+      Pattern.compile(".*([0-9]{4})([0-9]{2}).*"), //
+
+      //               .* yyyy .*
+      Pattern.compile(".*([0-9]{4}).*"), //
+  };
+
   public LocalDateTime parseData(String p_sz) {
     LocalDateTime dtRet = null;
     if (p_sz == null)
@@ -71,6 +99,36 @@ public class ParseData {
       if (dtRet != null && dtRet.isAfter(s_dtMin) && dtRet.isBefore(s_dtMax))
         break;
       dtRet = null;
+    }
+    return dtRet;
+  }
+
+  public LocalDateTime guessData(String p_sz) {
+    LocalDateTime dtRet = null;
+    if (p_sz == null)
+      return null;
+    String[] szFmtDt = { "2999", "01", "01", "06", "00", "00" };
+
+    for (Pattern pat : s_arrpatGuess) {
+      Matcher mtch = pat.matcher(p_sz);
+      if (mtch.find()) {
+        for (int k = 0; k < mtch.groupCount(); k++)
+          szFmtDt[k] = mtch.group(k + 1);
+        String l_fmt = "%s:%s:%s %s:%s:%s";
+        if (szFmtDt[0].length() == 2)
+          l_fmt = "20%s:%s:%s %s:%s:%s";
+        String szDt = String.format(l_fmt, (Object[]) szFmtDt);
+        try {
+          dtRet = LocalDateTime.parse(szDt, s_fmtDtExif);
+        } catch (Exception e) {
+          dtRet = null;
+          // e.printStackTrace();
+        }
+        if (dtRet != null)
+          if (dtRet.isAfter(s_dtMin) && dtRet.isBefore(s_dtMax))
+            break;
+        dtRet = null;
+      }
     }
     return dtRet;
   }

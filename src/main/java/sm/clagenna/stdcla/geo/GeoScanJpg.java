@@ -36,6 +36,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import lombok.Data;
+import sm.clagenna.stdcla.enums.EExifPriority;
 import sm.clagenna.stdcla.sys.ex.GeoFileException;
 import sm.clagenna.stdcla.utils.ParseData;
 import sm.clagenna.stdcla.utils.Utils;
@@ -48,11 +49,16 @@ public class GeoScanJpg {
   private static final TagInfoAscii EXIF_TAG_OFFSET_TIME = new TagInfoAscii("OffsetTime", TAG_OFFSET_TIME, 20,
       TiffDirectoryType.TIFF_DIRECTORY_ROOT);
 
-  private GeoList geolist;
-  private Path    startDir;
+  private GeoList       geolist;
+  private boolean       addSimilFoto;
+  private Path          startDir;
+  private EExifPriority exifPrio;
+  private FotoNoExif    m_fotonx;
 
   public GeoScanJpg(GeoList p_gl) {
     geolist = p_gl;
+    exifPrio = EExifPriority.ExifFileDir;
+    m_fotonx = new FotoNoExif();
   }
 
   public GeoList scanDir(Path p_pth) throws GeoFileException {
@@ -108,6 +114,7 @@ public class GeoScanJpg {
   }
 
   private void gestFileJpg(Path p_jpg) {
+    GeoCoord geo = new GeoCoord();
     ImageMetadata metadata = null;
     LocalDateTime dtAcquisizione = null;
     double longitude = 0;
@@ -127,12 +134,12 @@ public class GeoScanJpg {
       exif = ((JpegImageMetadata) metadata).getExif();
     } else if (metadata instanceof TiffImageMetadata) {
       exif = (TiffImageMetadata) metadata;
-    } else {
-      s_log.info("Sul file {} mancano completamente le info EXIF!", fi.getName());
-      // return;
     }
-    if (exif == null)
+    if (null == exif || EExifPriority.DirFileExif == exifPrio) {
+      cercaInfoDaFileODir(p_jpg);
       return;
+    }
+
     String szDt = null;
     String szZoneOfset = null;
     try {
@@ -143,14 +150,24 @@ public class GeoScanJpg {
       if (szDt != null)
         dtAcquisizione = LocalDateTime.from(ParseData.s_fmtDtExif.parse(szDt));
       arr = exif.getFieldValue(EXIF_TAG_OFFSET_TIME);
-      if (arr != null && arr.length > 0) 
+      if (arr != null && arr.length > 0)
         szZoneOfset = arr[0];
-//      if (! Utils.isValue(szZoneOfset)) {
-//        if ( arr.length >1 )
-//          szZoneOfset = arr[1];
-//      }
-      if (! Utils.isValue(szZoneOfset)) 
-        szZoneOfset="+01:00";
+      //      if (! Utils.isValue(szZoneOfset)) {
+      //        if ( arr.length >1 )
+      //          szZoneOfset = arr[1];
+      //      }
+      try {
+        // provo ad interpretare quello che c'e' nel file
+        @SuppressWarnings("unused")
+        ZoneOffset zof = null;
+        if (null != szZoneOfset)
+          zof = ZoneOffset.of(szZoneOfset);
+      } catch (Exception e) {
+        s_log.error("Errore Zone Offset \"{}\" su  \"{}\", err={}", szZoneOfset, p_jpg.getFileName().toString(), e.getMessage());
+        szZoneOfset = null;
+      }
+      if ( !Utils.isValue(szZoneOfset))
+        szZoneOfset = "+01:00";
     } catch (ImageReadException | DateTimeParseException e) {
       // setFileInError(true);
       s_log.error("Errore leggi Dt ORIGINAL \"{}\", err={}", szDt, e.getMessage());
@@ -167,22 +184,36 @@ public class GeoScanJpg {
       s_log.error("Errore leggi GPS \"{}\", err={}", p_jpg.getFileName().toString(), e.getMessage());
     }
     if (dtAcquisizione != null /* && longitude * latitude != 0 */) {
-      GeoCoord geo = new GeoCoord();
       geo.setTstamp(dtAcquisizione);
       geo.parseZoneOffset(szZoneOfset);
       geo.setLongitude(longitude);
       geo.setLatitude(latitude);
       geo.setSrcGeo(EGeoSrcCoord.foto);
       geo.setFotoFile(p_jpg);
-      if ( !geolist.contains(geo)) {
+      if ( !geolist.contains(geo) || addSimilFoto) {
         geolist.add(geo);
         s_log.debug("Added {}", geo.toStringSimple());
       } else {
-        s_log.debug("Discarded {}", geo.toStringSimple());
+        s_log.error("Discarded {}", geo.getFotoFile().toString());
       }
     } else {
       s_log.debug("No exif info on {}", p_jpg.toAbsolutePath().toString());
+      cercaInfoDaFileODir(p_jpg);
     }
+  }
+
+  private GeoCoord cercaInfoDaFileODir(Path p_jpg) {
+    GeoCoord geo;
+    s_log.info("Sul file {} mancano completamente le info EXIF!", p_jpg.toString());
+    m_fotonx.setFotoFile(p_jpg);
+    geo = m_fotonx.esaminaFotoFile();
+    if ( !geolist.contains(geo) || addSimilFoto) {
+      geolist.add(geo);
+      s_log.debug("Added {}", geo.toStringSimple());
+    } else {
+      s_log.debug("Discarded {}", geo.getFotoFile().toString());
+    }
+    return geo;
   }
 
   public void cambiaGpsCoordinate(GeoCoord p_geo) {
@@ -262,8 +293,8 @@ public class GeoScanJpg {
         }
       }
       if (null != dtAcquisizione) {
-        if ( zoneOffset == null)
-          zoneOffset=ZoneOffset.of("+01:00");
+        if (zoneOffset == null)
+          zoneOffset = ZoneOffset.of("+01:00");
         s_log.debug("Foto {} dt acquiziz. {} {}", pth.toString(), szDt, zoneOffset != null ? zoneOffset.toString() : " - ");
         // timeFi = FileTime.from(dtAcquisizione.plusHours(1).toInstant(zoneOffset));
         timeFi = FileTime.from(dtAcquisizione.toInstant(zoneOffset));
