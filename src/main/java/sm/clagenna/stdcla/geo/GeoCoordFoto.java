@@ -111,10 +111,11 @@ public class GeoCoordFoto extends GeoCoord {
   }
 
   private LocalDateTime daFileADir() {
+    // FIXME decidere se privileggiare la data piu antecedente 
     LocalDateTime dt = dtNomeFile;
-    if (null == dt || dtNomeDir.isBefore(dt))
+    if (null == dt  /* || dtNomeDir.isBefore(dt) */)
       dt = dtNomeDir;
-    if (null == dt || dtCreazione.isBefore(dt))
+    if (null == dt /* || dtCreazione.isBefore(dt) */)
       dt = dtCreazione.isBefore(dtUltModif) ? dtCreazione : dtUltModif;
     if (dt.equals(LocalDateTime.MAX))
       dt = null;
@@ -194,7 +195,7 @@ public class GeoCoordFoto extends GeoCoord {
     String szFil = null != dtNomeFile ? GeoFormatter.s_fmtmY4MD_hms.format(dtNomeFile) : "-";
     String szCrea = null != dtCreazione ? GeoFormatter.s_fmtmY4MD_hms.format(dtCreazione) : "-";
     String szAcq = null != dtAcquisizione ? GeoFormatter.s_fmtmY4MD_hms.format(dtAcquisizione) : "-";
-    sz += String.format("\n\tass:%s; acq:%s; dir:%s; fil:%s; crea:%s", szAss, szAcq, szDir, szFil, szCrea);
+    sz += String.format("\n\tass:%s\n\tacq:%s\n\tdir:%s\n\tfil:%s\n\tcrea:%s", szAss, szAcq, szDir, szFil, szCrea);
     return sz;
   }
 }

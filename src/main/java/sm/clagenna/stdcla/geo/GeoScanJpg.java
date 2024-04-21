@@ -7,18 +7,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.FileSystems;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.apache.commons.imaging.ImageReadException;
 import org.apache.commons.imaging.ImageWriteException;
@@ -52,6 +50,7 @@ public class GeoScanJpg {
 
   private GeoList             geolist;
   private boolean             addSimilFoto;
+  private boolean             recurseDirs;
   private Path                startDir;
   private EExifPriority       exifPrio;
   private TiffOutputSet       m_outputSet;
@@ -78,43 +77,78 @@ public class GeoScanJpg {
   }
 
   private void scandir() throws GeoFileException {
-    try {
-      Files.walkFileTree(startDir, new FileVisitor<Path>() {
-
-        @Override
-        public FileVisitResult preVisitDirectory(Path p_dir, BasicFileAttributes p_attrs) throws IOException {
-          // System.out.printf("preVisitDirectory(%s)\n", p_dir.toString());
-          return FileVisitResult.CONTINUE;
-        }
-
-        @Override
-        public FileVisitResult visitFile(Path p_file, BasicFileAttributes p_attrs) throws IOException {
-          // System.out.printf("visitFile(%s)\n", p_file.toString());
-          String sz = p_file.getFileName().toString().toLowerCase();
-          if (sz.endsWith(".jpg") || sz.endsWith(".jpeg"))
-            gestFileJpg(p_file);
-          else
-            s_log.debug("Scarto il file {}", p_file.getFileName());
-          return FileVisitResult.CONTINUE;
-        }
-
-        @Override
-        public FileVisitResult visitFileFailed(Path p_file, IOException p_exc) throws IOException {
-          // System.out.printf("visitFileFailed(%s)\n", p_file.toString());
-          return FileVisitResult.TERMINATE;
-        }
-
-        @Override
-        public FileVisitResult postVisitDirectory(Path p_dir, IOException p_exc) throws IOException {
-          // System.out.printf("postVisitDirectory(%s)\n", p_dir.toString());
-          return FileVisitResult.CONTINUE;
-        }
-
-      });
-    } catch (Exception e) {
+    int depth = isRecurseDirs() ? 99 : 1;
+    //    try {
+    //      Files.walkFileTree(startDir, new FileVisitor<Path>() {
+    //
+    //        @Override
+    //        public FileVisitResult preVisitDirectory(Path p_dir, BasicFileAttributes p_attrs) throws IOException {
+    //          // System.out.printf("preVisitDirectory(%s)\n", p_dir.toString());
+    //          return FileVisitResult.CONTINUE;
+    //        }
+    //
+    //        @Override
+    //        public FileVisitResult visitFile(Path p_file, BasicFileAttributes p_attrs) throws IOException {
+    //          // System.out.printf("visitFile(%s)\n", p_file.toString());
+    //          String sz = p_file.getFileName().toString().toLowerCase();
+    //          if (sz.endsWith(".jpg") || sz.endsWith(".jpeg") || sz.endsWith(".heic"))
+    //            gestFileJpg(p_file);
+    //          else if (sz.endsWith(".heic"))
+    //            gestFileHeic(p_file);
+    //          else
+    //            s_log.debug("Scarto il file {}", p_file.getFileName());
+    //          return FileVisitResult.CONTINUE;
+    //        }
+    //
+    //        @Override
+    //        public FileVisitResult visitFileFailed(Path p_file, IOException p_exc) throws IOException {
+    //          // System.out.printf("visitFileFailed(%s)\n", p_file.toString());
+    //          return FileVisitResult.TERMINATE;
+    //        }
+    //
+    //        @Override
+    //        public FileVisitResult postVisitDirectory(Path p_dir, IOException p_exc) throws IOException {
+    //          // System.out.printf("postVisitDirectory(%s)\n", p_dir.toString());
+    //          return FileVisitResult.CONTINUE;
+    //        }
+    //
+    //      } );
+    //    } catch (Exception e) {
+    //      s_log.error("Errore scan dir {}, err={}", startDir.toString(), e.getMessage());
+    //      throw new GeoFileException("Errore scan:" + startDir.toString(), e);
+    //    }
+    try (Stream<Path> stre = Files.walk(startDir, depth)) {
+      stre //
+          .filter(Files::isRegularFile) //
+          .forEach(s -> scanFile(s));
+    } catch (IOException e) {
       s_log.error("Errore scan dir {}, err={}", startDir.toString(), e.getMessage());
       throw new GeoFileException("Errore scan:" + startDir.toString(), e);
     }
+
+  }
+
+  private void scanFile(Path p_file) {
+    String sz = p_file.getFileName().toString().toLowerCase();
+    if (sz.endsWith(".jpg") || sz.endsWith(".jpeg"))
+      gestFileJpg(p_file);
+    else if (sz.endsWith(".heic"))
+      gestFileHeic(p_file);
+    else
+      s_log.debug("Scarto il file {}", p_file.getFileName());
+  }
+
+  private GeoCoord gestFileHeic(Path p_file) {
+    GeoCoordFoto geox = new GeoCoordFoto(p_file);
+    geox.setExifPriority(EExifPriority.FileDirExif);
+    geox.esaminaFotoFile();
+    if ( !geolist.contains(geox) || addSimilFoto) {
+      geolist.add(geox);
+      s_log.debug("Added {}", geox.toStringSimple());
+    } else {
+      s_log.debug("Discarded {}", geox.getFotoFile().toString());
+    }
+    return geox;
   }
 
   public GeoCoord gestFileJpg(Path p_jpg) {
@@ -127,6 +161,7 @@ public class GeoScanJpg {
           EExifPriority.DirFileExif == exifPrio) {
         // cercaInfoDaFileODir(p_jpg);
         GeoCoordFoto geox = new GeoCoordFoto(p_jpg);
+        exifPrio = null == exifPrio ? EExifPriority.FileDirExif : exifPrio;
         geox.setExifPriority(exifPrio);
         geox.esaminaFotoFile();
         if ( !geolist.contains(geox) || addSimilFoto) {
@@ -322,6 +357,14 @@ public class GeoScanJpg {
     return pthNew;
   }
 
+  /**
+   * Qui viene fissato la data ottenuta da p_geo.getTstamp() come data da
+   * fissare nel EXIF del file. Si arriva qui quando si da' la priorità
+   * {@link  EExifPriority#FileDirExif}
+   *
+   * @param p_geo
+   * @return
+   */
   private GeoCoord cambiaExifDtAcqInfos(GeoCoord p_geo) {
     Path pth = p_geo.getFotoFile();
     try {
@@ -377,15 +420,19 @@ public class GeoScanJpg {
 
   private ImageMetadata readMetadataJPG(Path p_jpg) throws ImageReadException, IOException, ImageWriteException {
     File jpegImageFile = p_jpg.toFile();
+    m_exif = null;
     m_outputSet = null;
     m_metadata = null;
     m_jpegMetadata = null;
     m_rootDir = null;
     m_exifDir = null;
 
-    m_metadata = Imaging.getMetadata(jpegImageFile);
+    try {
+      m_metadata = Imaging.getMetadata(jpegImageFile);
+    } catch (IllegalArgumentException | ImageReadException | IOException e) {
+      return m_jpegMetadata;
+    }
     m_jpegMetadata = (JpegImageMetadata) m_metadata;
-    m_exif = null;
     if (null != m_jpegMetadata) {
       m_exif = m_jpegMetadata.getExif();
       if (null != m_exif) {
@@ -407,7 +454,6 @@ public class GeoScanJpg {
     if (exifPrio == EExifPriority.FileDirExif || //
         exifPrio == EExifPriority.DirFileExif) {
       p_geo = cambiaExifDtAcqInfos(p_geo);
-      return p_geo.getFotoFile();
     }
     pthJpg = p_geo.getFotoFile();
     LocalDateTime dtAcq = p_geo.getTstamp();
