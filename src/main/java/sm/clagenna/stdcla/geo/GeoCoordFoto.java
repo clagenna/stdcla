@@ -1,5 +1,6 @@
 package sm.clagenna.stdcla.geo;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -9,7 +10,20 @@ import java.nio.file.attribute.FileTime;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 
+import org.apache.commons.imaging.ImageReadException;
+import org.apache.commons.imaging.ImageWriteException;
+import org.apache.commons.imaging.Imaging;
+import org.apache.commons.imaging.common.ImageMetadata;
+import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
+import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
+import org.apache.commons.imaging.formats.tiff.TiffImageMetadata.GPSInfo;
+import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
+import org.apache.commons.imaging.formats.tiff.constants.TiffDirectoryType;
+import org.apache.commons.imaging.formats.tiff.taginfos.TagInfoAscii;
+import org.apache.commons.imaging.formats.tiff.write.TiffOutputDirectory;
+import org.apache.commons.imaging.formats.tiff.write.TiffOutputSet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,21 +31,33 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import sm.clagenna.stdcla.enums.EExifPriority;
 import sm.clagenna.stdcla.utils.ParseData;
+import sm.clagenna.stdcla.utils.Utils;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class GeoCoordFoto extends GeoCoord {
   private static final long   serialVersionUID = 5812233941539440255L;
   private static final Logger s_log            = LogManager.getLogger(GeoCoordFoto.class);
-  private static ZoneOffset   s_zoneOffSet     = ZoneOffset.of("+01:00");
 
-  private EExifPriority exifPriority;
-  private LocalDateTime dtAssunta;
-  private LocalDateTime dtNomeDir;
-  private LocalDateTime dtNomeFile;
-  private LocalDateTime dtCreazione;
-  private LocalDateTime dtUltModif;
-  private LocalDateTime dtAcquisizione;
+  private static final int          TAG_OFFSET_TIME      = 0x9010;
+  private static final TagInfoAscii EXIF_TAG_OFFSET_TIME = new TagInfoAscii("OffsetTime", TAG_OFFSET_TIME, 20,
+      TiffDirectoryType.TIFF_DIRECTORY_ROOT);
+
+  private static ZoneOffset s_zoneOffSet = ZoneOffset.of("+01:00");
+
+  private EExifPriority       exifPriority;
+  private LocalDateTime       dtAssunta;
+  private LocalDateTime       dtNomeDir;
+  private LocalDateTime       dtNomeFile;
+  private LocalDateTime       dtCreazione;
+  private LocalDateTime       dtUltModif;
+  private LocalDateTime       dtAcquisizione;
+  private ImageMetadata       m_metadata;
+  private JpegImageMetadata   m_jpegMetadata;
+  private TiffImageMetadata   m_exif;
+  private TiffOutputSet       m_outputSet;
+  private TiffOutputDirectory m_rootDir;
+  private TiffOutputDirectory m_exifDir;
 
   public GeoCoordFoto() {
     super();
@@ -71,8 +97,7 @@ public class GeoCoordFoto extends GeoCoord {
   }
 
   public GeoCoord esaminaFotoFile() {
-    if (exifPriority == EExifPriority.ExifFileDir)
-      leggiExifInfos();
+    leggiExifInfos2();
     leggiDtParentDir();
     interpretaDateTimeDaNomefile();
     leggiFilesAttributes();
@@ -93,6 +118,7 @@ public class GeoCoordFoto extends GeoCoord {
     return this;
   }
 
+  @SuppressWarnings("unused")
   private void leggiExifInfos() {
     GeoList geolist = new GeoList();
     GeoScanJpg scj = new GeoScanJpg(geolist);
@@ -101,35 +127,130 @@ public class GeoCoordFoto extends GeoCoord {
       this.assign(geo);
   }
 
+  private void leggiExifInfos2() {
+    try {
+      readMetadataJpg();
+    } catch (ImageReadException | ImageWriteException | IOException e) {
+      s_log.error("Errore lettura EXIF \"{}\", err={}", getFotoFile().toString(), e.getMessage());
+      return;
+    }
+    if (null == m_exif)
+      return;
+    String szDt = null;
+    String szZoneOfset = null;
+    try {
+      String[] arr = null;
+      // provo a leggere la data di acquisizione
+      if (null != m_exif)
+        arr = m_exif.getFieldValue(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
+      if (arr != null && arr.length > 0) {
+        szDt = arr[0];
+      }
+      if (szDt != null)
+        dtAcquisizione = LocalDateTime.from(ParseData.s_fmtDtExif.parse(szDt));
+      // provo a leggere Time Offset
+      if (null != m_exif)
+        arr = m_exif.getFieldValue(EXIF_TAG_OFFSET_TIME);
+      if (arr != null && arr.length > 0)
+        szZoneOfset = arr[0];
+      try {
+        // provo ad interpretare il ZoneOffset
+        @SuppressWarnings("unused")
+        ZoneOffset zof = null;
+        if (null != szZoneOfset)
+          zof = ZoneOffset.of(szZoneOfset);
+        // arrivo qui se è interpretabile
+      } catch (Exception e) {
+        // non è parse-able, lo annullo
+        s_log.error("Errore Zone Offset \"{}\" su  \"{}\", err={}", szZoneOfset, getFotoFile().toString(), e.getMessage());
+        szZoneOfset = null;
+      }
+      if ( !Utils.isValue(szZoneOfset))
+        szZoneOfset = "+01:00";
+    } catch (ImageReadException | DateTimeParseException e) {
+      s_log.error("Errore leggi Dt ORIGINAL \"{}\", err={}", szDt, e.getMessage());
+    }
+    // provo a leggere le info GPS
+    GPSInfo gpsi = null;
+    try {
+      if (null != m_exif)
+        gpsi = m_exif.getGPS();
+      if (gpsi != null) {
+        setLongitude(gpsi.getLongitudeAsDegreesEast());
+        setLatitude(gpsi.getLatitudeAsDegreesNorth());
+      }
+    } catch (ImageReadException | DateTimeParseException e) {
+      s_log.error("Errore leggi GPS \"{}\", err={}", getFotoFile().getFileName().toString(), e.getMessage());
+    }
+    if (null != dtAcquisizione)
+      setTstamp(dtAcquisizione);
+    parseZoneOffset(szZoneOfset);
+    setSrcGeo(EGeoSrcCoord.foto);
+  }
+
+  private ImageMetadata readMetadataJpg() throws ImageReadException, IOException, ImageWriteException {
+    File jpegImageFile = getFotoFile().toFile();
+    m_exif = null;
+    m_outputSet = null;
+    m_metadata = null;
+    m_jpegMetadata = null;
+    m_rootDir = null;
+    m_exifDir = null;
+
+    try {
+      m_metadata = Imaging.getMetadata(jpegImageFile);
+    } catch (IllegalArgumentException | ImageReadException | IOException e) {
+      return m_jpegMetadata;
+    }
+    m_jpegMetadata = (JpegImageMetadata) m_metadata;
+    if (null != m_jpegMetadata) {
+      m_exif = m_jpegMetadata.getExif();
+      if (null != m_exif) {
+        m_outputSet = m_exif.getOutputSet();
+      }
+    }
+    if (null == m_outputSet)
+      m_outputSet = new TiffOutputSet();
+    m_rootDir = m_outputSet.getOrCreateRootDirectory();
+    m_exifDir = m_outputSet.getOrCreateExifDirectory();
+    return m_jpegMetadata;
+  }
+
   private LocalDateTime daExifADir() {
-    LocalDateTime dt = getTstamp();
-    if (null == dt || dtNomeFile.isBefore(dt))
-      dt = dtNomeFile;
-    if (null == dt || dtNomeDir.isBefore(dt))
-      dt = dtNomeDir;
+    LocalDateTime dt = goodTime(dtAcquisizione);
+    if (null == dt /* || dtNomeFile.isBefore(dt) */)
+      dt = goodTime(dtNomeFile);
+    if (null == dt /* || dtNomeDir.isBefore(dt) */)
+      dt = goodTime(dtNomeDir);
     return dt;
   }
 
   private LocalDateTime daFileADir() {
-    // FIXME decidere se privileggiare la data piu antecedente 
-    LocalDateTime dt = dtNomeFile;
-    if (null == dt  /* || dtNomeDir.isBefore(dt) */)
-      dt = dtNomeDir;
+    // FIXME decidere se privileggiare la data piu antecedente
+    LocalDateTime dt = goodTime(dtNomeFile);
+    if (null == dt /* || dtNomeDir.isBefore(dt) */)
+      dt = goodTime(dtNomeDir);
+    if (null == dt)
+      dt = goodTime(dtAcquisizione);
     if (null == dt /* || dtCreazione.isBefore(dt) */)
       dt = dtCreazione.isBefore(dtUltModif) ? dtCreazione : dtUltModif;
-    if (dt.equals(LocalDateTime.MAX))
-      dt = null;
+    dt = goodTime(dt);
     return dt;
   }
 
+  private LocalDateTime goodTime(LocalDateTime dt) {
+    return dt != null && dt.isBefore(LocalDateTime.MAX) ? dt : null;
+  }
+
   private LocalDateTime daDirAFile() {
-    LocalDateTime dt = dtNomeDir;
+    LocalDateTime dt = goodTime(dtNomeDir);
     if (null == dt)
-      dt = dtNomeFile;
+      dt = goodTime(dtNomeFile);
+    if (null == dt)
+      dt = goodTime(dtAcquisizione);
     if (null == dt)
       dt = dtCreazione.isBefore(dtUltModif) ? dtCreazione : dtUltModif;
-    if (dt.equals(LocalDateTime.MAX))
-      dt = null;
+    dt = goodTime(dt);
     return dt;
   }
 
@@ -141,7 +262,9 @@ public class GeoCoordFoto extends GeoCoord {
     if (dtNomeDir == null) {
       s_log.trace("Parent Dir name No e' DateTime :" + sz);
       dtNomeDir = LocalDateTime.MAX;
-    }
+    } else if (getTstamp() == null)
+      setTstamp(dtNomeDir);
+
   }
 
   private void interpretaDateTimeDaNomefile() {
@@ -158,11 +281,12 @@ public class GeoCoordFoto extends GeoCoord {
     if (null == dtNomeFile) {
       if (EExifPriority.DirFileExif == exifPriority || //
           EExifPriority.FileDirExif == exifPriority)
-        s_log.warn("File name no e' DateTime :" + sz);
+        s_log.warn("File name {} no e' DateTime", sz);
       else
         s_log.trace("File name no e' DateTime :" + sz);
       dtNomeFile = LocalDateTime.MAX;
-    }
+    } else if (getTstamp() == null)
+      setTstamp(dtNomeFile);
   }
 
   private void leggiFilesAttributes() {

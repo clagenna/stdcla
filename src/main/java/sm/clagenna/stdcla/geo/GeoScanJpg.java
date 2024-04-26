@@ -44,7 +44,7 @@ import sm.clagenna.stdcla.utils.Utils;
 public class GeoScanJpg {
   private static final Logger s_log = LogManager.getLogger(GeoScanJpg.class);
 
-  private static int                TAG_OFFSET_TIME      = 0x9010;
+  private static final int          TAG_OFFSET_TIME      = 0x9010;
   private static final TagInfoAscii EXIF_TAG_OFFSET_TIME = new TagInfoAscii("OffsetTime", TAG_OFFSET_TIME, 20,
       TiffDirectoryType.TIFF_DIRECTORY_ROOT);
 
@@ -131,7 +131,7 @@ public class GeoScanJpg {
   private void scanFile(Path p_file) {
     String sz = p_file.getFileName().toString().toLowerCase();
     if (sz.endsWith(".jpg") || sz.endsWith(".jpeg"))
-      gestFileJpg(p_file);
+      gestFileJpg2(p_file);
     else if (sz.endsWith(".heic"))
       gestFileHeic(p_file);
     else
@@ -151,45 +151,77 @@ public class GeoScanJpg {
     return geox;
   }
 
+  public GeoCoord gestFileJpg2(Path p_jpg) {
+    GeoCoordFoto geo = new GeoCoordFoto(p_jpg);
+    if ( exifPrio == null)
+      geo.setExifPriority(EExifPriority.FileDirExif);
+    else
+      geo.setExifPriority(exifPrio);
+    geo.esaminaFotoFile();
+    if ( !geolist.contains(geo) || addSimilFoto) {
+      geolist.add(geo);
+      s_log.debug("Added {}", geo.toStringSimple());
+    } else {
+      s_log.debug("Discarded {}", geo.getFotoFile().toString());
+    }
+    return geo;
+  }
+
+  @SuppressWarnings("unused")
   public GeoCoord gestFileJpg(Path p_jpg) {
     GeoCoord geo = null;
+    final int versione = 2;
     try {
       readMetadataJPG(p_jpg);
-      // se manca EXIF oppure cambia la Priority
-      if (null == m_exif || //
-          EExifPriority.FileDirExif == exifPrio || //
-          EExifPriority.DirFileExif == exifPrio) {
-        // cercaInfoDaFileODir(p_jpg);
-        GeoCoordFoto geox = new GeoCoordFoto(p_jpg);
-        exifPrio = null == exifPrio ? EExifPriority.FileDirExif : exifPrio;
-        geox.setExifPriority(exifPrio);
-        geox.esaminaFotoFile();
-        if ( !geolist.contains(geox) || addSimilFoto) {
-          geolist.add(geox);
-          s_log.debug("Added {}", geox.toStringSimple());
-        } else {
-          s_log.debug("Discarded {}", geox.getFotoFile().toString());
+      if (versione == 1) {
+        // se manca EXIF oppure cambia la Priority
+        if (null == m_exif || //
+            EExifPriority.FileDirExif == exifPrio || //
+            EExifPriority.DirFileExif == exifPrio) {
+          // cercaInfoDaFileODir(p_jpg);
+          GeoCoordFoto geox = new GeoCoordFoto(p_jpg);
+          exifPrio = null == exifPrio ? EExifPriority.FileDirExif : exifPrio;
+          geox.setExifPriority(exifPrio);
+          geox.esaminaFotoFile();
+          if ( !geolist.contains(geox) || addSimilFoto) {
+            geolist.add(geox);
+            s_log.debug("Added {}", geox.toStringSimple());
+          } else {
+            s_log.debug("Discarded {}", geox.getFotoFile().toString());
+          }
+          return geox;
         }
-        return geox;
       }
     } catch (ImageReadException | ImageWriteException | IOException e) {
       s_log.error("Errore lettura EXIF \"{}\", err={}", p_jpg.toString(), e.getMessage());
     }
 
     geo = new GeoCoord();
+    ParseData prs = new ParseData();
     LocalDateTime dtAcquisizione = null;
+    LocalDateTime dtNomeFile = null;
     double longitude = 0;
     double latitude = 0;
     String szDt = null;
     String szZoneOfset = null;
     try {
-      String[] arr = m_exif.getFieldValue(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
+
+      String sz = p_jpg.getName(p_jpg.getNameCount() - 1).toString();
+      int n = sz.lastIndexOf(".");
+      if (n > 0)
+        sz = sz.substring(0, n);
+      dtNomeFile = prs.guessData(sz);
+
+      String[] arr = null;
+      if (null != m_exif)
+        arr = m_exif.getFieldValue(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
       if (arr != null && arr.length > 0) {
         szDt = arr[0];
       }
       if (szDt != null)
         dtAcquisizione = LocalDateTime.from(ParseData.s_fmtDtExif.parse(szDt));
-      arr = m_exif.getFieldValue(EXIF_TAG_OFFSET_TIME);
+      if (null != m_exif)
+        arr = m_exif.getFieldValue(EXIF_TAG_OFFSET_TIME);
       if (arr != null && arr.length > 0)
         szZoneOfset = arr[0];
       try {
@@ -211,7 +243,8 @@ public class GeoScanJpg {
 
     GPSInfo gpsi = null;
     try {
-      gpsi = m_exif.getGPS();
+      if (null != m_exif)
+        gpsi = m_exif.getGPS();
       if (gpsi != null) {
         longitude = gpsi.getLongitudeAsDegreesEast();
         latitude = gpsi.getLatitudeAsDegreesNorth();
@@ -219,8 +252,10 @@ public class GeoScanJpg {
     } catch (ImageReadException | DateTimeParseException e) {
       s_log.error("Errore leggi GPS \"{}\", err={}", p_jpg.getFileName().toString(), e.getMessage());
     }
-    if (dtAcquisizione != null /* && longitude * latitude != 0 */) {
-      geo.setTstamp(dtAcquisizione);
+    if (dtAcquisizione != null
+        || dtNomeFile != null /* && longitude * latitude != 0 */) {
+      LocalDateTime dt = null != dtAcquisizione ? dtAcquisizione : dtNomeFile;
+      geo.setTstamp(dt);
       geo.parseZoneOffset(szZoneOfset);
       geo.setLongitude(longitude);
       geo.setLatitude(latitude);
@@ -360,7 +395,7 @@ public class GeoScanJpg {
   /**
    * Qui viene fissato la data ottenuta da p_geo.getTstamp() come data da
    * fissare nel EXIF del file. Si arriva qui quando si da' la priorità
-   * {@link  EExifPriority#FileDirExif}
+   * {@link EExifPriority#FileDirExif}
    *
    * @param p_geo
    * @return

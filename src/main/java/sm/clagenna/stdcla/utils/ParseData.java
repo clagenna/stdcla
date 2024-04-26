@@ -31,6 +31,7 @@ public class ParseData {
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"), // 03
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"), // 04
       DateTimeFormatter.ofPattern("yyyy-MM-dd"), // 05
+      DateTimeFormatter.ofPattern("yyyy_MM_dd"), // 05
       DateTimeFormatter.ofPattern("yy-MM-dd"), // 06
       DateTimeFormatter.ofPattern("yyyy-MM"), // 07
 
@@ -50,7 +51,8 @@ public class ParseData {
 
   private static Pattern[] s_arrpatGuess = { //
       //               .* yyyy-MM-dd?*hh.mm.ss ?*
-      Pattern.compile(".*([0-9]{4})-([0-9]{2})-([0-9]{2}).*([0-9]{2})\\.([0-9]{2})\\.([0-9]{2}).*"), //
+      Pattern.compile(".*([0-9]{4})[\\-_.]([0-9]{2})[\\-_.]([0-9]{2}).*([0-9]{2})[\\-_.]([0-9]{2})[\\-_.]([0-9]{2}).*"), //
+      
       //               .* yyyyMMdd?hhmmss .*
       Pattern.compile(".*([0-9]{4})([0-9]{2})([0-9]{2}).([0-9]{2})([0-9]{2})([0-9]{2}).*"), //
 
@@ -58,6 +60,8 @@ public class ParseData {
       Pattern.compile(".*([0-9]{4})-([0-9]{2})-([0-9]{2}).*([0-9]{2})\\.([0-9]{2})\\.*"), //
       //               .* yyyy-MM-dd ?*
       Pattern.compile(".*([0-9]{4})-([0-9]{2})-([0-9]{2})\\.*"), //
+      //               .* yyyy_MM_dd ?*
+      Pattern.compile(".*([0-9]{4})_([0-9]{2})_([0-9]{2})\\.*"), //
       //               .* yy-MM-dd ?*
       Pattern.compile(".*([0-9]{2})-([0-9]{2})-([0-9]{2})\\.*"), //
       //               .* yyyy-MM ?*

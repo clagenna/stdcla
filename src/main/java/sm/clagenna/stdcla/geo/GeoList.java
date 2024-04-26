@@ -76,12 +76,16 @@ public class GeoList extends LinkedList<GeoCoord> {
   }
 
   public List<GeoCoord> sortByTStamp() {
+    // System.out.println("GeoList.sortByTStamp() inizio");
     Collections.sort(this, new Comparator<GeoCoord>() {
       @Override
       public int compare(GeoCoord p_o1, GeoCoord p_o2) {
+        if ((p_o1 == null) || (p_o2 == null) || (p_o1.getTstamp() == null) || (p_o2.getTstamp() == null))
+          return -1;
         return p_o1.getTstamp().compareTo(p_o2.getTstamp());
       }
     });
+    // System.out.println("GeoList.sortByTStamp() fine");
     return this;
   }
 
