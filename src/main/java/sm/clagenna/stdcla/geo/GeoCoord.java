@@ -32,7 +32,7 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     setLongitude(0);
     altitude = 0;
     setTstamp(LocalDateTime.now());
-    setZoneOffset(ZoneOffset.UTC);
+    setZoneOffset(GeoCoordFoto.s_zoneOffSet);
     setSrcGeo(EGeoSrcCoord.track);
     setFotoFile(null);
   }
@@ -42,14 +42,14 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     setLongitude(p_lon);
     setAltitude(0);
     setTstamp(LocalDateTime.now());
-    setZoneOffset(ZoneOffset.UTC);
+    setZoneOffset(GeoCoordFoto.s_zoneOffSet);
     setSrcGeo(EGeoSrcCoord.track);
     setFotoFile(null);
   }
 
   public GeoCoord(LocalDateTime pdt, double p_lat, double p_lon) {
     setTstamp(pdt);
-    setZoneOffset(ZoneOffset.UTC);
+    setZoneOffset(GeoCoordFoto.s_zoneOffSet);
     setLatitude(p_lat);
     setLongitude(p_lon);
     setAltitude(0);
@@ -59,7 +59,7 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
 
   public GeoCoord(LocalDateTime pdt, double p_lat, double p_lon, double p_alt) {
     setTstamp(pdt);
-    setZoneOffset(ZoneOffset.UTC);
+    setZoneOffset(GeoCoordFoto.s_zoneOffSet);
     setLatitude(p_lat);
     setLongitude(p_lon);
     setAltitude(p_alt);
@@ -86,7 +86,7 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
   public GeoCoord parse(String p_szDt, String p_szLat, String p_szLon) {
     GeoFormatter fmt = new GeoFormatter();
     fmt.parseTStamp(this, p_szDt);
-    setZoneOffset(ZoneOffset.UTC);
+    setZoneOffset(GeoCoordFoto.s_zoneOffSet);
     fmt.parseLatitude(this, p_szLat);
     fmt.parseLongitude(this, p_szLon);
     return this;

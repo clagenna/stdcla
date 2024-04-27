@@ -43,21 +43,26 @@ public class GeoCoordFoto extends GeoCoord {
   private static final TagInfoAscii EXIF_TAG_OFFSET_TIME = new TagInfoAscii("OffsetTime", TAG_OFFSET_TIME, 20,
       TiffDirectoryType.TIFF_DIRECTORY_ROOT);
 
-  private static ZoneOffset s_zoneOffSet = ZoneOffset.of("+01:00");
+  public static ZoneOffset s_zoneOffSet;
 
-  private EExifPriority       exifPriority;
-  private LocalDateTime       dtAssunta;
-  private LocalDateTime       dtNomeDir;
-  private LocalDateTime       dtNomeFile;
-  private LocalDateTime       dtCreazione;
-  private LocalDateTime       dtUltModif;
-  private LocalDateTime       dtAcquisizione;
+  private EExifPriority exifPriority;
+  private LocalDateTime dtAssunta;
+  private LocalDateTime dtNomeDir;
+  private LocalDateTime dtNomeFile;
+  private LocalDateTime dtCreazione;
+  private LocalDateTime dtUltModif;
+  private LocalDateTime dtAcquisizione;
+
   private ImageMetadata       m_metadata;
   private JpegImageMetadata   m_jpegMetadata;
   private TiffImageMetadata   m_exif;
   private TiffOutputSet       m_outputSet;
   private TiffOutputDirectory m_rootDir;
   private TiffOutputDirectory m_exifDir;
+
+  static {
+    s_zoneOffSet = OffsetDateTime.now().getOffset();
+  }
 
   public GeoCoordFoto() {
     super();

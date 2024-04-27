@@ -153,7 +153,7 @@ public class GeoScanJpg {
 
   public GeoCoord gestFileJpg2(Path p_jpg) {
     GeoCoordFoto geo = new GeoCoordFoto(p_jpg);
-    if ( exifPrio == null)
+    if (exifPrio == null)
       geo.setExifPriority(EExifPriority.FileDirExif);
     else
       geo.setExifPriority(exifPrio);
@@ -537,7 +537,7 @@ public class GeoScanJpg {
   }
 
   private void cambiaAttrFile(Path p_pth, LocalDateTime p_dt) throws IOException {
-    FileTime timeFi = FileTime.from(p_dt.toInstant(ZoneOffset.UTC));
+    FileTime timeFi = FileTime.from(p_dt.toInstant(GeoCoordFoto.s_zoneOffSet));
     cambiaAttrFile(p_pth, timeFi);
   }
 
