@@ -68,4 +68,50 @@ public enum SqlTypes {
   public static SqlTypes decode(int i) {
     return s_map.get(i);
   }
+
+  public static SqlTypes translate(Object o) {
+    SqlTypes ret = null;
+    if (null == o)
+      return ret;
+    String szCls = o.getClass().getSimpleName().toLowerCase();
+    switch (szCls) {
+
+      case "character":
+        ret = CHAR;
+        break;
+
+      case "string":
+        ret = NVARCHAR;
+        break;
+
+      case "integer":
+        ret = INTEGER;
+        break;
+
+      case "long":
+        ret = INTEGER;
+        break;
+
+      case "bigdecimal":
+        ret = DECIMAL;
+        break;
+
+      case "float":
+      case "double":
+        ret = DOUBLE;
+        break;
+
+      case "localdatetime":
+      case "timestamp":
+      case "date":
+        ret = DATE;
+        break;
+
+      default:
+        throw new UnsupportedOperationException(String.format("Translate SqlType \"%s\" Unknown", szCls));
+
+    }
+
+    return ret;
+  }
 }

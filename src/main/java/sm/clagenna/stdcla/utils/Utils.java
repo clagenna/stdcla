@@ -3,10 +3,14 @@ package sm.clagenna.stdcla.utils;
 import java.io.File;
 import java.math.BigInteger;
 import java.nio.file.Path;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -25,6 +29,11 @@ public class Utils {
   public static double F_A4he      = 3508f;
   public static double F_XCharMax  = 150f;
   public static double F_YRigheMax = 140f;
+
+  private static Locale               S_LOCALE;
+  private static DecimalFormatSymbols S_FMT_SYMS;
+  private static String               S_Decimal_Sep;
+  private static String               S_Group_Sep;
 
   private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
@@ -45,6 +54,20 @@ public class Utils {
 
   public Utils() {
     //
+  }
+
+  public static void setLocale(Locale ll) {
+    S_LOCALE = ll;
+    DecimalFormat df = (DecimalFormat) NumberFormat.getInstance(S_LOCALE);
+    S_FMT_SYMS = df.getDecimalFormatSymbols();
+    Character decsep = S_FMT_SYMS.getDecimalSeparator();
+    S_Decimal_Sep = decsep.toString();
+    Character grpsep = S_FMT_SYMS.getGroupingSeparator();
+    S_Group_Sep = grpsep.toString();
+  }
+
+  public static Locale getLocale() {
+    return S_LOCALE;
   }
 
   public static String bytesToHex(byte[] bytes) {
@@ -103,7 +126,7 @@ public class Utils {
       return false;
     if (p_dtOld == null || p_dtVal == null)
       return true;
-    return ! p_dtOld.equals(p_dtVal);
+    return !p_dtOld.equals(p_dtVal);
   }
 
   public static boolean isChanged(Double p_dtVal, Double p_dtOld) {
@@ -111,7 +134,7 @@ public class Utils {
       return false;
     if (p_dtOld == null || p_dtVal == null)
       return true;
-    return ! p_dtOld.equals(p_dtVal);
+    return !p_dtOld.equals(p_dtVal);
   }
 
   public static boolean isChanged(int p_primo, int p_secondo) {
@@ -132,18 +155,19 @@ public class Utils {
     if ( !Utils.isValue(p_sz))
       return false;
     try {
-      /* Integer ii = */ Integer.valueOf(p_sz);
-      return true;
+      Long ii = Utils.parseLong(p_sz);
+      if (null != ii)
+        return true;
     } catch (NumberFormatException ex) {
       //
     }
     return false;
   }
 
-  public static boolean isValue(String p_prefix) {
-    if (p_prefix == null)
+  public static boolean isValue(String p_v) {
+    if (p_v == null)
       return false;
-    if (p_prefix.trim().length() > 0)
+    if (p_v.trim().length() > 0)
       return true;
     return false;
   }
@@ -188,11 +212,11 @@ public class Utils {
     return p_v1.equals(p_v2);
   }
 
-  public static double getDouble(Properties p_prop, String p_propName) {
-    return Utils.getDouble(p_prop, p_propName, 0D);
+  public static double getDoubleProp(Properties p_prop, String p_propName) {
+    return Utils.getDoubleProp(p_prop, p_propName, 0D);
   }
 
-  public static double getDouble(Properties prop, String propName, double defValue) {
+  public static double getDoubleProp(Properties prop, String propName, double defValue) {
     double retDbl = defValue;
     String p = prop.getProperty(propName);
     if (p == null)
@@ -203,6 +227,48 @@ public class Utils {
       //
     }
     return retDbl;
+  }
+
+  public static Integer parseInt(String psz) {
+    if (null == S_LOCALE)
+      Utils.setLocale(Locale.getDefault());
+    Integer ii = null;
+    if (null == psz)
+      return ii;
+    try {
+      ii = Integer.parseInt(psz.trim().replace(S_Group_Sep, "").replace(S_Decimal_Sep, "."));
+    } catch (NumberFormatException ex) {
+      //
+    }
+    return ii;
+  }
+
+  public static Long parseLong(String psz) {
+    if (null == S_LOCALE)
+      Utils.setLocale(Locale.getDefault());
+    Long ii = null;
+    if (null == psz)
+      return ii;
+    try {
+      ii = Long.parseLong(psz.trim().replace(S_Group_Sep, "").replace(S_Decimal_Sep, "."));
+    } catch (NumberFormatException ex) {
+      //
+    }
+    return ii;
+  }
+
+  public static Double parseDouble(String psz) {
+    if (null == S_LOCALE)
+      Utils.setLocale(Locale.getDefault());
+    Double ii = null;
+    if (null == psz)
+      return ii;
+    try {
+      ii = Double.parseDouble(psz.trim().replace(S_Group_Sep, "").replace(S_Decimal_Sep, "."));
+    } catch (NumberFormatException ex) {
+      //
+    }
+    return ii;
   }
 
   /**

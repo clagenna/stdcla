@@ -4,22 +4,27 @@ import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import sm.clagenna.stdcla.sql.DtsCols.DtsCol;
 import sm.clagenna.stdcla.sys.ex.DatasetException;
 import sm.clagenna.stdcla.utils.ParseData;
 
-
-public class DtsRow {
+public class DtsRow implements Cloneable {
   private static final Logger s_log = LogManager.getLogger(DtsRow.class);
   private List<Object>        valori;
   private Dataset             dataset;
   private ParseData           parsedt;
+
+  private DtsRow() {
+
+  }
 
   public DtsRow(Dataset p_dts) throws DatasetException {
     dataset = p_dts;
@@ -30,7 +35,7 @@ public class DtsRow {
   }
 
   public void addRow(ResultSet p_res) throws DatasetException {
-    for (DtsCol col : dataset.getColumns()) {
+    for (DtsCol col : dataset.getColumns().getColumns()) {
       int nCol = col.getIndex() + 1;
       Object val = null;
       try {
@@ -79,6 +84,35 @@ public class DtsRow {
     }
   }
 
+  public int addRow(List<Object> p_lio) {
+    int nRet = -1;
+    if (null == p_lio || p_lio.size() == 0)
+      return nRet;
+    int nCol = 0;
+    for (Object obj : p_lio) {
+      valori.set(nCol++, obj);
+    }
+    return nRet;
+  }
+
+  public Object get(int nCol) {
+    return valori.get(nCol);
+  }
+
+  public Object get(String col) {
+    Object ret = null;
+    int ii = dataset.getColumNo(col);
+    ret = valori.get(ii);
+    return ret;
+  }
+
+  public void set(String col, Object val) {
+    int ii = dataset.getColumNo(col);
+    while (valori.size() < ii)
+      valori.add((Object) null);
+    valori.set(ii, val);
+  }
+
   private Object provaSeData(Object p_val) {
     if (p_val == null)
       return p_val;
@@ -97,9 +131,19 @@ public class DtsRow {
   }
 
   @Override
+  protected Object clone() throws CloneNotSupportedException {
+    DtsRow ret = new DtsRow();
+    ret.dataset = dataset;
+    ret.parsedt = parsedt;
+    if (null != valori)
+      ret.valori = Arrays.asList(valori.toArray());
+    return ret;
+  }
+
+  @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    for (DtsCol col : dataset.getColumns()) {
+    for (DtsCol col : dataset.getColumns().getColumns()) {
       Object vv = valori.get(col.getIndex());
       String szv = String.format(DtsCols.getColFmtL(), "*null*");
       if (vv != null) {
@@ -116,13 +160,13 @@ public class DtsRow {
         //        };
         String szClss = vv != null ? vv.getClass().getSimpleName() : "Object";
         switch (szClss) {
-          
+
           case "LocalDateTime":
             szv = ParseData.s_fmtDtExif.format((LocalDateTime) vv);
             szv = szv.replace(" 00:00:00", "");
             szv = String.format(DtsCols.getColFmtR(), szv);
             break;
-            
+
           case "Timestamp":
             szv = ParseData.s_fmtDtDate.format((Timestamp) vv);
             szv = szv.replace(" 00:00:00", "");
@@ -130,7 +174,7 @@ public class DtsRow {
             break;
 
           default:
-            szv = String.format(col.getFormat(), vv);
+            szv = String.format(DtsCols.getColFmt(), vv);
             break;
         }
 
@@ -139,4 +183,15 @@ public class DtsRow {
     }
     return sb.toString();
   }
+
+  public Map<String, Object> toMap() {
+    Map<String, Object> mp = new LinkedHashMap<>();
+    for (DtsCol col : dataset.getColumns().getColumns()) {
+      String szNam = col.getName();
+      Object obj = valori.get(col.getIndex());
+      mp.put(szNam, obj);
+    }
+    return mp;
+  }
+
 }

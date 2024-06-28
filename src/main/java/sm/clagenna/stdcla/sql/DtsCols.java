@@ -13,62 +13,27 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import lombok.Getter;
-import lombok.Setter;
 import sm.clagenna.stdcla.sys.ex.DatasetException;
 
+public class DtsCols implements Cloneable {
+  private static final Logger   s_log    = LogManager.getLogger(DtsCols.class);
+  @Getter private static int    colWidth = 16;
+  @Getter private static String colFmtL;
+  @Getter private static String colFmtR;
+  @Getter private static String colFmt;
 
-public class DtsCols {
-  private static final Logger s_log    = LogManager.getLogger(DtsCols.class);
-  @Getter
-  private static int          colWidth = 16;
-  @Getter
-  private static String       colFmtL;
-  @Getter
-  private static String       colFmtR;
+  @SuppressWarnings("unused") private Dataset dtset;
 
-  class DtsCol {
-    /** Il nome <b>univoco</b> e <b>case insensitive</b> della colonna */
-    @Getter @Setter
-    private String   name;
-    /** la posizione 0-based nel dataset */
-    @Getter @Setter
-    private int      index;
-    @Getter @Setter
-    private SqlTypes type;
-    @Getter @Setter
-    private String   format;
-    @Getter
-    private boolean  inferredDate;
-
-    public DtsCol() {
-      index = -1;
-    }
-
-    public void setInferredDate(boolean bv) {
-      // la prima data valida inferisce
-      inferredDate |= bv;
-    }
-
-    @Override
-    public String toString() {
-      String szRet = "col:";
-      szRet += name != null ? name : "??name??";
-      szRet += index >= 0 ? String.format("(%d)", index) : "(?)";
-      szRet += type != null ? "[" + type + "]" : "[??type??]";
-      return szRet;
-    }
-  }
-
-  @SuppressWarnings("unused")
-  private Dataset             dtset;
-
-  @Getter
-  private List<DtsCol>        columns;
-  private Map<String, DtsCol> nomecol;
-  private StringBuilder       sbIntesta;
+  @Getter private List<DtsCol> columns;
+  private Map<String, DtsCol>  nomecol;
+  private StringBuilder        sbIntesta;
 
   static {
     DtsCols.setWidthCh(colWidth);
+  }
+
+  private DtsCols() {
+    init();
   }
 
   public DtsCols(Dataset p_dt) {
@@ -85,6 +50,7 @@ public class DtsCols {
     colWidth = p_coWth;
     colFmtL = String.format("%%-%ds ", p_coWth);
     colFmtR = String.format("%%%ds ", p_coWth);
+    colFmt = colFmtL;
   }
 
   public int parseColsStatement(PreparedStatement p_stmt) throws DatasetException {
@@ -152,7 +118,7 @@ public class DtsCols {
             szTyp = "DATE";
             break;
           default:
-            System.err.printf("Non interpreto tipo %d per col %s\n", nTyp, szNam);
+            s_log.error("Non interpreto tipo {} per col {}", nTyp, szNam);
             break;
         }
         col.setName(szNam);
@@ -170,6 +136,12 @@ public class DtsCols {
       throw new DatasetException("Errore in getColumnType()", e);
     }
     return columns.size();
+  }
+
+  public void creaCols(Map<String, SqlTypes> p_map) {
+    for (String k : p_map.keySet()) {
+      addCol(k, p_map.get(k));
+    }
   }
 
   public void addCol(String szNam, SqlTypes p_ty) {
@@ -204,8 +176,22 @@ public class DtsCols {
   public String getIntestazione() {
     StringBuilder sb = new StringBuilder();
     for (DtsCol col : columns) {
-      sb.append(String.format(colFmtR, col.getName()));
+      sb.append(String.format(colFmt, col.getName()));
     }
     return sb.toString();
+  }
+
+  @Override
+  protected Object clone() throws CloneNotSupportedException {
+    DtsCols ret = new DtsCols();
+    for (DtsCol col : columns) {
+      ret.addCol(col);
+    }
+    return ret;
+  }
+
+  @Override
+  public String toString() {
+    return getIntestazione();
   }
 }
