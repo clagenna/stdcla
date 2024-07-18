@@ -8,6 +8,7 @@ import java.util.Map;
 import org.junit.Test;
 
 import sm.clagenna.stdcla.sql.Dataset;
+import sm.clagenna.stdcla.sql.DtsCols;
 import sm.clagenna.stdcla.sql.SqlTypes;
 import sm.clagenna.stdcla.sys.ex.DatasetException;
 
@@ -15,6 +16,7 @@ public class ProvaDatasetNoSql {
 
   @Test
   public void provalo() throws DatasetException {
+    DtsCols.setWidthCh(20);
     Dataset dts = new Dataset();
     // un linkedHashMap che mantiene l'ordine d'inserimento nel keySet
     Map<String, SqlTypes> map = new LinkedHashMap<String, SqlTypes>();
@@ -36,24 +38,32 @@ public class ProvaDatasetNoSql {
     // -------------- get array colums ---------------
     String szColNo = "Weight";
     List<Object> colv = dts.colArray(szColNo);
+    // .............. Mean of column -----------------
     double somma = colv //
         .stream() //
         .mapToDouble(s -> Double.parseDouble(s.toString())) //
         .sum();
-    double mean = somma / (double) dts.size();
+    double mean = somma / dts.size();
     System.out.printf("Media di %s\t\t= %.2f\n", szColNo, mean);
-    mean = dts.mean(szColNo);
-    System.out.printf("Media(2) di %s\t= %.2f\n", szColNo, mean);
+    // .............. Mean of column -----------------
+    final double meanWe = dts.mean(szColNo);
+    System.out.printf("Media(2) di %s\t= %.2f\n", szColNo, meanWe);
+    // .............. Mean of column -----------------
     szColNo = "Height";
-    mean = dts.mean(szColNo);
-    System.out.printf("Media(3) di %s\t= %.2f\n", szColNo, mean);
-    // -----------------------------------------------
-    szColNo = "Height";
-    mean = dts.mean(szColNo);
-    // -----------------------------------------------
+    final double meanHe = dts.mean(szColNo);
+    System.out.printf("Media(3) di %s\t= %.2f\n", szColNo, meanHe);
+    // ------------- conv Gender -----------------------
     System.out.println("\n------ conv Gender --------------");
     Dataset dt2 = dts.convert("Gender", s -> s.equals('F') ? 1 : 0);
     System.out.println(dt2.toString());
+    // ------------ Norm Weight------------------------------
+    System.out.println("\n------ norm Weight --------------");
+    Dataset dt3 = dt2.convert("Weight", s -> (Double) s - meanWe);
+    System.out.println(dt3.toString());
+    // ------------ Norm Height------------------------------
+    System.out.println("\n------ norm Height --------------");
+    Dataset dt4 = dt3.convert("Height", s -> (Double) s - meanHe);
+    System.out.println(dt4.toString());
   }
 
   private void addRow(Dataset dt, Object... p_li) throws DatasetException {

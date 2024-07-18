@@ -18,6 +18,7 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
   // private static final Logger      s_log     = LogManager.getLogger(GeoCoord.class);
   private static final GeoDistance s_geodist = new GeoDistance();
 
+  private LocalDateTime tstampNew;
   private LocalDateTime tstamp;
   private ZoneOffset    zoneOffset;
   private double        longitude;
@@ -31,6 +32,7 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     setLatitude(0);
     setLongitude(0);
     altitude = 0;
+    tstampNew = null;
     setTstamp(LocalDateTime.now());
     setZoneOffset(GeoCoordFoto.s_zoneOffSet);
     setSrcGeo(EGeoSrcCoord.track);
@@ -41,6 +43,7 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     setLatitude(p_lat);
     setLongitude(p_lon);
     setAltitude(0);
+    tstampNew = null;
     setTstamp(LocalDateTime.now());
     setZoneOffset(GeoCoordFoto.s_zoneOffSet);
     setSrcGeo(EGeoSrcCoord.track);
@@ -48,6 +51,7 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
   }
 
   public GeoCoord(LocalDateTime pdt, double p_lat, double p_lon) {
+    tstampNew = null;
     setTstamp(pdt);
     setZoneOffset(GeoCoordFoto.s_zoneOffSet);
     setLatitude(p_lat);
@@ -58,6 +62,7 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
   }
 
   public GeoCoord(LocalDateTime pdt, double p_lat, double p_lon, double p_alt) {
+    tstampNew = null;
     setTstamp(pdt);
     setZoneOffset(GeoCoordFoto.s_zoneOffSet);
     setLatitude(p_lat);
@@ -70,6 +75,10 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
   public GeoCoord(EGeoSrcCoord p_v) {
     setSrcGeo(p_v);
   }
+
+  //  public void setTstamp(LocalDateTime p_ts) {
+  //    tstamp = p_ts;
+  //  }
 
   public void setLongitude(double dbl) {
     longitude = dbl;
@@ -102,6 +111,13 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     return ChronoUnit.SECONDS.between(getTstamp(), p_o.getTstamp());
   }
 
+  public void assumeTStampNew() {
+    if ( null != tstampNew) {
+      tstamp = tstampNew;
+    }
+    tstampNew = null;
+  }
+
   public static long getEpoch(LocalDateTime ts) {
     if (ts == null)
       return 0;
@@ -118,8 +134,9 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     bRet &= tstamp != null;
     if (bRet)
       bRet &= tstamp.isAfter(LocalDateTime.MIN);
-    if (bRet)
-      bRet &= longitude + latitude != 0;
+    // devo poter cambiare solo il TStamp
+    //    if (bRet)
+    //      bRet &= longitude + latitude != 0;
     return bRet;
   }
 
@@ -221,7 +238,7 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
   }
 
   public void update(GeoCoord other) {
-    if ( null == other )
+    if (null == other)
       return;
     setAltitude(other.getAltitude());
     setLongitude(other.getLongitude());

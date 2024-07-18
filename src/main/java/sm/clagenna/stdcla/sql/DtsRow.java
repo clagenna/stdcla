@@ -166,6 +166,15 @@ public class DtsRow implements Cloneable {
             szv = szv.replace(" 00:00:00", "");
             szv = String.format(DtsCols.getColFmtR(), szv);
             break;
+            
+          case "Integer":
+            szv = String.format(DtsCols.getColFmtR(), vv);
+            break;
+            
+          case "Double":
+            szv = String.format(DtsCols.getColFmtDbl(), vv);
+            szv = String.format(DtsCols.getColFmtR(), szv);
+            break;
 
           case "Timestamp":
             szv = ParseData.s_fmtDtDate.format((Timestamp) vv);

@@ -20,6 +20,7 @@ public class DtsCols implements Cloneable {
   @Getter private static int    colWidth = 16;
   @Getter private static String colFmtL;
   @Getter private static String colFmtR;
+  @Getter private static String colFmtDbl;
   @Getter private static String colFmt;
 
   @SuppressWarnings("unused") private Dataset dtset;
@@ -50,6 +51,7 @@ public class DtsCols implements Cloneable {
     colWidth = p_coWth;
     colFmtL = String.format("%%-%ds ", p_coWth);
     colFmtR = String.format("%%%ds ", p_coWth);
+    colFmtDbl = "%.2f";
     colFmt = colFmtL;
   }
 
@@ -176,7 +178,24 @@ public class DtsCols implements Cloneable {
   public String getIntestazione() {
     StringBuilder sb = new StringBuilder();
     for (DtsCol col : columns) {
-      sb.append(String.format(colFmt, col.getName()));
+      String sz = String.format(colFmt, col.getName());
+      switch (col.getType()) {
+        case BIGINT:
+        case NUMERIC:
+        case DECIMAL:
+        case INTEGER:
+        case SMALLINT:
+        case TINYINT:
+        case DOUBLE:
+        case FLOAT:
+        case REAL:
+          sz = String.format(colFmtR, col.getName());
+          break;
+        default:
+          sz = String.format(colFmt, col.getName());
+          break;
+      }
+      sb.append(sz);
     }
     return sb.toString();
   }

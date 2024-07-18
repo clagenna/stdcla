@@ -226,8 +226,7 @@ public class GeoScanJpg {
         szZoneOfset = arr[0];
       try {
         // provo ad interpretare quello che c'e' nel file
-        @SuppressWarnings("unused")
-        ZoneOffset zof = null;
+        @SuppressWarnings("unused") ZoneOffset zof = null;
         if (null != szZoneOfset)
           zof = ZoneOffset.of(szZoneOfset);
       } catch (Exception e) {
@@ -263,9 +262,9 @@ public class GeoScanJpg {
       geo.setFotoFile(p_jpg);
       if ( !geolist.contains(geo) || addSimilFoto) {
         geolist.add(geo);
-        s_log.debug("Added {}", geo.toStringSimple());
+        s_log.debug("Geo Added {}", geo.toStringSimple());
       } else {
-        s_log.error("Discarded {}", geo.getFotoFile().toString());
+        s_log.error("Geo Discarded {}", geo.getFotoFile().toString());
       }
     } else {
       s_log.debug("No exif info on {}", p_jpg.toAbsolutePath().toString());
@@ -367,7 +366,7 @@ public class GeoScanJpg {
     }
     try {
       Path pthNew = removeJpgCopy(bOk, pthCopy, pth);
-      if (null != pthNew) {
+      if (null != pthNew && null != dtAcquisizione) {
         p_geo.setFotoFile(pthNew);
         cambiaAttrFile(pthNew, dtAcquisizione);
       }
@@ -390,6 +389,21 @@ public class GeoScanJpg {
       s_log.error("Errore di cancellazione di {}", p_copy.toString(), e);
     }
     return pthNew;
+  }
+
+  public boolean cambiaTStamp(GeoCoord p_updGeo) {
+    if (null == p_updGeo.getTstampNew())
+      return false;
+    if ( !Utils.isChanged(p_updGeo.getTstamp(), p_updGeo.getTstampNew())) {
+      p_updGeo.setTstampNew(null);
+      return false;
+    }
+    s_log.info("Cambio dtAcquis da {}  con {}", //
+        GeoFormatter.s_fmtTimeZ.format(p_updGeo.getTstamp()), //
+        GeoFormatter.s_fmtTimeZ.format(p_updGeo.getTstampNew()));
+    p_updGeo.assumeTStampNew();
+    cambiaExifDtAcqInfos(p_updGeo);
+    return true;
   }
 
   /**
