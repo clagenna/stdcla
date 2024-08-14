@@ -21,15 +21,14 @@ import sm.clagenna.stdcla.utils.ParseData;
 
 @Data
 public class GeoJsonParser {
-  private static final Logger    s_log        = LogManager.getLogger(GeoJsonParser.class);
-  private static final String    CSZ_LAT      = "latitudeE7";
-  private static final String    CSZ_LON      = "longitudeE7";
-  private static final String    CSZ_ALT      = "altitude";
-  private static final String    CSZ_TST      = "deviceTimestamp";
-  private static final String    CSZ_FACT     = "formFactor";
-  private static NumberFormat    intFmt       = NumberFormat.getNumberInstance(Locale.getDefault());
-  private static final long      N_PRIMO      = 245591;
-  private static final ParseData s_dataParser = new ParseData();
+  private static final Logger s_log    = LogManager.getLogger(GeoJsonParser.class);
+  private static final String CSZ_LAT  = "latitudeE7";
+  private static final String CSZ_LON  = "longitudeE7";
+  private static final String CSZ_ALT  = "altitude";
+  private static final String CSZ_TST  = "deviceTimestamp";
+  private static final String CSZ_FACT = "formFactor";
+  private static NumberFormat intFmt   = NumberFormat.getNumberInstance(Locale.getDefault());
+  private static final long   N_PRIMO  = 245591;
 
   private Path           jsonFile;
   private List<GeoCoord> listCoord;
@@ -45,7 +44,7 @@ public class GeoJsonParser {
   private int            riga;
   private GeoCoord       geoCoord;
   private int            infoAdded;
-  private TimerMeter m_tim;
+  private TimerMeter     m_tim;
 
   public GeoJsonParser() {
     dtMinFilter = LocalDateTime.MIN;
@@ -151,14 +150,14 @@ public class GeoJsonParser {
         infoAdded++;
         break;
       case CSZ_TST:
-        LocalDateTime dt = s_dataParser.parseData(lVal);
+        LocalDateTime dt = ParseData.parseData(lVal);
         geoCoord.setTstamp(dt);
         infoAdded++;
         break;
       case CSZ_FACT:
         //        if ( !lVal.equals("PHONE"))
         //          break;
-        if ( geoCoord.getTstamp() == null)
+        if (geoCoord.getTstamp() == null)
           return null;
         if (geoCoord.getTstamp().isAfter(dtMinFilter) && geoCoord.getTstamp().isBefore(dtMaxFilter))
           if (infoAdded >= 3) {

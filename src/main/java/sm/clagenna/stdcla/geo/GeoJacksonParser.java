@@ -40,17 +40,13 @@ public class GeoJacksonParser {
   public static final String FLD_deviceDesignation = "deviceDesignation";
   public static final String FLD_verticalAccuracy  = "verticalAccuracy";
 
-  private static ParseData s_tmParse = new ParseData();
+  // private static ParseData s_tmParse = new ParseData();
 
-  @Getter @Setter
-  private Path          fileJson;
-  @Getter @Setter
-  private LocalDateTime minDateTime;
-  @Getter @Setter
-  private LocalDateTime maxDateTime;
+  @Getter @Setter private Path          fileJson;
+  @Getter @Setter private LocalDateTime minDateTime;
+  @Getter @Setter private LocalDateTime maxDateTime;
 
-  @Getter @Setter
-  private GeoList liGeo;
+  @Getter @Setter private GeoList liGeo;
 
   public GeoJacksonParser() {
     //
@@ -69,8 +65,7 @@ public class GeoJacksonParser {
   private GeoList parseJson() throws FileNotFoundException {
     liGeo = new GeoList();
     final int goodLiv = 2;
-    @SuppressWarnings("unused")
-    int arrLiv = 0;
+    @SuppressWarnings("unused") int arrLiv = 0;
     int nestLiv = 0;
     int riga = 0;
     String fldNam = null;
@@ -171,12 +166,12 @@ public class GeoJacksonParser {
         break;
       case FLD_timestamp:
         // privilegio il "deviceTimestamp"
-        dt = s_tmParse.parseData(p_fldVal.toString());
+        dt = ParseData.parseData(p_fldVal.toString());
         if (p_geo.getTstamp() == null)
           p_geo.setTstamp(dt);
         break;
       case FLD_deviceTimestamp:
-        dt = s_tmParse.parseData(p_fldVal.toString());
+        dt = ParseData.parseData(p_fldVal.toString());
         p_geo.setTstamp(dt);
         break;
       default:

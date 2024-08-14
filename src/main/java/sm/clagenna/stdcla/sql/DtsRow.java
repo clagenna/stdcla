@@ -4,7 +4,6 @@ import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,25 +12,24 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import lombok.Getter;
+import lombok.Setter;
 import sm.clagenna.stdcla.sys.ex.DatasetException;
 import sm.clagenna.stdcla.utils.ParseData;
 
 public class DtsRow implements Cloneable {
-  private static final Logger s_log = LogManager.getLogger(DtsRow.class);
-  private List<Object>        valori;
-  private Dataset             dataset;
-  private ParseData           parsedt;
+  private static final Logger     s_log = LogManager.getLogger(DtsRow.class);
+  private List<Object>            valori;
+  @Getter @Setter private Dataset dataset;
 
   private DtsRow() {
 
   }
 
-  public DtsRow(Dataset p_dts) throws DatasetException {
+  public DtsRow(Dataset p_dts) {
     dataset = p_dts;
     List<Object> li = Collections.nCopies(dataset.getQtaCols(), (Object) null);
     valori = new ArrayList<>(li);
-    if (dataset.getTipoServer().isDateAsString())
-      parsedt = new ParseData();
   }
 
   public void addRow(ResultSet p_res) throws DatasetException {
@@ -84,15 +82,35 @@ public class DtsRow implements Cloneable {
     }
   }
 
-  public int addRow(List<Object> p_lio) {
-    int nRet = -1;
+  public DtsRow addRow(List<Object> p_lio) {
+    // int nRet = -1;
     if (null == p_lio || p_lio.size() == 0)
-      return nRet;
+      return null;
     int nCol = 0;
     for (Object obj : p_lio) {
       valori.set(nCol++, obj);
     }
+    return this;
+  }
+
+  /**
+   * Dalo un {@link List<String>} dalla lettura di un CSV popolo il row attuale
+   *
+   * @param p_rec
+   * @return
+   */
+  public int parseRow(List<String> p_rec) {
+    int nRet = -1;
+    if (null == p_rec || p_rec.size() == 0)
+      return nRet;
+    int nCol = 0;
+    for (String szv : p_rec) {
+      DtsCol col = dataset.getColum(nCol);
+      Object o = col.parse(szv);
+      valori.set(nCol++, o);
+    }
     return nRet;
+
   }
 
   public Object get(int nCol) {
@@ -113,11 +131,15 @@ public class DtsRow implements Cloneable {
     valori.set(ii, val);
   }
 
+  public void addCol(SqlTypes p_ty) {
+    valori.add(SqlTypes.defval(p_ty));
+  }
+
   private Object provaSeData(Object p_val) {
     if (p_val == null)
       return p_val;
     String szVal = p_val.toString();
-    LocalDateTime dt = parsedt.parseData(szVal);
+    LocalDateTime dt = ParseData.parseData(szVal);
     if (dt != null) {
       p_val = java.sql.Timestamp.valueOf(dt);
       s_log.trace("Convertito {} in Timestamp {}", szVal, ParseData.s_fmtDtExif.format(dt));
@@ -127,22 +149,25 @@ public class DtsRow implements Cloneable {
 
   public void addVal(String p_nam, Object p_v) {
     int nCol = dataset.getColumNo(p_nam);
-    valori.set(nCol - 1, p_v);
+    valori.set(nCol, p_v);
   }
 
   @Override
   protected Object clone() throws CloneNotSupportedException {
     DtsRow ret = new DtsRow();
     ret.dataset = dataset;
-    ret.parsedt = parsedt;
-    if (null != valori)
-      ret.valori = Arrays.asList(valori.toArray());
+    if (null != valori) {
+      // ret.valori = Arrays.asList(valori.toArray());
+      ret.valori = new ArrayList<>();
+      ret.valori.addAll(valori);
+    }
     return ret;
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
+    // sb.append(dataset.getColumns().getIntestazione()).append("\n");
     for (DtsCol col : dataset.getColumns().getColumns()) {
       Object vv = valori.get(col.getIndex());
       String szv = String.format(DtsCols.getColFmtL(), "*null*");
@@ -162,15 +187,15 @@ public class DtsRow implements Cloneable {
         switch (szClss) {
 
           case "LocalDateTime":
-            szv = ParseData.s_fmtDtExif.format((LocalDateTime) vv);
+            szv = ParseData.s_fmtTs.format((LocalDateTime) vv);
             szv = szv.replace(" 00:00:00", "");
             szv = String.format(DtsCols.getColFmtR(), szv);
             break;
-            
+
           case "Integer":
             szv = String.format(DtsCols.getColFmtR(), vv);
             break;
-            
+
           case "Double":
             szv = String.format(DtsCols.getColFmtDbl(), vv);
             szv = String.format(DtsCols.getColFmtR(), szv);

@@ -1,14 +1,21 @@
 package sm.clagenna.stdcla.sql;
 
+import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,12 +24,14 @@ import lombok.Getter;
 import lombok.Setter;
 import sm.clagenna.stdcla.enums.EServerId;
 import sm.clagenna.stdcla.sys.ex.DatasetException;
+import sm.clagenna.stdcla.utils.ParseData;
 
 public class Dataset implements Closeable {
   private static final Logger       s_log = LogManager.getLogger(Dataset.class);
   @Getter @Setter private EServerId tipoServer;
   private DtsCols                   columns;
   @Getter @Setter private DBConn    db;
+  @Getter @Setter private String    csvdelim;
   @Getter private List<DtsRow>      righe;
 
   public Dataset() {
@@ -50,6 +59,117 @@ public class Dataset implements Closeable {
       s_log.error("Error execute Query, err={}", e.getMessage());
     }
     return bRet;
+  }
+
+  /**
+   * Legge un file CSV dove sono presenti i nomi di colonna nella prima riga.
+   * Inoltre il separatore di campi e' specificato nel campo csvdelim (default
+   * semicolon ';')
+   *
+   * @param p_csvFil
+   * @return qta di records letti
+   * @throws IOException
+   */
+  public int readcsv(Path p_csvFil) throws IOException {
+    if (null == csvdelim)
+      csvdelim = ";";
+    if (null == columns || columns.size() == 0)
+      creaCsvCols(p_csvFil);
+    readCsvFile(p_csvFil);
+    return size();
+  }
+
+  private void creaCsvCols(Path p_csvFil) throws IOException {
+    List<List<String>> recs = null;
+    try (BufferedReader reader = Files.newBufferedReader(p_csvFil)) {
+      recs = reader.lines() //
+          .limit(20) //
+          .map(li -> Arrays.asList(li.split(csvdelim))) //
+          .collect(Collectors.toList());
+
+      List<String> liNames = recs.get(0);
+      List<SqlTypes> liTypes = guessSqlTypes(recs);
+      Map<String, SqlTypes> mpCols = new LinkedHashMap<>();
+      int i = 0;
+      for (String na : liNames)
+        mpCols.put(na, liTypes.get(i++));
+      creaCols(mpCols);
+    }
+  }
+
+  public void addCol(String szNam, SqlTypes p_ty) {
+    columns.addCol(szNam, p_ty);
+    for (DtsRow row : righe) {
+      row.setDataset(this);
+      row.addCol(p_ty);
+    }
+
+  }
+
+  private void readCsvFile(Path p_csvFil) throws IOException {
+    try (BufferedReader reader = Files.newBufferedReader(p_csvFil)) {
+      reader //
+          .lines() //
+          .skip(1) //
+          .map(li -> Arrays.asList(li.split(csvdelim))) //
+          .forEach(s -> parseRow(s));
+    }
+  }
+
+  /**
+   * Cerca di indovinare il {@link SqlTypes} di ogni colonna facendo una analisi
+   * con precedenza di difficolta'
+   *
+   * @param p_recs
+   * @return
+   */
+  private List<SqlTypes> guessSqlTypes(List<List<String>> p_recs) {
+    List<SqlTypes> liTy = new ArrayList<SqlTypes>();
+    int k = 0;
+    for (List<String> riga : p_recs) {
+      if (k++ < 1)
+        continue;
+      if (k > 20)
+        break;
+      int col = 0;
+      for (String sz : riga) {
+        SqlTypes ty = guessSqlType(sz);
+        if (liTy.size() <= col)
+          liTy.add(ty);
+        else
+          liTy.set(col, ty);
+        col++;
+      }
+    }
+    return liTy;
+  }
+
+  private SqlTypes guessSqlType(String p_sz) {
+    // ******   date *********
+    LocalDateTime dt = ParseData.parseData(p_sz);
+    if (null != dt)
+      return SqlTypes.DATE;
+    // ******* double ********
+    if (p_sz.contains(".") || p_sz.contains(",")) {
+      Double dbl = null;
+      try {
+        dbl = Double.parseDouble(p_sz.replace(",", "."));
+        if (null != dbl)
+          return SqlTypes.DOUBLE;
+      } catch (NumberFormatException e) {
+        //
+      }
+    }
+    // ***** integer *******
+    Integer ii = null;
+    try {
+      ii = Integer.parseInt(p_sz);
+      if (ii != null)
+        return SqlTypes.INTEGER;
+    } catch (NumberFormatException e) {
+      //
+    }
+    return SqlTypes.VARCHAR;
   }
 
   public void creaCols(PreparedStatement p_stmt) throws DatasetException {
@@ -93,8 +213,15 @@ public class Dataset implements Closeable {
   public int addRow(DtsRow p_r) {
     if (righe == null)
       righe = new ArrayList<>();
+    // System.out.println(p_r);
     righe.add(p_r);
     return righe.size();
+  }
+
+  public void parseRow(List<String> p_rec) {
+    DtsRow row = new DtsRow(this);
+    row.parseRow(p_rec);
+    addRow(row);
   }
 
   public int addRow(List<Object> p_lio) throws DatasetException {
@@ -104,7 +231,7 @@ public class Dataset implements Closeable {
     return righe.size();
   }
 
-  public int getQtaCols() throws DatasetException {
+  public int getQtaCols() {
     return columns.size();
   }
 
@@ -112,8 +239,20 @@ public class Dataset implements Closeable {
     return columns;
   }
 
+  public DtsCol getColum(int p_i) {
+    if (null == columns || columns.size() <= p_i)
+      throw new UnsupportedOperationException("Out of bound, Col no=" + p_i);
+    return columns.getCol(p_i);
+  }
+
   public int getColumNo(String p_nam) {
     return columns.getColIndex(p_nam);
+  }
+
+  public DtsRow getRow(int p_i) throws DatasetException {
+    if (null == righe || p_i >= righe.size())
+      throw new DatasetException("Index " + p_i + " out of bound");
+    return righe.get(p_i);
   }
 
   public List<Object> colArray(String p_colNam) {
@@ -148,6 +287,92 @@ public class Dataset implements Closeable {
     return ret;
   }
 
+  public Dataset filter(String p_col, IDtsFiltra<Object> p_conv) {
+    Dataset ret = new Dataset();
+    ret.creaCols(columns);
+    try {
+      for (DtsRow row : righe) {
+        DtsRow r = (DtsRow) row.clone();
+        Object vv = r.get(p_col);
+        if (p_conv.filtra(vv))
+          ret.addRow(r);
+      }
+    } catch (CloneNotSupportedException e) {
+      e.printStackTrace();
+    }
+    return ret;
+  }
+
+  /**
+   * Torna un {@link Dataset} con le sole colonne (case-insensitive) specificate
+   *
+   * @param p_colList
+   *          elenco di colonne da includere
+   * @return
+   * @throws DatasetException
+   */
+  public Dataset colSubset(List<String> p_colList) throws DatasetException {
+    Dataset ret = new Dataset();
+    DtsCols cols = new DtsCols(ret);
+    try {
+      for (DtsCol col : getColumns().getColumns()) {
+        if (p_colList.stream().anyMatch(col.getName()::equalsIgnoreCase)) {
+          cols.addCol((DtsCol) col.clone());
+        }
+      }
+    } catch (CloneNotSupportedException e) {
+      e.printStackTrace();
+    }
+    if (cols.size() == 0)
+      throw new DatasetException("No cols for " + p_colList.toString());
+    ret.creaCols(cols);
+    for (DtsRow row : righe) {
+      DtsRow newro = new DtsRow(ret);
+      for (String szc : p_colList) {
+        newro.addVal(szc, row.get(szc));
+      }
+      ret.addRow(newro);
+    }
+    return ret;
+  }
+
+  /**
+   * Creo un nuovo {@link Dataset} con i records specificati. <code>p_ini</code>
+   * inclusive, <code>p_fin</code> <b>ex</b>clusive.<br/>
+   * Se <code>p_fin</code> oltre <b>this.size()</b> il subset si ferma
+   * all'ultimo record.
+   *
+   * @param p_ini
+   *          index record iniziale
+   * @param p_fin
+   *          index record finale escluso
+   * @return
+   * @throws DatasetException
+   */
+  public Dataset subset(int p_ini, int p_fin) throws DatasetException {
+    if (p_ini < 0 || p_ini >= p_fin)
+      throw new DatasetException("Indexes incongruent");
+    Dataset ret = new Dataset();
+    try {
+      DtsCols cols = (DtsCols) getColumns().clone();
+      ret.creaCols(cols);
+    } catch (CloneNotSupportedException e) {
+      e.printStackTrace();
+    }
+    int i = 0;
+    try {
+      for (DtsRow row : getRighe()) {
+        if (i >= p_ini && i < p_fin)
+          ret.addRow((DtsRow) row.clone());
+        if (i++ >= p_fin)
+          break;
+      }
+    } catch (CloneNotSupportedException e) {
+      e.printStackTrace();
+    }
+    return ret;
+  }
+
   public double mean(String p_colNam) throws DatasetException {
     DtsCol col = columns.getCol(p_colNam);
     if (null == col)
@@ -165,14 +390,42 @@ public class Dataset implements Closeable {
       case DOUBLE:
         break;
       default:
-        throw new DatasetException("Mean on not numeric:"+p_colNam);
+        throw new DatasetException("Mean on not numeric:" + p_colNam);
     }
     List<Object> colv = colArray(p_colNam);
     double somma = colv //
         .stream() //
         .mapToDouble(s -> Double.parseDouble(s.toString())) //
         .sum();
-    return somma / (double) size();
+    return somma / size();
+  }
+
+  public double sqrtmean(String p_colNam) throws DatasetException {
+    DtsCol col = columns.getCol(p_colNam);
+    if (null == col)
+      throw new DatasetException("no col:" + p_colNam);
+    if (0 == size())
+      throw new DatasetException("mean on no data");
+    SqlTypes typ = col.getType();
+    switch (typ) {
+      case TINYINT:
+      case SMALLINT:
+      case INTEGER:
+      case NUMERIC:
+      case DECIMAL:
+      case FLOAT:
+      case DOUBLE:
+        break;
+      default:
+        throw new DatasetException("sqrtMean on not numeric:" + p_colNam);
+    }
+    List<Object> colv = colArray(p_colNam);
+    double somma = colv //
+        .stream() //
+        .mapToDouble(s -> Double.parseDouble(s.toString())) //
+        .map(s -> s * s) //
+        .sum();
+    return Math.sqrt(somma / size());
   }
 
   public int size() {
@@ -189,9 +442,12 @@ public class Dataset implements Closeable {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append(columns.toString()).append("\n");
-    for (DtsRow row : righe)
-      sb.append(row.toString()).append("\n");
+    sb.append(columns.getIntestazione()).append("\n");
+    if (null != righe) {
+      for (DtsRow row : righe)
+        sb.append(row.toString()).append("\n");
+    } else
+      sb.append("** no rows **");
     return sb.toString();
   }
 

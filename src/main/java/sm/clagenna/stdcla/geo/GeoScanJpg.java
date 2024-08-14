@@ -226,7 +226,7 @@ public class GeoScanJpg {
         szZoneOfset = arr[0];
       try {
         // provo ad interpretare quello che c'e' nel file
-        @SuppressWarnings("unused") ZoneOffset zof = null;
+        ZoneOffset zof = null;
         if (null != szZoneOfset)
           zof = ZoneOffset.of(szZoneOfset);
       } catch (Exception e) {

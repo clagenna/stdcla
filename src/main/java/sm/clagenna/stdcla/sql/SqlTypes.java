@@ -1,5 +1,8 @@
 package sm.clagenna.stdcla.sql;
 
+import java.math.BigInteger;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -109,9 +112,88 @@ public enum SqlTypes {
 
       default:
         throw new UnsupportedOperationException(String.format("Translate SqlType \"%s\" Unknown", szCls));
-
     }
-
     return ret;
+  }
+
+  public static Object defval(SqlTypes tt) {
+    Object obj = null;
+    switch (tt) {
+      case ARRAY:
+        break;
+      case BIGINT:
+        obj = BigInteger.ZERO;
+        break;
+      case BINARY:
+        break;
+      case BIT:
+        break;
+      case BLOB:
+        break;
+      case BOOLEAN:
+        obj = Boolean.FALSE;
+        break;
+      case CHAR:
+        obj = Character.valueOf('0');
+        break;
+      case CLOB:
+        break;
+      case DATALINK:
+        break;
+      case DATE:
+      case TIME:
+      case TIMESTAMP:
+        obj = new Date(0);
+        break;
+      case DECIMAL:
+      case DOUBLE:
+      case FLOAT:
+      case NUMERIC:
+      case REAL:
+        obj = Double.valueOf(0);
+        break;
+      case DISTINCT:
+        break;
+      case INTEGER:
+      case SMALLINT:
+      case TINYINT:
+        obj = Integer.valueOf(0);
+        break;
+      case JAVA_OBJECT:
+        break;
+      case LONGNVARCHAR:
+      case LONGVARBINARY:
+      case LONGVARCHAR:
+      case NCHAR:
+      case NVARCHAR:
+      case VARCHAR:
+        obj = new String();
+        break;
+      case NCLOB:
+        break;
+      case NULL:
+        break;
+      case OTHER:
+        break;
+      case REF:
+        break;
+      case REF_CURSOR:
+        break;
+      case ROWID:
+        break;
+      case SQLXML:
+        break;
+      case STRUCT:
+        break;
+      case TIMESTAMP_WITH_TIMEZONE:
+      case TIME_WITH_TIMEZONE:
+        obj = LocalDateTime.now();
+        break;
+      case VARBINARY:
+        break;
+      default:
+        break;
+    }
+    return obj;
   }
 }

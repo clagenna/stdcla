@@ -23,7 +23,7 @@ public class DtsCols implements Cloneable {
   @Getter private static String colFmtDbl;
   @Getter private static String colFmt;
 
-  @SuppressWarnings("unused") private Dataset dtset;
+  //   @SuppressWarnings("unused") private Dataset dtset;
 
   @Getter private List<DtsCol> columns;
   private Map<String, DtsCol>  nomecol;
@@ -38,7 +38,7 @@ public class DtsCols implements Cloneable {
   }
 
   public DtsCols(Dataset p_dt) {
-    dtset = p_dt;
+    //    dtset = p_dt;
     init();
   }
 
@@ -156,6 +156,7 @@ public class DtsCols implements Cloneable {
   public void addCol(DtsCol p_col) {
     if (p_col == null)
       return;
+    // zero-based index
     p_col.setIndex(columns.size());
     columns.add(p_col);
     nomecol.put(p_col.getName(), p_col);
@@ -165,9 +166,15 @@ public class DtsCols implements Cloneable {
     return nomecol.get(p_nam);
   }
 
-  public int size() throws DatasetException {
+  public DtsCol getCol(int p_i) {
+    if (null == columns || columns.size() <= p_i)
+      throw new UnsupportedOperationException("Col non esiste:" + p_i);
+    return columns.get(p_i);
+  }
+
+  public int size() {
     if (columns == null || columns.size() == 0)
-      throw new DatasetException("No colums present");
+      throw new UnsupportedOperationException("No colums present");
     return columns.size();
   }
 
@@ -211,6 +218,12 @@ public class DtsCols implements Cloneable {
 
   @Override
   public String toString() {
-    return getIntestazione();
+    if (null == columns)
+      return "**NO COLS**";
+    StringBuilder sb = new StringBuilder();
+    for (DtsCol col : columns)
+      sb.append(col.toString()).append("\n");
+    return sb.toString();
+    // return getIntestazione();
   }
 }
