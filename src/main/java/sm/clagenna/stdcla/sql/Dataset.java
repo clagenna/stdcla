@@ -1,7 +1,9 @@
 package sm.clagenna.stdcla.sql;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.Closeable;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,7 +29,8 @@ import sm.clagenna.stdcla.sys.ex.DatasetException;
 import sm.clagenna.stdcla.utils.ParseData;
 
 public class Dataset implements Closeable {
-  private static final Logger       s_log = LogManager.getLogger(Dataset.class);
+  private static final Logger       s_log             = LogManager.getLogger(Dataset.class);
+  private static final String       DEFAULT_CSV_DELIM = ";";
   @Getter @Setter private EServerId tipoServer;
   private DtsCols                   columns;
   @Getter @Setter private DBConn    db;
@@ -70,13 +73,30 @@ public class Dataset implements Closeable {
    * @return qta di records letti
    * @throws IOException
    */
-  public int readcsv(Path p_csvFil) throws IOException {
+  public Dataset readcsv(Path p_csvFil) throws IOException {
     if (null == csvdelim)
-      csvdelim = ";";
+      csvdelim = DEFAULT_CSV_DELIM;
     if (null == columns || columns.size() == 0)
       creaCsvCols(p_csvFil);
     readCsvFile(p_csvFil);
-    return size();
+    return this;
+  }
+
+  public void savecsv(Path p_fil) throws DatasetException {
+    if (null == csvdelim)
+      csvdelim = DEFAULT_CSV_DELIM;
+    if (null == columns || columns.size() == 0)
+      throw new DatasetException("Nothing to save");
+    try (BufferedWriter bw = new BufferedWriter(new FileWriter(p_fil.toFile(), false))) {
+      bw.write(columns.csvIntestazione(csvdelim));
+      bw.newLine();
+      for (DtsRow row : righe) {
+        bw.write(row.toCsv(csvdelim));
+        bw.newLine();
+      }
+    } catch (IOException e) {
+      throw new DatasetException("Write :" + p_fil.toString(), e);
+    }
   }
 
   private void creaCsvCols(Path p_csvFil) throws IOException {

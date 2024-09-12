@@ -218,6 +218,51 @@ public class DtsRow implements Cloneable {
     return sb.toString();
   }
 
+  public String toCsv(String csvdelim) {
+    StringBuilder sb = new StringBuilder();
+    String escsep = String.format("\\%s", csvdelim);
+
+    for (DtsCol col : dataset.getColumns().getColumns()) {
+      Object vv = valori.get(col.getIndex());
+      String szv = "";
+      if (sb.length() > 0)
+        sb.append(csvdelim);
+      if (vv != null) {
+        String szClss = vv != null ? vv.getClass().getSimpleName() : "Object";
+        switch (szClss) {
+
+          case "LocalDateTime":
+            szv = ParseData.s_fmtTs.format((LocalDateTime) vv);
+            szv = szv.replace(" 00:00:00", "");
+            // szv = String.format(DtsCols.getColFmtR(), szv);
+            break;
+
+          case "Integer":
+            szv = String.format(DtsCols.getColFmtR(), vv).trim();
+            break;
+
+          case "Double":
+            szv = String.format(DtsCols.getColFmtDbl(), vv);
+            // szv = String.format(DtsCols.getColFmtR(), szv);
+            break;
+
+          case "Timestamp":
+            szv = ParseData.s_fmtDtDate.format((Timestamp) vv);
+            szv = szv.replace(" 00:00:00", "");
+            // szv = String.format(DtsCols.getColFmtR(), szv);
+            break;
+
+          default:
+            szv = vv.toString().replaceAll(csvdelim, escsep);
+            break;
+        }
+        sb.append(szv);
+      }
+    }
+    return sb.toString();
+
+  }
+
   public Map<String, Object> toMap() {
     Map<String, Object> mp = new LinkedHashMap<>();
     for (DtsCol col : dataset.getColumns().getColumns()) {

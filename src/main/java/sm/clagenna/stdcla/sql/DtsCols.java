@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -180,6 +181,11 @@ public class DtsCols implements Cloneable {
 
   public int getColIndex(String p_nam) {
     return nomecol.get(p_nam).getIndex();
+  }
+
+  public String csvIntestazione(String p_sep) {
+    String szRet = columns.stream().map(s -> s.getName()).collect(Collectors.joining(p_sep));
+    return szRet;
   }
 
   public String getIntestazione() {

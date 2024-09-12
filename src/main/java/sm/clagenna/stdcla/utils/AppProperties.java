@@ -99,6 +99,16 @@ public class AppProperties {
     return leggiPropertyFile(new File(p_fiProp), bForce, true);
   }
 
+  /**
+   * Legge il file di propreties specificato. Se <code>bForce</code> allora il
+   * file <b>deve</b> esistere
+   * 
+   * @param p_fiProp
+   * @param bForce
+   * @param bResJar
+   * @return
+   * @throws AppPropsException
+   */
   @SuppressWarnings("unused")
   public Properties leggiPropertyFile(File p_fiProp, boolean bForce, boolean bResJar) throws AppPropsException {
     properties = new Properties();
@@ -107,6 +117,7 @@ public class AppProperties {
         if (bForce)
           throw new AppPropsException(
               "Il file properties non esiste:" + (p_fiProp != null ? p_fiProp.getAbsolutePath() : "*NULL*"));
+        propertyFile = p_fiProp;
         return properties;
       }
     }

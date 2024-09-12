@@ -1,4 +1,4 @@
-package prova.stdcla.sql;
+package prova.stdcla.dts;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -17,12 +17,17 @@ public class ProvaDatasetCSV {
   @Test
   public void provalo() throws DatasetException {
     Path pthFi = Paths.get("src", "test", "resources", "prova", "stdcla", "dts", "abitanti2.csv");
+    Path pthCopia = Paths.get("src", "test", "resources", "prova", "stdcla", "dts", "abitanti_Copia.csv");
     try (Dataset dts = new Dataset()) {
       // lettura del file CSV
-      int qta = dts.readcsv(pthFi);
+      int qta = dts.readcsv(pthFi).size();
       System.out.printf("\nLetti %d records\n", qta);
       // elenco colonne
       System.out.println(dts.getColumns());
+
+      dts.savecsv(pthCopia);
+      System.out.println("Scritto:" + pthCopia);
+
       // calcolo delle medie
       System.out.printf("%20s:%f\n", "Eta media", dts.mean("eta"));
       System.out.printf("%20s:%f\n", "Eta media quardr", dts.sqrtmean("eta"));
