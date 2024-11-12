@@ -29,13 +29,29 @@ import sm.clagenna.stdcla.sys.ex.DatasetException;
 import sm.clagenna.stdcla.utils.ParseData;
 
 public class Dataset implements Closeable {
-  private static final Logger       s_log             = LogManager.getLogger(Dataset.class);
-  private static final String       DEFAULT_CSV_DELIM = ";";
-  @Getter @Setter private EServerId tipoServer;
-  private DtsCols                   columns;
-  @Getter @Setter private DBConn    db;
-  @Getter @Setter private String    csvdelim;
-  @Getter private List<DtsRow>      righe;
+  private static final Logger s_log             = LogManager.getLogger(Dataset.class);
+  private static final String DEFAULT_CSV_DELIM = ";";
+  @Getter @Setter
+  private EServerId           tipoServer;
+  private DtsCols             columns;
+  @Getter @Setter
+  private DBConn              db;
+  @Getter @Setter
+  private String              csvdelim;
+  @Getter
+  private List<DtsRow>        righe;
+  /**
+   * scandisce solo la quantita di colonne conosciute (vedi
+   * {@link #getQtaCols()} )
+   */
+  @Getter @Setter
+  private boolean             onlyKnownCols;
+  /**
+   * fa si che anche gli interi durante la {@link #guessSqlType(String)} vengano
+   * interpretati come double
+   */
+  @Getter @Setter
+  private boolean             intToDouble;
 
   public Dataset() {
     setTipoServer(EServerId.SqlServer);
@@ -100,6 +116,7 @@ public class Dataset implements Closeable {
   }
 
   private void creaCsvCols(Path p_csvFil) throws IOException {
+    // FIXME Impostare una var che tiene conto se l'elenco di colonne finisce con ';' finale vuoto
     List<List<String>> recs = null;
     try (BufferedReader reader = Files.newBufferedReader(p_csvFil)) {
       recs = reader.lines() //
@@ -109,10 +126,18 @@ public class Dataset implements Closeable {
 
       List<String> liNames = recs.get(0);
       List<SqlTypes> liTypes = guessSqlTypes(recs);
+      int diff = liNames.size() - liTypes.size();
+      for (; diff > 0; diff--)
+        liTypes.add(SqlTypes.VARCHAR);
+
       Map<String, SqlTypes> mpCols = new LinkedHashMap<>();
       int i = 0;
-      for (String na : liNames)
-        mpCols.put(na, liTypes.get(i++));
+      try {
+        for (String na : liNames)
+          mpCols.put(na.trim(), liTypes.get(i++));
+      } catch (Exception e) {
+        s_log.error("Errore crea DataSet su file {}, err={}", p_csvFil.getFileName().toString(), e.getMessage());
+      }
       creaCols(mpCols);
     }
   }
@@ -138,7 +163,7 @@ public class Dataset implements Closeable {
 
   /**
    * Cerca di indovinare il {@link SqlTypes} di ogni colonna facendo una analisi
-   * con precedenza di difficolta'
+   * con precedenza di difficolta' del tipo confrontando il .code()
    *
    * @param p_recs
    * @return
@@ -156,8 +181,11 @@ public class Dataset implements Closeable {
         SqlTypes ty = guessSqlType(sz);
         if (liTy.size() <= col)
           liTy.add(ty);
-        else
-          liTy.set(col, ty);
+        else {
+          SqlTypes prevty = liTy.get(col);
+          if (prevty.code() > ty.code())
+            liTy.set(col, ty);
+        }
         col++;
       }
     }
@@ -170,7 +198,7 @@ public class Dataset implements Closeable {
     if (null != dt)
       return SqlTypes.DATE;
     // ******* double ********
-    if (p_sz.contains(".") || p_sz.contains(",")) {
+    if (p_sz.contains(".") || p_sz.contains(",") || isIntToDouble()) {
       Double dbl = null;
       try {
         dbl = Double.parseDouble(p_sz.replace(",", "."));
@@ -261,7 +289,7 @@ public class Dataset implements Closeable {
 
   public DtsCol getColum(int p_i) {
     if (null == columns || columns.size() <= p_i)
-      throw new UnsupportedOperationException("Out of bound, Col no=" + p_i);
+      throw new UnsupportedOperationException("Col no of bound:" + p_i);
     return columns.getCol(p_i);
   }
 

@@ -13,6 +13,8 @@ import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import sm.clagenna.stdcla.enums.ETipoCambioNome;
+import sm.clagenna.stdcla.fotoscan.IImageModel;
 import sm.clagenna.stdcla.sys.ex.AppPropsException;
 
 public class AppProperties {
@@ -23,6 +25,7 @@ public class AppProperties {
 
   public static final String CSZ_PROP_LASTDIR    = "last.dir";
   public static final String CSZ_PROP_LASTFIL    = "last.fil";
+  public static final String CSZ_PROP_LASTGPX    = "gps.last";
   public static final String CSZ_PROP_DIMFRAME_X = "frame.dimx";
   public static final String CSZ_PROP_DIMFRAME_Y = "frame.dimy";
   public static final String CSZ_PROP_POSFRAME_X = "frame.posx";
@@ -35,6 +38,11 @@ public class AppProperties {
   public static final String CSZ_PROP_DB_user    = "DB.user";
   public static final String CSZ_PROP_DB_passwd  = "DB.passwd";
 
+  public static final String CSZ_PROP_TBCOL    = "tbview.col.%s";
+  public static final String CSZ_PROP_SHOW_GMS = "gps.show_gms";
+
+  private IImageModel        m_model;
+  private ETipoCambioNome    tipoCambioNome;
   private Properties         properties;
   private File               propertyFile;
   /**
@@ -188,10 +196,20 @@ public class AppProperties {
   }
 
   public int getIntProperty(String p_propName) {
+    return getIntProperty(p_propName, -1);
+  }
+
+  public void setIntProperty(String p_propName, int p_v) {
+    setProperty(p_propName, String.valueOf(p_v));
+  }
+
+  public int getIntProperty(String p_propName, int p_defv) {
     int nRet = -1;
     String sz = getProperty(p_propName);
     if (Utils.isNumeric(sz))
       nRet = Integer.parseInt(sz);
+    else
+      nRet = p_defv;
     return nRet;
   }
 
@@ -267,5 +285,21 @@ public class AppProperties {
   public void setLastDir(String p_last) {
     getProperties();
     properties.setProperty(CSZ_PROP_LASTDIR, p_last);
+  }
+
+  public ETipoCambioNome getTipoCambioNome() {
+    return tipoCambioNome;
+  }
+
+  public void setTipoCambioNome(ETipoCambioNome p_tipoCambioNome) {
+    tipoCambioNome = p_tipoCambioNome;
+  }
+
+  public void setModel(IImageModel p_mod) {
+    m_model = p_mod;
+  }
+
+  public IImageModel getModel() {
+    return m_model;
   }
 }

@@ -5,9 +5,16 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.sqlite.SQLiteConfig;
+import org.sqlite.SQLiteConfig.Pragma;
 
 import sm.clagenna.stdcla.enums.EServerId;
 import sm.clagenna.stdcla.utils.Utils;
@@ -76,6 +83,13 @@ public class DBConnSQLite extends DBConn {
     super.close();
   }
 
+  @Override
+  public void changePragma() {
+    SQLiteConfig conf = new SQLiteConfig();
+    Properties prop = conf.toProperties();
+    prop.setProperty(Pragma.DATE_STRING_FORMAT.pragmaName, "yyyy-MM-dd");
+  }
+
   /**
    * SQLite preferisce le date in
    * <a href="https://en.wikipedia.org/wiki/ISO_8601}">ISO 8601 Date Format</a>
@@ -107,6 +121,13 @@ public class DBConnSQLite extends DBConn {
     } else if (p_dt instanceof java.util.Date) {
       java.util.Date udt = (java.util.Date) p_dt;
       dt = new java.sql.Date(udt.getTime());
+    } else if (p_dt instanceof LocalDate ldt) {
+      java.util.Date udt = java.util.Date.from(ldt.atStartOfDay(ZoneId.systemDefault()).toInstant());
+      dt = new java.sql.Date(udt.getTime());
+    } else if (p_dt instanceof LocalDateTime ldt) {
+      ZonedDateTime zo = ldt.atZone(ZoneId.systemDefault());
+      java.util.Date udt = java.util.Date.from(zo.toInstant());
+      dt = new java.sql.Date(udt.getTime());
     }
     if (dt != null) {
       String sz = Utils.s_fmtY4MD.format(dt);
@@ -117,5 +138,15 @@ public class DBConnSQLite extends DBConn {
   @Override
   public Logger getLog() {
     return s_log;
+  }
+
+  @Override
+  public void setStmtImporto(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
+    p_stmt.setDouble(p_index, (Double) p_dt);
+  }
+
+  @Override
+  public void setStmtString(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
+    p_stmt.setString(p_index, (String) p_dt);
   }
 }

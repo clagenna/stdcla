@@ -17,18 +17,24 @@ import lombok.Getter;
 import sm.clagenna.stdcla.sys.ex.DatasetException;
 
 public class DtsCols implements Cloneable {
-  private static final Logger   s_log    = LogManager.getLogger(DtsCols.class);
-  @Getter private static int    colWidth = 16;
-  @Getter private static String colFmtL;
-  @Getter private static String colFmtR;
-  @Getter private static String colFmtDbl;
-  @Getter private static String colFmt;
+  private static final Logger s_log    = LogManager.getLogger(DtsCols.class);
+  @Getter
+  private static int          colWidth = 16;
+  @Getter
+  private static String       colFmtL;
+  @Getter
+  private static String       colFmtR;
+  @Getter
+  private static String       colFmtDbl;
+  @Getter
+  private static String       colFmt;
 
   //   @SuppressWarnings("unused") private Dataset dtset;
 
-  @Getter private List<DtsCol> columns;
-  private Map<String, DtsCol>  nomecol;
-  private StringBuilder        sbIntesta;
+  @Getter
+  private List<DtsCol>        columns;
+  private Map<String, DtsCol> nomecol;
+  private StringBuilder       sbIntesta;
 
   static {
     DtsCols.setWidthCh(colWidth);
@@ -180,7 +186,10 @@ public class DtsCols implements Cloneable {
   }
 
   public int getColIndex(String p_nam) {
-    return nomecol.get(p_nam).getIndex();
+    DtsCol rr = nomecol.get(p_nam);
+    if (null == rr)
+      return -1;
+    return rr.getIndex();
   }
 
   public String csvIntestazione(String p_sep) {

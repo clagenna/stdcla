@@ -1,6 +1,7 @@
 package sm.clagenna.stdcla.sql;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -13,7 +14,7 @@ import sm.clagenna.stdcla.enums.EServerId;
 
 public class DBConnSQL extends DBConn {
 
-  private static final Logger s_log      = LogManager.getLogger(DBConnSQL.class);
+  private static final Logger s_log = LogManager.getLogger(DBConnSQL.class);
 
   //  private static final String CSZ_DBNAME  = "aass";
   //  private static final String CSZ_SQLUSER = "sqlgianni";
@@ -21,12 +22,12 @@ public class DBConnSQL extends DBConn {
   //  private static final int    CN_SERVICE  = 1433;
   @SuppressWarnings("unused")
   private static final String CSZ_DRIVER = "com.mysql.cj.jdbc.Driver";
-  private static final String CSZ_URL    = "jdbc:sqlserver://%s:%d;"             //
-      + "database=%s;"                                                           //
-      + "user=%s;"                                                               //
-      + "password=%s;"                                                           //
-      + "encrypt=false;"                                                         //
-      + "trustServerCertificate=false;"                                          //
+  private static final String CSZ_URL    = "jdbc:sqlserver://%s:%d;"   //
+      + "database=%s;"                                                 //
+      + "user=%s;"                                                     //
+      + "password=%s;"                                                 //
+      + "encrypt=false;"                                               //
+      + "trustServerCertificate=false;"                                //
       + "loginTimeout=10;";
   private static final String QRY_LASTID = "select @@identity";
   private PreparedStatement   m_stmt_lastid;
@@ -93,7 +94,37 @@ public class DBConnSQL extends DBConn {
   }
 
   @Override
+  public void setStmtImporto(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
+    BigDecimal bd = null;
+    if (p_dt instanceof Double dbl) {
+      bd = BigDecimal.valueOf(dbl);
+    } else if (p_dt instanceof Integer ii) {
+      bd = BigDecimal.valueOf(ii);
+    }
+    if (bd != null)
+      p_stmt.setBigDecimal(p_index, bd);
+    else
+      p_stmt.setNull(p_index, Types.DECIMAL);
+  }
+
+  @Override
+  public void setStmtString(PreparedStatement p_stmt, int p_index, Object p_sz) throws SQLException {
+    String sz = null;
+    if (null != p_sz)
+      sz = (String) p_sz;
+    if (null != sz)
+      p_stmt.setString(p_index, sz);
+    else
+      p_stmt.setNull(p_index, Types.VARCHAR);
+  }
+
+  @Override
   public Logger getLog() {
     return s_log;
+  }
+
+  @Override
+  public void changePragma() {
+    // per compensare al SQLite pragma date 'yyyy-MM-dd' 
   }
 }

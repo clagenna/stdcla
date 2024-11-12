@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -11,10 +12,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ParseData {
-  public static SimpleDateFormat  s_fmtDtDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-  public static DateTimeFormatter s_fmtTs     = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-  public static DateTimeFormatter s_fmtDtExif = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss");
-  public static DateTimeFormatter s_fmtDtFile = DateTimeFormatter.ofPattern("'f'yyyyMMdd'_'HHmmss");
+
+  public static final SimpleDateFormat s_fmt       = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+  public static SimpleDateFormat       s_fmtDtDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+  public static DateTimeFormatter      s_fmtTs     = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+  public static DateTimeFormatter      s_fmtDtExif = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss");
+  public static DateTimeFormatter      s_fmtDtFile = DateTimeFormatter.ofPattern("'f'yyyyMMdd'_'HHmmss");
+  public static DateTimeFormatter      s_fmtY4MD   = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.systemDefault()) ;
 
   private static final LocalDateTime s_dtMin;
   private static final LocalDateTime s_dtMax;
@@ -28,6 +32,7 @@ public class ParseData {
       s_fmtDtExif, // 00
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"), // 01
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"), // 02
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"), // 02
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"), // 03
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"), // 04
       DateTimeFormatter.ofPattern("yyyy-MM-dd"), // 05
@@ -139,7 +144,7 @@ public class ParseData {
 
   public OffsetDateTime parseOffsetDateTime(String p_sz, String p_ofs) {
     ZoneOffset offsZone = ZoneOffset.of(p_ofs);
-    LocalDateTime dt = parseData(p_sz);
+    LocalDateTime dt = ParseData.parseData(p_sz);
     OffsetDateTime odt = OffsetDateTime.of(dt, offsZone);
     return odt;
   }

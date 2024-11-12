@@ -6,17 +6,23 @@ import org.apache.logging.log4j.Logger;
 import lombok.Getter;
 import lombok.Setter;
 import sm.clagenna.stdcla.utils.ParseData;
+import sm.clagenna.stdcla.utils.Utils;
 
-class DtsCol implements Cloneable {
+public class DtsCol implements Cloneable {
 
-  private static final Logger    s_log = LogManager.getLogger(DtsCol.class);
+  private static final Logger s_log = LogManager.getLogger(DtsCol.class);
   /** Il nome <b>univoco</b> e <b>case insensitive</b> della colonna */
-  @Getter @Setter private String name;
+  @Getter @Setter
+  private String              name;
   /** la posizione 0-based nel dataset */
-  @Getter @Setter private int    index;
-  @Getter private SqlTypes       type;
-  @Getter @Setter private String format;
-  @Getter private boolean        inferredDate;
+  @Getter @Setter
+  private int                 index;
+  @Getter
+  private SqlTypes            type;
+  @Getter @Setter
+  private String              format;
+  @Getter
+  private boolean             inferredDate;
 
   public DtsCol() {
     index = -1;
@@ -44,27 +50,40 @@ class DtsCol implements Cloneable {
 
   public Object parse(String p_szv) {
     Object obj = null;
-    switch (type) {
-      case SqlTypes.SMALLINT:
-      case SqlTypes.INTEGER:
-        obj = Integer.parseInt(p_szv);
-        break;
-      case SqlTypes.VARCHAR:
-        obj = p_szv;
-        break;
-      case SqlTypes.NUMERIC:
-      case SqlTypes.DECIMAL:
-      case SqlTypes.FLOAT:
-      case SqlTypes.DOUBLE:
-      case SqlTypes.REAL:
-        obj = Double.parseDouble(p_szv.replace(",", "."));
-        break;
-      case SqlTypes.DATE:
-        obj = ParseData.parseData(p_szv);
-        break;
-      default:
-        s_log.error("Non interpreto tipo {} per col {}", type, name);
-        break;
+    String sz2 = null;
+    try {
+      switch (type) {
+        case SqlTypes.SMALLINT:
+        case SqlTypes.INTEGER:
+          if (null != p_szv) 
+            sz2 = p_szv.trim();
+          if ( null != sz2 && sz2.length() > 0)
+            obj = Integer.parseInt(sz2);
+          break;
+        case SqlTypes.VARCHAR:
+          obj = p_szv;
+          break;
+        case SqlTypes.NUMERIC:
+        case SqlTypes.DECIMAL:
+        case SqlTypes.FLOAT:
+        case SqlTypes.DOUBLE:
+        case SqlTypes.REAL:
+          sz2 = p_szv.trim();
+          if (sz2.length() > 0) {
+            //            sz2 = sz2.replace(",", ".");
+            //            obj = Double.parseDouble(sz2);
+            obj = Utils.parseDouble(sz2);
+          }
+          break;
+        case SqlTypes.DATE:
+          obj = ParseData.parseData(p_szv);
+          break;
+        default:
+          s_log.error("Non interpreto tipo {} per col {}", type, name);
+          break;
+      }
+    } catch (Exception e) {
+      s_log.error("Excp: interpreto tipo {} per col {}, err={}", type, name, e.getMessage());
     }
     return obj;
   }

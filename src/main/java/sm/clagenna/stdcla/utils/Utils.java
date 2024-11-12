@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.Base64;
@@ -260,12 +261,16 @@ public class Utils {
   public static Double parseDouble(String psz) {
     if (null == S_LOCALE)
       Utils.setLocale(Locale.getDefault());
+    NumberFormat fmt = NumberFormat.getInstance(S_LOCALE);
     Double ii = null;
     if (null == psz)
       return ii;
     try {
-      ii = Double.parseDouble(psz.trim().replace(S_Group_Sep, "").replace(S_Decimal_Sep, "."));
-    } catch (NumberFormatException ex) {
+      // cambiare i "." e "," a priori è un arbitrio, va chiamata la Utils.setLocale()
+      // String sz = psz.trim().replace(S_Group_Sep, "").replace(S_Decimal_Sep, ".");
+      String sz = psz.trim();
+      ii = fmt.parse(sz).doubleValue();
+    } catch (NumberFormatException | ParseException ex) {
       //
     }
     return ii;

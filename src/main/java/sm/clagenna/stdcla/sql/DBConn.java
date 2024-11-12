@@ -41,6 +41,8 @@ public abstract class DBConn implements Closeable {
 
   public abstract int getLastIdentity() throws SQLException;
 
+  public abstract void changePragma();
+
   /**
    * La funzione serve per suplire alla (pessima) caratteristica di SQLite3 che
    * <b>NON</b> ha il tipo dato "DATE"!
@@ -53,6 +55,10 @@ public abstract class DBConn implements Closeable {
    * @throws SQLException
    */
   public abstract void setStmtDate(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException;
+
+  public abstract void setStmtImporto(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException;
+
+  public abstract void setStmtString(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException;
 
   public Connection doConn() {
     String szUrl = getURL();
@@ -87,5 +93,5 @@ public abstract class DBConn implements Closeable {
     szv = p_props.getProperty(AppProperties.CSZ_PROP_DB_passwd);
     setPasswd(szv);
   }
-
+  
 }

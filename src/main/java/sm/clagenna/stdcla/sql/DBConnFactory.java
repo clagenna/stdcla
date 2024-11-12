@@ -37,7 +37,7 @@ public class DBConnFactory {
     EServerId tip = EServerId.parse(p_id);
     if (tip == null) {
       s_log.error("Non capisco il tipo di DB: {}", p_id);
-      throw new UnsupportedOperationException("DBConnFactory() non e' singleton");
+      throw new UnsupportedOperationException("Non capisco il tipo di DB:" + p_id);
     }
     conn = null;
     switch (tip) {

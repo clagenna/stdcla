@@ -5,6 +5,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,9 +19,10 @@ import sm.clagenna.stdcla.sys.ex.DatasetException;
 import sm.clagenna.stdcla.utils.ParseData;
 
 public class DtsRow implements Cloneable {
-  private static final Logger     s_log = LogManager.getLogger(DtsRow.class);
-  private List<Object>            valori;
-  @Getter @Setter private Dataset dataset;
+  private static final Logger s_log = LogManager.getLogger(DtsRow.class);
+  private List<Object>        valori;
+  @Getter @Setter
+  private Dataset             dataset;
 
   private DtsRow() {
 
@@ -69,6 +71,11 @@ public class DtsRow implements Cloneable {
           case REAL:
             val = p_res.getDouble(nCol);
             break;
+          case NUMERIC:
+            val = p_res.getObject(nCol);
+            if (null != val)
+              val = val.toString();
+            break;
 
           default:
             s_log.error("Non riconosco tipo della col {}", col);
@@ -94,7 +101,7 @@ public class DtsRow implements Cloneable {
   }
 
   /**
-   * Dalo un {@link List<String>} dalla lettura di un CSV popolo il row attuale
+   * Dato un {@link List<String>} dalla lettura di un CSV popolo il row attuale
    *
    * @param p_rec
    * @return
@@ -103,11 +110,18 @@ public class DtsRow implements Cloneable {
     int nRet = -1;
     if (null == p_rec || p_rec.size() == 0)
       return nRet;
+    int nMaxCol = dataset.getQtaCols();
     int nCol = 0;
+    boolean bOnlyKCols = dataset.isOnlyKnownCols();
     for (String szv : p_rec) {
-      DtsCol col = dataset.getColum(nCol);
-      Object o = col.parse(szv);
-      valori.set(nCol++, o);
+      if (bOnlyKCols && nCol >= nMaxCol)
+        break;
+      if (nCol < nMaxCol) {
+        DtsCol col = dataset.getColum(nCol);
+        Object o = col.parse(szv);
+        valori.set(nCol++, o);
+      } else if (null != szv && szv.trim().length() > 0)
+        s_log.warn("Too many cols (n={}) on Row {}", nCol, p_rec.toString());
     }
     return nRet;
 
@@ -120,6 +134,8 @@ public class DtsRow implements Cloneable {
   public Object get(String col) {
     Object ret = null;
     int ii = dataset.getColumNo(col);
+    if (ii < 0)
+      return ret;
     ret = valori.get(ii);
     return ret;
   }
@@ -271,6 +287,32 @@ public class DtsRow implements Cloneable {
       mp.put(szNam, obj);
     }
     return mp;
+  }
+
+  public List<Object> getValues() {
+    return valori;
+  }
+
+  public List<Object> getValues(boolean bEdit) {
+    if ( !bEdit)
+      return valori;
+    List<Object> loc = new ArrayList<Object>();
+    for (Object o : valori) {
+      Object ret = o;
+      String szcls = null != o ? o.getClass().getSimpleName() : "*NULL*";
+      switch (szcls) {
+        case "Timestamp":
+          Date dt = new Date( ((Timestamp) o).getTime());
+          ret = ParseData.s_fmtY4MD.format(dt.toInstant());
+          break;
+        default:
+          break;
+      }
+      // String sz = null != o ? o.toString() : "";
+      // System.out.printf("DtsRow.getValues([%s]=\"%s\")\n", szcls, sz);
+      loc.add(ret);
+    }
+    return loc;
   }
 
 }
