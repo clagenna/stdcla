@@ -21,7 +21,7 @@ import sm.clagenna.stdcla.utils.Utils;
 
 public class DBConnSQLite extends DBConn {
   private static final Logger s_log = LogManager.getLogger(DBConnSQLite.class);
-  // private static final String CSZ_DBNAME = "data/sql/SQLite/SQLaass.sqlite3";
+
   private static final String CSZ_URL = "jdbc:sqlite:%s";
 
   private static final String QRY_LASTID = "select last_insert_rowid()";

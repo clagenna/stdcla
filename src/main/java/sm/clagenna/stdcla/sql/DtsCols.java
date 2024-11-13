@@ -98,6 +98,7 @@ public class DtsCols implements Cloneable {
             szFmt = String.format("%%%dd ", colWidth);
             szTyp = "INTEGER";
             break;
+          case Types.NVARCHAR:
           case Types.VARCHAR:
             szFmt = String.format("%%-%ds ", colWidth);
             szTyp = "VARCHAR";

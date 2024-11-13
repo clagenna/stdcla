@@ -13,13 +13,8 @@ import org.apache.logging.log4j.Logger;
 import sm.clagenna.stdcla.enums.EServerId;
 
 public class DBConnSQL extends DBConn {
-
   private static final Logger s_log = LogManager.getLogger(DBConnSQL.class);
 
-  //  private static final String CSZ_DBNAME  = "aass";
-  //  private static final String CSZ_SQLUSER = "sqlgianni";
-  //  private static final String CSZ_SQLPSWD = "sicuelserver";
-  //  private static final int    CN_SERVICE  = 1433;
   @SuppressWarnings("unused")
   private static final String CSZ_DRIVER = "com.mysql.cj.jdbc.Driver";
   private static final String CSZ_URL    = "jdbc:sqlserver://%s:%d;"   //
