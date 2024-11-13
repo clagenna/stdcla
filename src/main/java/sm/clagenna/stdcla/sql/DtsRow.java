@@ -1,6 +1,5 @@
 package sm.clagenna.stdcla.sql;
 
-import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -67,7 +66,7 @@ public class DtsRow implements Cloneable {
             break;
           case DATE:
             valo = p_res.getObject(nCol);
-            if ( valo != null && !valo.getClass().getSimpleName().equals("Date"))
+            if (valo != null && !valo.getClass().getSimpleName().equals("Date"))
               System.out.println("DtsRow.addRow()");
             val = p_res.getDate(nCol);
             break;

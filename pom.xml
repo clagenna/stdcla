@@ -1,4 +1,6 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="https://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>sm.clagenna</groupId>
 	<artifactId>stdcla</artifactId>
@@ -7,11 +9,12 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<compiler.plugin>3.12.1</compiler.plugin>
-		<log4j2.vers>2.22.1</log4j2.vers>
+		<log4j2.vers>2.24.1</log4j2.vers>
 		<slf4j.version>2.0.11</slf4j.version>
 		<maven.compiler.source>21</maven.compiler.source>
 		<maven.compiler.target>21</maven.compiler.target>
-		<!-- la versione 22.0.1 contiene nel POM padre un errore di var irrisolta: "javafx.platform" -->
+		<!-- la versione 22.0.1 contiene nel POM padre un errore di var
+		irrisolta: "javafx.platform" -->
 		<javafx.version>23-ea+22</javafx.version>
 		<jackson.version>2.11.1</jackson.version>
 		<lombok.version>1.18.32</lombok.version>
@@ -40,16 +43,16 @@
 			<version>1.0-alpha2</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.openjfx/javafx -->
-        <!--	questa **non ci va**, e' il progetto padre dei tutte le JavaFx -->
-        <!-- 	
+		<!--	questa **non ci va**, e' il progetto padre dei tutte le JavaFx -->
+		<!-- 	
 	    <dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx</artifactId>
 			<version>${javafx.version}</version>
 			<type>pom</type>
 		</dependency> 
-		-->	
-	    <dependency>
+		-->
+		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-controls</artifactId>
 			<version>${javafx.version}</version>
@@ -92,32 +95,47 @@
 			<artifactId>log4j-core</artifactId>
 			<version>${log4j2.vers}</version>
 		</dependency>
+		<dependency>
+			<groupId>biz.aQute.bnd</groupId>
+			<artifactId>biz.aQute.bnd.annotation</artifactId>
+			<version>6.3.1</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>osgi.annotation</artifactId>
+			<version>8.1.0</version>
+			<scope>provided</scope>
+		</dependency>
+
+
 		<!-- vedi sito: https://www.baeldung.com/slf4j-with-log4j2-logback  -->
-<!--		<dependency>-->
-<!--		    <groupId>org.apache.logging.log4j</groupId>-->
-<!--		    <artifactId>log4j-slf4j-impl</artifactId>-->
-<!--		    <version>${log4j2.vers}</version>-->
-<!--		</dependency>-->
-<!--		<dependency>-->
-<!--			<groupId>org.apache.logging.log4j</groupId>-->
-<!--			<artifactId>log4j-slf4j-impl</artifactId>-->
-<!--			<version>${log4j2.vers}</version>-->
-<!--		</dependency>-->
+		<!--		<dependency>-->
+		<!--		    <groupId>org.apache.logging.log4j</groupId>-->
+		<!--		    <artifactId>log4j-slf4j-impl</artifactId>-->
+		<!--		    <version>${log4j2.vers}</version>-->
+		<!--		</dependency>-->
+		<!--		<dependency>-->
+		<!--			<groupId>org.apache.logging.log4j</groupId>-->
+		<!--			<artifactId>log4j-slf4j-impl</artifactId>-->
+		<!--			<version>${log4j2.vers}</version>-->
+		<!--		</dependency>-->
 
 
-
-<!-- Per il binding vedi: https://logging.apache.org/log4j/2.x/log4j-slf4j-impl.html   -->
+		<!-- Per il binding vedi:
+		https://logging.apache.org/log4j/2.x/log4j-slf4j-impl.html   -->
 		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
 		<dependency>
-		    <groupId>org.slf4j</groupId>
-		    <artifactId>slf4j-api</artifactId>
-		    <version>${slf4j.version}</version>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-simple -->
 		<dependency>
-		    <groupId>org.slf4j</groupId>
-		    <artifactId>slf4j-simple</artifactId>
-		    <version>${slf4j.version}</version>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>${slf4j.version}</version>
 		</dependency>
 
 		<dependency>
@@ -127,7 +145,7 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	
+
 	<build>
 		<finalName>${project.name}</finalName>
 		<plugins>
@@ -167,7 +185,8 @@
 						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
 						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
 						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED</arg>
+						<arg>
+							-J--add-opens=jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED</arg>
 					</compilerArgs>
 					<annotationProcessorPaths>
 						<path>

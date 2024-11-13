@@ -64,6 +64,8 @@ public abstract class DBConn implements Closeable {
     String szUrl = getURL();
     try {
       conn = DriverManager.getConnection(szUrl, user, passwd);
+      EServerId id = getServerId();
+      getLog().info("Connected DBType={}, DB name={}", id, getDbname());
     } catch (SQLException e) {
       getLog().error("Error in open connection:{}", e.getMessage(), e);
     }

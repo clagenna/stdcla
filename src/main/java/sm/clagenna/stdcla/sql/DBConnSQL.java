@@ -6,6 +6,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -80,6 +84,13 @@ public class DBConnSQL extends DBConn {
       dt = (java.sql.Date) p_dt;
     } else if (p_dt instanceof java.util.Date) {
       java.util.Date udt = (java.util.Date) p_dt;
+      dt = new java.sql.Date(udt.getTime());
+    } else if (p_dt instanceof LocalDate ldt) {
+      java.util.Date udt = java.util.Date.from(ldt.atStartOfDay(ZoneId.systemDefault()).toInstant());
+      dt = new java.sql.Date(udt.getTime());
+    } else if (p_dt instanceof LocalDateTime ldt) {
+      ZonedDateTime zo = ldt.atZone(ZoneId.systemDefault());
+      java.util.Date udt = java.util.Date.from(zo.toInstant());
       dt = new java.sql.Date(udt.getTime());
     }
     if (dt != null)
