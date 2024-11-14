@@ -151,7 +151,7 @@ public class AppProperties {
         if (is != null)
           properties.load(is);
         else
-          s_log.error("property file {} null!", p_fiProp.getAbsolutePath());
+          s_log.error("property file in JAR {} is null!", p_fiProp.getAbsolutePath());
         setPropertyFile(p_fiProp);
       } catch (IOException e) {
         s_log.error("Errore apertura property file {}", p_fiProp.getAbsolutePath(), e);

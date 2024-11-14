@@ -52,6 +52,7 @@ public class Dataset implements Closeable {
    */
   @Getter @Setter
   private boolean             intToDouble;
+  private int skipRows;
 
   public Dataset() {
     setTipoServer(EServerId.SqlServer);
@@ -125,6 +126,17 @@ public class Dataset implements Closeable {
           .collect(Collectors.toList());
 
       List<String> liNames = recs.get(0);
+      skipRows=1;
+      if (liNames.size() == 1 && liNames.get(0).toString().startsWith("sep=")) {
+        liNames = recs.get(1);
+        skipRows++;
+      }
+      int k=0;
+      for ( String sz : liNames) {
+        if ( sz.startsWith("\""))
+          liNames.set(k, sz.replaceAll("\"", ""));
+        k++;
+      }
       List<SqlTypes> liTypes = guessSqlTypes(recs);
       int diff = liNames.size() - liTypes.size();
       for (; diff > 0; diff--)
@@ -155,7 +167,7 @@ public class Dataset implements Closeable {
     try (BufferedReader reader = Files.newBufferedReader(p_csvFil)) {
       reader //
           .lines() //
-          .skip(1) //
+          .skip(skipRows) //
           .map(li -> Arrays.asList(li.split(csvdelim))) //
           .forEach(s -> parseRow(s));
     }
@@ -172,6 +184,10 @@ public class Dataset implements Closeable {
     List<SqlTypes> liTy = new ArrayList<SqlTypes>();
     int k = 0;
     for (List<String> riga : p_recs) {
+      // salto il "sep="
+      if (riga.size() <= 1)
+        continue;
+      // salto i "nomi colonna"
       if (k++ < 1)
         continue;
       if (k > 20)
@@ -194,7 +210,7 @@ public class Dataset implements Closeable {
 
   private SqlTypes guessSqlType(String p_sz) {
     // ******   date *********
-    LocalDateTime dt = ParseData.parseData(p_sz);
+    LocalDateTime dt = ParseData.parseData(p_sz.replaceAll("\"",""));
     if (null != dt)
       return SqlTypes.DATE;
     // ******* double ********

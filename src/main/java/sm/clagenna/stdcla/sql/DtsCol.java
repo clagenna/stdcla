@@ -55,9 +55,9 @@ public class DtsCol implements Cloneable {
       switch (type) {
         case SqlTypes.SMALLINT:
         case SqlTypes.INTEGER:
-          if (null != p_szv) 
+          if (null != p_szv)
             sz2 = p_szv.trim();
-          if ( null != sz2 && sz2.length() > 0)
+          if (null != sz2 && sz2.length() > 0)
             obj = Integer.parseInt(sz2);
           break;
         case SqlTypes.VARCHAR:
@@ -76,6 +76,8 @@ public class DtsCol implements Cloneable {
           }
           break;
         case SqlTypes.DATE:
+          if (p_szv.startsWith("\""))
+            p_szv = p_szv.replaceAll("\"", "");
           obj = ParseData.parseData(p_szv);
           break;
         default:
