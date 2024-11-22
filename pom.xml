@@ -15,10 +15,12 @@
 		<maven.compiler.target>21</maven.compiler.target>
 		<!-- la versione 22.0.1 contiene nel POM padre un errore di var
 		irrisolta: "javafx.platform" -->
-		<javafx.version>23-ea+22</javafx.version>
+		<javafx.version>23.0.1</javafx.version>
 		<jackson.version>2.11.1</jackson.version>
 		<lombok.version>1.18.32</lombok.version>
 		<sqlite3.version>3.45.0.0</sqlite3.version>
+		<apachePoi.version>5.2.4</apachePoi.version>
+		<commons-io.version>2.14.0</commons-io.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -95,13 +97,31 @@
 			<artifactId>log4j-core</artifactId>
 			<version>${log4j2.vers}</version>
 		</dependency>
+<!--		 https://mvnrepository.com/artifact/org.apache.poi/poi 
+		 https://mvnrepository.com/artifact/commons-io/commons-io 
+		<dependency>
+		    <groupId>commons-io</groupId>
+		    <artifactId>commons-io</artifactId>
+		    <version>${commons-io.version}</version>
+		</dependency  -->		
+        <dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>${apachePoi.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>${apachePoi.version}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>biz.aQute.bnd</groupId>
 			<artifactId>biz.aQute.bnd.annotation</artifactId>
 			<version>6.3.1</version>
 			<scope>provided</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>osgi.annotation</artifactId>
@@ -176,15 +196,24 @@
 					<fork>true</fork>
 					<compilerArgs>
 						<arg>-Xlint:all</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+						<arg>
+							-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+						<arg>
+							-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+						<arg>
+							-J--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+						<arg>
+							-J--add-opens=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+						<arg>
+							-J--add-opens=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
+						<arg>
+							-J--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+						<arg>
+							-J--add-opens=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+						<arg>
+							-J--add-opens=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+						<arg>
+							-J--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
 						<arg>
 							-J--add-opens=jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED</arg>
 					</compilerArgs>

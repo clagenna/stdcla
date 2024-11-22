@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Map;
 
 import org.apache.logging.log4j.Logger;
 
@@ -60,9 +61,12 @@ public abstract class DBConn implements Closeable {
 
   public abstract void setStmtString(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException;
 
+  public abstract Map<String, String> getListDBViews();
+
   public Connection doConn() {
     String szUrl = getURL();
     try {
+      changePragma();
       conn = DriverManager.getConnection(szUrl, user, passwd);
       EServerId id = getServerId();
       getLog().info("Connected DBType={}, DB name={}", id, getDbname());
@@ -95,5 +99,5 @@ public abstract class DBConn implements Closeable {
     szv = p_props.getProperty(AppProperties.CSZ_PROP_DB_passwd);
     setPasswd(szv);
   }
-  
+
 }

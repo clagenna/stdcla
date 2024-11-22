@@ -2,14 +2,18 @@ package sm.clagenna.stdcla.sql;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,16 +24,19 @@ public class DBConnSQL extends DBConn {
   private static final Logger s_log = LogManager.getLogger(DBConnSQL.class);
 
   @SuppressWarnings("unused")
-  private static final String CSZ_DRIVER = "com.mysql.cj.jdbc.Driver";
-  private static final String CSZ_URL    = "jdbc:sqlserver://%s:%d;"   //
-      + "database=%s;"                                                 //
-      + "user=%s;"                                                     //
-      + "password=%s;"                                                 //
-      + "encrypt=false;"                                               //
-      + "trustServerCertificate=false;"                                //
+  private static final String CSZ_DRIVER     = "com.mysql.cj.jdbc.Driver";
+  private static final String CSZ_URL        = "jdbc:sqlserver://%s:%d;"                  //
+      + "database=%s;"                                                                    //
+      + "user=%s;"                                                                        //
+      + "password=%s;"                                                                    //
+      + "encrypt=false;"                                                                  //
+      + "trustServerCertificate=false;"                                                   //
       + "loginTimeout=10;";
-  private static final String QRY_LASTID = "select @@identity";
-  private PreparedStatement   m_stmt_lastid;
+  private static final String QRY_LASTID     = "select @@identity";
+  private static final String QRY_LIST_VIEWS = "SELECT name FROM sys.views ORDER BY name";
+  private static final String QRY_PATT_VIEW  = "SELECT * FROM %s WHERE 1=1";
+
+  private PreparedStatement m_stmt_lastid;
 
   public DBConnSQL() {
     //
@@ -63,6 +70,23 @@ public class DBConnSQL extends DBConn {
       }
     }
     return retId;
+  }
+
+  @Override
+  public Map<String, String> getListDBViews() {
+    Connection conn = getConn();
+    Map<String, String> liViews = new HashMap<>();
+    // liViews.put((String)null, null);
+    try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(QRY_LIST_VIEWS)) {
+      while (rs.next()) {
+        String view = rs.getString(1);
+        String qry = String.format(QRY_PATT_VIEW, view);
+        liViews.put(view, qry);
+      }
+    } catch (SQLException e) {
+      s_log.error("Query {}; err={}", QRY_LIST_VIEWS, e.getMessage(), e);
+    }
+    return liViews;
   }
 
   @Override
@@ -131,6 +155,6 @@ public class DBConnSQL extends DBConn {
 
   @Override
   public void changePragma() {
-    // per compensare al SQLite pragma date 'yyyy-MM-dd' 
+    // per compensare al SQLite pragma date 'yyyy-MM-dd'
   }
 }

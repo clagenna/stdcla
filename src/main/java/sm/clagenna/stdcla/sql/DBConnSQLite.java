@@ -1,14 +1,18 @@
 package sm.clagenna.stdcla.sql;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
@@ -24,8 +28,11 @@ public class DBConnSQLite extends DBConn {
 
   private static final String CSZ_URL = "jdbc:sqlite:%s";
 
-  private static final String QRY_LASTID = "select last_insert_rowid()";
-  private PreparedStatement   m_stmt_lastid;
+  private static final String QRY_LASTID     = "select last_insert_rowid()";
+  private static final String QRY_LIST_VIEWS = "SELECT name FROM sqlite_master WHERE type = 'view'";
+  private static final String QRY_PATT_VIEW  = "SELECT * FROM %s WHERE 1=1";
+
+  private PreparedStatement m_stmt_lastid;
 
   static {
     try {
@@ -69,6 +76,23 @@ public class DBConnSQLite extends DBConn {
       }
     }
     return retId;
+  }
+
+  @Override
+  public Map<String, String> getListDBViews() {
+    Connection conn = getConn();
+    Map<String, String> liViews = new HashMap<>();
+    // liViews.put((String)null, null);
+    try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(QRY_LIST_VIEWS)) {
+      while (rs.next()) {
+        String view = rs.getString(1);
+        String qry = String.format(QRY_PATT_VIEW, view);
+        liViews.put(view, qry);
+      }
+    } catch (SQLException e) {
+      s_log.error("Query {}; err={}", QRY_LIST_VIEWS, e.getMessage(), e);
+    }
+    return liViews;
   }
 
   @Override
@@ -129,9 +153,13 @@ public class DBConnSQLite extends DBConn {
       java.util.Date udt = java.util.Date.from(zo.toInstant());
       dt = new java.sql.Date(udt.getTime());
     }
-    if (dt != null) {
-      String sz = Utils.s_fmtY4MD.format(dt);
-      p_stmt.setString(p_index, sz);
+    try {
+      if (dt != null) {
+        String sz = Utils.s_fmtY4MD.format(dt);
+        p_stmt.setString(p_index, sz);
+      }
+    } catch (ArrayIndexOutOfBoundsException e) {
+      e.printStackTrace();
     }
   }
 

@@ -276,6 +276,17 @@ public class Utils {
     return ii;
   }
 
+  public static String formatDouble(Double dbl) {
+    String szRet = null;
+    if (null == dbl)
+      return szRet;
+    if (null == S_LOCALE)
+      Utils.setLocale(Locale.getDefault());
+    NumberFormat fmt = NumberFormat.getInstance(S_LOCALE);
+    szRet = fmt.format(dbl);
+    return szRet;
+  }
+
   /**
    * Toglie dalle date Gregoriane es:<br/>
    * <code>2017-09-22T07:31:05.231+02Z</code><br/>
@@ -316,6 +327,23 @@ public class Utils {
       l_ex = l_ex.getCause();
     }
     return szMsg.toString();
+  }
+
+  /**
+   * Torna l'estensione del file (comprensiva del punto '.') in lowercase
+   * 
+   * @param p_pth
+   * @return
+   */
+  public static String getFileExtention(Path p_pth) {
+    if (null == p_pth)
+      return null;
+    String szExt = p_pth.getName(p_pth.getNameCount() - 1).toString();
+    int n = szExt.lastIndexOf(".");
+    if (n >= 0)
+      szExt = szExt.substring(n);
+    szExt = szExt.toLowerCase();
+    return szExt;
   }
 
   /**

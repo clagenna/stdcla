@@ -18,7 +18,7 @@ public class ParseData {
   public static DateTimeFormatter      s_fmtTs     = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
   public static DateTimeFormatter      s_fmtDtExif = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss");
   public static DateTimeFormatter      s_fmtDtFile = DateTimeFormatter.ofPattern("'f'yyyyMMdd'_'HHmmss");
-  public static DateTimeFormatter      s_fmtY4MD   = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.systemDefault()) ;
+  public static DateTimeFormatter      s_fmtY4MD   = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.systemDefault());
 
   private static final LocalDateTime s_dtMin;
   private static final LocalDateTime s_dtMax;
@@ -112,7 +112,7 @@ public class ParseData {
     return dtRet;
   }
 
-  public LocalDateTime guessData(String p_sz) {
+  public static LocalDateTime guessData(String p_sz) {
     LocalDateTime dtRet = null;
     if (p_sz == null)
       return null;
@@ -147,5 +147,18 @@ public class ParseData {
     LocalDateTime dt = ParseData.parseData(p_sz);
     OffsetDateTime odt = OffsetDateTime.of(dt, offsZone);
     return odt;
+  }
+
+  public static String formatDate(LocalDateTime p_ldt) {
+    String szRet = null;
+    if (null == p_ldt)
+      return szRet;
+    try {
+      szRet = s_fmtTs.format(p_ldt);
+      szRet = szRet.replace(" 00:00:00", "");
+    } catch (Exception e) {
+      // e.printStackTrace();
+    }
+    return szRet;
   }
 }

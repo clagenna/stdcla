@@ -3,6 +3,8 @@ package sm.clagenna.stdcla.sql;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.Closeable;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,6 +16,7 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,12 +24,20 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import lombok.Getter;
 import lombok.Setter;
 import sm.clagenna.stdcla.enums.EServerId;
 import sm.clagenna.stdcla.sys.ex.DatasetException;
 import sm.clagenna.stdcla.utils.ParseData;
+import sm.clagenna.stdcla.utils.Utils;
 
 public class Dataset implements Closeable {
   private static final Logger s_log             = LogManager.getLogger(Dataset.class);
@@ -52,7 +63,7 @@ public class Dataset implements Closeable {
    */
   @Getter @Setter
   private boolean             intToDouble;
-  private int skipRows;
+  private int                 skipRows;
 
   public Dataset() {
     setTipoServer(EServerId.SqlServer);
@@ -114,6 +125,7 @@ public class Dataset implements Closeable {
     } catch (IOException e) {
       throw new DatasetException("Write :" + p_fil.toString(), e);
     }
+    s_log.info("Salvato file CSV {}", p_fil.toString());
   }
 
   private void creaCsvCols(Path p_csvFil) throws IOException {
@@ -126,15 +138,15 @@ public class Dataset implements Closeable {
           .collect(Collectors.toList());
 
       List<String> liNames = recs.get(0);
-      skipRows=1;
+      skipRows = 1;
       if (liNames.size() == 1 && liNames.get(0).toString().startsWith("sep=")) {
         liNames = recs.get(1);
         skipRows++;
       }
-      int k=0;
-      for ( String sz : liNames) {
-        if ( sz.startsWith("\""))
-          liNames.set(k, sz.replaceAll("\"", ""));
+      int k = 0;
+      for (String sz : liNames) {
+        if (sz.startsWith("\""))
+          liNames.set(k, sz.replace("\"", ""));
         k++;
       }
       List<SqlTypes> liTypes = guessSqlTypes(recs);
@@ -173,6 +185,239 @@ public class Dataset implements Closeable {
     }
   }
 
+  public Dataset readexcel(Path p_excelFil) throws IOException {
+    String szExt = Utils.getFileExtention(p_excelFil);
+    switch (szExt) {
+      case ".xls":
+        // formato Excel 1995 -
+        readExcelHSSF(p_excelFil);
+        break;
+      case ".xlsx":
+        readExcelXSSF(p_excelFil);
+        break;
+    }
+    return this;
+  }
+
+  private void readExcelHSSF(Path p_excelFil) throws FileNotFoundException, IOException {
+    if (null == columns || columns.size() == 0)
+      creaExcelHSSFCols(p_excelFil);
+    readExcelHSSFFile(p_excelFil);
+  }
+
+  private void creaExcelHSSFCols(Path p_excelFil) throws FileNotFoundException, IOException {
+    List<List<String>> recs = leggiPrimeRigheHSSF(p_excelFil);
+    List<String> liNames = recs.get(0);
+    skipRows = 1;
+    if (liNames.size() == 1) {
+      liNames = recs.get(1);
+      skipRows++;
+    }
+    int k = 0;
+    for (String sz : liNames) {
+      if (sz.startsWith("\""))
+        liNames.set(k, sz.replace("\"", ""));
+      // se ci sono parentesi nei nomi tolgo tutto
+      if (sz.contains("(")) {
+        int n = sz.indexOf("(");
+        if (n > 0) {
+          sz = sz.substring(0, n);
+          liNames.set(k, sz);
+        }
+      }
+      k++;
+    }
+    List<SqlTypes> liTypes = guessSqlTypes(recs);
+    int diff = liNames.size() - liTypes.size();
+    for (; diff > 0; diff--)
+      liTypes.add(SqlTypes.VARCHAR);
+
+    Map<String, SqlTypes> mpCols = new LinkedHashMap<>();
+    int i = 0;
+    try {
+      for (String na : liNames)
+        mpCols.put(na.trim(), liTypes.get(i++));
+    } catch (Exception e) {
+      s_log.error("Errore crea DataSet su file {}, err={}", p_excelFil.getFileName().toString(), e.getMessage());
+    }
+    creaCols(mpCols);
+  }
+
+  private List<List<String>> leggiPrimeRigheHSSF(Path p_excelFil) throws FileNotFoundException, IOException {
+    List<List<String>> righe = new ArrayList<>();
+    try (FileInputStream file = new FileInputStream(p_excelFil.toFile())) {
+      try (HSSFWorkbook workbook = new HSSFWorkbook(file)) {
+
+        HSSFSheet sheet = workbook.getSheetAt(0);
+        Iterator<Row> rowIterator = sheet.iterator();
+        while (rowIterator.hasNext()) {
+          Row row = rowIterator.next();
+          Iterator<Cell> cellIterator = row.cellIterator();
+          List<String> liRiga = new ArrayList<>();
+          while (cellIterator.hasNext()) {
+            Cell cell = cellIterator.next();
+            switch (cell.getCellType()) {
+              case CellType.NUMERIC:
+                liRiga.add(Double.toString(cell.getNumericCellValue()));
+                break;
+              case CellType.STRING:
+                liRiga.add(cell.getStringCellValue());
+                break;
+              default:
+                s_log.warn("Cella non riconosciuta:{}", cell.getStringCellValue());
+                break;
+            }
+          }
+          righe.add(liRiga);
+          if (righe.size() > 20)
+            break;
+        }
+      }
+    }
+    return righe;
+  }
+
+  private void readExcelHSSFFile(Path p_excelFil) throws FileNotFoundException, IOException {
+    try (FileInputStream file = new FileInputStream(p_excelFil.toFile())) {
+      try (HSSFWorkbook workbook = new HSSFWorkbook(file)) {
+        HSSFSheet sheet = workbook.getSheetAt(0);
+        Iterator<Row> rowIterator = sheet.iterator();
+        int qtaRighe = 0;
+        while (rowIterator.hasNext()) {
+          Row row = rowIterator.next();
+          if (qtaRighe++ < skipRows)
+            continue;
+          Iterator<Cell> cellIterator = row.cellIterator();
+          List<String> liRiga = new ArrayList<>();
+          while (cellIterator.hasNext()) {
+            Cell cell = cellIterator.next();
+            switch (cell.getCellType()) {
+              case CellType.NUMERIC:
+                liRiga.add(Utils.formatDouble(cell.getNumericCellValue()));
+                break;
+              case CellType.STRING:
+                liRiga.add(cell.getStringCellValue());
+                break;
+              default:
+                s_log.warn("Cella non riconosciuta:{}", cell.getStringCellValue());
+                break;
+            }
+          }
+          parseRow(liRiga);
+        }
+      }
+    }
+  }
+
+  private void readExcelXSSF(Path p_excelFil) throws FileNotFoundException, IOException {
+    if (null == columns || columns.size() == 0)
+      creaExcelXSSFCols(p_excelFil);
+    readExcelXSSFFile(p_excelFil);
+  }
+
+  private void creaExcelXSSFCols(Path p_excelFil) throws FileNotFoundException, IOException {
+    List<List<String>> recs = leggiPrimeRigheXSSF(p_excelFil);
+    List<String> liNames = recs.get(0);
+    skipRows = 1;
+    if (liNames.size() == 1) {
+      liNames = recs.get(1);
+      skipRows++;
+    }
+    int k = 0;
+    for (String sz : liNames) {
+      if (sz.startsWith("\""))
+        liNames.set(k, sz.replace("\"", ""));
+      // se ci sono parentesi nei nomi tolgo tutto
+      if (sz.contains("(")) {
+        int n = sz.indexOf("(");
+        if (n > 0) {
+          sz = sz.substring(0, n);
+          liNames.set(k, sz);
+        }
+      }
+      k++;
+    }
+    List<SqlTypes> liTypes = guessSqlTypes(recs);
+    int diff = liNames.size() - liTypes.size();
+    for (; diff > 0; diff--)
+      liTypes.add(SqlTypes.VARCHAR);
+
+    Map<String, SqlTypes> mpCols = new LinkedHashMap<>();
+    int i = 0;
+    try {
+      for (String na : liNames)
+        mpCols.put(na.trim(), liTypes.get(i++));
+    } catch (Exception e) {
+      s_log.error("Errore crea DataSet su file {}, err={}", p_excelFil.getFileName().toString(), e.getMessage());
+    }
+    creaCols(mpCols);
+  }
+
+  private List<List<String>> leggiPrimeRigheXSSF(Path p_excelFil) throws FileNotFoundException, IOException {
+    List<List<String>> righe = new ArrayList<>();
+    try (FileInputStream file = new FileInputStream(p_excelFil.toFile())) {
+      try (XSSFWorkbook workbook = new XSSFWorkbook(file)) {
+        XSSFSheet sheet = workbook.getSheetAt(0);
+        Iterator<Row> rowIterator = sheet.iterator();
+        while (rowIterator.hasNext()) {
+          Row row = rowIterator.next();
+          Iterator<Cell> cellIterator = row.cellIterator();
+          List<String> liRiga = new ArrayList<>();
+          while (cellIterator.hasNext()) {
+            Cell cell = cellIterator.next();
+            switch (cell.getCellType()) {
+              case CellType.NUMERIC:
+                liRiga.add(Double.toString(cell.getNumericCellValue()));
+                break;
+              case CellType.STRING:
+                liRiga.add(cell.getStringCellValue());
+                break;
+              default:
+                s_log.warn("Cella non riconosciuta:{}", cell.getStringCellValue());
+                break;
+            }
+          }
+          righe.add(liRiga);
+          if (righe.size() > 20)
+            break;
+        }
+      }
+    }
+    return righe;
+  }
+
+  private void readExcelXSSFFile(Path p_excelFil) throws FileNotFoundException, IOException {
+    try (FileInputStream file = new FileInputStream(p_excelFil.toFile())) {
+      try (XSSFWorkbook workbook = new XSSFWorkbook(file)) {
+        XSSFSheet sheet = workbook.getSheetAt(0);
+        Iterator<Row> rowIterator = sheet.iterator();
+        int qtaRighe = 0;
+        while (rowIterator.hasNext()) {
+          Row row = rowIterator.next();
+          if (qtaRighe++ < skipRows)
+            continue;
+          Iterator<Cell> cellIterator = row.cellIterator();
+          List<String> liRiga = new ArrayList<>();
+          while (cellIterator.hasNext()) {
+            Cell cell = cellIterator.next();
+            switch (cell.getCellType()) {
+              case CellType.NUMERIC:
+                liRiga.add(Utils.formatDouble(cell.getNumericCellValue()));
+                break;
+              case CellType.STRING:
+                liRiga.add(cell.getStringCellValue());
+                break;
+              default:
+                s_log.warn("Cella non riconosciuta:{}", cell.getStringCellValue());
+                break;
+            }
+          }
+          parseRow(liRiga);
+        }
+      }
+    }
+  }
+
   /**
    * Cerca di indovinare il {@link SqlTypes} di ogni colonna facendo una analisi
    * con precedenza di difficolta' del tipo confrontando il .code()
@@ -185,10 +430,8 @@ public class Dataset implements Closeable {
     int k = 0;
     for (List<String> riga : p_recs) {
       // salto il "sep="
-      if (riga.size() <= 1)
-        continue;
       // salto i "nomi colonna"
-      if (k++ < 1)
+      if (riga.size() <= 1 || k++ < 1)
         continue;
       if (k > 20)
         break;
@@ -210,7 +453,7 @@ public class Dataset implements Closeable {
 
   private SqlTypes guessSqlType(String p_sz) {
     // ******   date *********
-    LocalDateTime dt = ParseData.parseData(p_sz.replaceAll("\"",""));
+    LocalDateTime dt = ParseData.parseData(p_sz.replace("\"", ""));
     if (null != dt)
       return SqlTypes.DATE;
     // ******* double ********

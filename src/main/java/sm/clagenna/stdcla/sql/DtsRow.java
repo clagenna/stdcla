@@ -67,8 +67,9 @@ public class DtsRow implements Cloneable {
           case DATE:
             valo = p_res.getObject(nCol);
             if (valo != null && !valo.getClass().getSimpleName().equals("Date"))
-              System.out.println("DtsRow.addRow()");
-            val = p_res.getDate(nCol);
+              val = ParseData.parseData(valo.toString());
+            else
+              val = p_res.getDate(nCol);
             break;
           case TIMESTAMP:
             val = p_res.getTimestamp(nCol);
@@ -121,9 +122,12 @@ public class DtsRow implements Cloneable {
     int nMaxCol = dataset.getQtaCols();
     int nCol = 0;
     boolean bOnlyKCols = dataset.isOnlyKnownCols();
+    //    String szDebugCol = "27";
     for (String szv : p_rec) {
       if (bOnlyKCols && nCol >= nMaxCol)
         break;
+      //      if (null != szDebugCol && szv.contains(szDebugCol))
+      //        System.out.println("DtsRow.parseRow()");
       if (nCol < nMaxCol) {
         DtsCol col = dataset.getColum(nCol);
         Object o = col.parse(szv);

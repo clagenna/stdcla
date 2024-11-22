@@ -224,6 +224,13 @@ public class AppProperties {
       return 0f;
     return Double.parseDouble(sz);
   }
+  
+  public double getDoubleProperty(String p_key, double def) {
+    String sz = getProperty(p_key);
+    if (sz == null || sz.length() == 0)
+      return def;
+    return Double.parseDouble(sz);
+  }
 
   public boolean getBooleanProperty(String p_prop) {
     boolean bRet = false;
