@@ -206,7 +206,7 @@ public class Dataset implements Closeable {
   }
 
   private void creaExcelHSSFCols(Path p_excelFil) throws FileNotFoundException, IOException {
-    List<List<String>> recs = leggiPrimeRigheHSSF(p_excelFil);
+    List<List<String>> recs = readExcelHSSFFile(p_excelFil, 20);
     List<String> liNames = recs.get(0);
     skipRows = 1;
     if (liNames.size() == 1) {
@@ -243,41 +243,25 @@ public class Dataset implements Closeable {
     creaCols(mpCols);
   }
 
-  private List<List<String>> leggiPrimeRigheHSSF(Path p_excelFil) throws FileNotFoundException, IOException {
-    List<List<String>> righe = new ArrayList<>();
-    try (FileInputStream file = new FileInputStream(p_excelFil.toFile())) {
-      try (HSSFWorkbook workbook = new HSSFWorkbook(file)) {
-
-        HSSFSheet sheet = workbook.getSheetAt(0);
-        Iterator<Row> rowIterator = sheet.iterator();
-        while (rowIterator.hasNext()) {
-          Row row = rowIterator.next();
-          Iterator<Cell> cellIterator = row.cellIterator();
-          List<String> liRiga = new ArrayList<>();
-          while (cellIterator.hasNext()) {
-            Cell cell = cellIterator.next();
-            switch (cell.getCellType()) {
-              case CellType.NUMERIC:
-                liRiga.add(Double.toString(cell.getNumericCellValue()));
-                break;
-              case CellType.STRING:
-                liRiga.add(cell.getStringCellValue());
-                break;
-              default:
-                s_log.warn("Cella non riconosciuta:{}", cell.getStringCellValue());
-                break;
-            }
-          }
-          righe.add(liRiga);
-          if (righe.size() > 20)
-            break;
-        }
-      }
-    }
-    return righe;
+  private List<List<String>> readExcelHSSFFile(Path p_excelFil) throws FileNotFoundException, IOException {
+    return readExcelHSSFFile(p_excelFil, -1);
   }
 
-  private void readExcelHSSFFile(Path p_excelFil) throws FileNotFoundException, IOException {
+  /**
+   * Leggo il foglio Excel formato Excel 97-2003 (poi HSSF)
+   *
+   * @param p_excelFil
+   *          il file formato Excel 97-2003 (poi HSSF) da leggere
+   * @param qtaMax
+   *          se -1 letto tutto il foglio e riga per riga la aggiungo chiamendo
+   *          {@link #parseRow()} altrimenti ritorno un List<> con qtaMax righe
+   *          lette
+   * @return se qtaMax > 0 torna qtaMax righe altrimenti List<> vuoto
+   * @throws FileNotFoundException
+   * @throws IOException
+   */
+  private List<List<String>> readExcelHSSFFile(Path p_excelFil, int qtaMax) throws FileNotFoundException, IOException {
+    List<List<String>> righe = new ArrayList<>();
     try (FileInputStream file = new FileInputStream(p_excelFil.toFile())) {
       try (HSSFWorkbook workbook = new HSSFWorkbook(file)) {
         HSSFSheet sheet = workbook.getSheetAt(0);
@@ -291,6 +275,9 @@ public class Dataset implements Closeable {
           List<String> liRiga = new ArrayList<>();
           while (cellIterator.hasNext()) {
             Cell cell = cellIterator.next();
+            int nCol = cell.getColumnIndex();
+            while (liRiga.size() < nCol)
+              liRiga.add("");
             switch (cell.getCellType()) {
               case CellType.NUMERIC:
                 liRiga.add(Utils.formatDouble(cell.getNumericCellValue()));
@@ -303,10 +290,19 @@ public class Dataset implements Closeable {
                 break;
             }
           }
-          parseRow(liRiga);
+          if (qtaMax < 0) {
+            // leggo tutto il foglio Excel
+            parseRow(liRiga);
+          } else {
+            // le righe le tratto dopo
+            righe.add(liRiga);
+            if (righe.size() > 20)
+              break;
+          }
         }
       }
     }
+    return righe;
   }
 
   private void readExcelXSSF(Path p_excelFil) throws FileNotFoundException, IOException {
@@ -316,7 +312,7 @@ public class Dataset implements Closeable {
   }
 
   private void creaExcelXSSFCols(Path p_excelFil) throws FileNotFoundException, IOException {
-    List<List<String>> recs = leggiPrimeRigheXSSF(p_excelFil);
+    List<List<String>> recs = readExcelXSSFFile(p_excelFil, 20);
     List<String> liNames = recs.get(0);
     skipRows = 1;
     if (liNames.size() == 1) {
@@ -353,40 +349,12 @@ public class Dataset implements Closeable {
     creaCols(mpCols);
   }
 
-  private List<List<String>> leggiPrimeRigheXSSF(Path p_excelFil) throws FileNotFoundException, IOException {
-    List<List<String>> righe = new ArrayList<>();
-    try (FileInputStream file = new FileInputStream(p_excelFil.toFile())) {
-      try (XSSFWorkbook workbook = new XSSFWorkbook(file)) {
-        XSSFSheet sheet = workbook.getSheetAt(0);
-        Iterator<Row> rowIterator = sheet.iterator();
-        while (rowIterator.hasNext()) {
-          Row row = rowIterator.next();
-          Iterator<Cell> cellIterator = row.cellIterator();
-          List<String> liRiga = new ArrayList<>();
-          while (cellIterator.hasNext()) {
-            Cell cell = cellIterator.next();
-            switch (cell.getCellType()) {
-              case CellType.NUMERIC:
-                liRiga.add(Double.toString(cell.getNumericCellValue()));
-                break;
-              case CellType.STRING:
-                liRiga.add(cell.getStringCellValue());
-                break;
-              default:
-                s_log.warn("Cella non riconosciuta:{}", cell.getStringCellValue());
-                break;
-            }
-          }
-          righe.add(liRiga);
-          if (righe.size() > 20)
-            break;
-        }
-      }
-    }
-    return righe;
+  private List<List<String>> readExcelXSSFFile(Path p_excelFil) throws FileNotFoundException, IOException {
+    return readExcelXSSFFile(p_excelFil, -1);
   }
 
-  private void readExcelXSSFFile(Path p_excelFil) throws FileNotFoundException, IOException {
+  private List<List<String>> readExcelXSSFFile(Path p_excelFil, int qtaMax) throws FileNotFoundException, IOException {
+    List<List<String>> righe = new ArrayList<>();
     try (FileInputStream file = new FileInputStream(p_excelFil.toFile())) {
       try (XSSFWorkbook workbook = new XSSFWorkbook(file)) {
         XSSFSheet sheet = workbook.getSheetAt(0);
@@ -400,6 +368,9 @@ public class Dataset implements Closeable {
           List<String> liRiga = new ArrayList<>();
           while (cellIterator.hasNext()) {
             Cell cell = cellIterator.next();
+            int nCol = cell.getColumnIndex();
+            while (liRiga.size() < nCol)
+              liRiga.add("");
             switch (cell.getCellType()) {
               case CellType.NUMERIC:
                 liRiga.add(Utils.formatDouble(cell.getNumericCellValue()));
@@ -412,10 +383,19 @@ public class Dataset implements Closeable {
                 break;
             }
           }
-          parseRow(liRiga);
+          if (qtaMax < 0) {
+            // leggo tutto il foglio Excel
+            parseRow(liRiga);
+          } else {
+            // le righe le tratto dopo
+            righe.add(liRiga);
+            if (righe.size() > 20)
+              break;
+          }
         }
       }
     }
+    return righe;
   }
 
   /**
