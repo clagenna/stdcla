@@ -124,6 +124,27 @@ public class DBConnSQL extends DBConn {
   }
 
   @Override
+  public void setStmtDatetime(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
+    java.sql.Timestamp dt = null;
+    if (p_dt instanceof java.sql.Timestamp pdt) {
+      dt = pdt;
+    } else if (p_dt instanceof java.util.Date udt) {
+      dt = new java.sql.Timestamp(udt.getTime());
+    } else if (p_dt instanceof LocalDate ldt) {
+      java.util.Date udt = java.util.Date.from(ldt.atStartOfDay(ZoneId.systemDefault()).toInstant());
+      dt = new java.sql.Timestamp(udt.getTime());
+    } else if (p_dt instanceof LocalDateTime ldt) {
+      ZonedDateTime zo = ldt.atZone(ZoneId.systemDefault());
+      java.util.Date udt = java.util.Date.from(zo.toInstant());
+      dt = new java.sql.Timestamp(udt.getTime());
+    }
+    if (dt != null)
+      p_stmt.setTimestamp(p_index, dt);
+    else
+      p_stmt.setNull(p_index, Types.TIMESTAMP);
+  }
+
+  @Override
   public void setStmtImporto(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
     BigDecimal bd = null;
     if (p_dt instanceof Double dbl) {

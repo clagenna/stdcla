@@ -56,6 +56,8 @@ public abstract class DBConn implements Closeable {
    * @throws SQLException
    */
   public abstract void setStmtDate(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException;
+  
+  public abstract void setStmtDatetime(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException;
 
   public abstract void setStmtImporto(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException;
 

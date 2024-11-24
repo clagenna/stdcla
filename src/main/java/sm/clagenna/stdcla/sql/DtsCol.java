@@ -80,6 +80,11 @@ public class DtsCol implements Cloneable {
             p_szv = p_szv.replaceAll("\"", "");
           obj = ParseData.parseData(p_szv);
           break;
+        case SqlTypes.TIMESTAMP:
+          if (p_szv.startsWith("\""))
+            p_szv = p_szv.replaceAll("\"", "");
+          obj = ParseData.parseData(p_szv);
+          break;
         default:
           s_log.error("Non interpreto tipo {} per col {}", type, name);
           break;

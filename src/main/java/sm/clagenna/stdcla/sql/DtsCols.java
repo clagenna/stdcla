@@ -127,6 +127,10 @@ public class DtsCols implements Cloneable {
             szFmt = String.format("%%%ds ", colWidth);
             szTyp = "DATE";
             break;
+          case Types.TIMESTAMP:
+            szFmt = String.format("%%%ds ", colWidth);
+            szTyp = "DATE";
+            break;
           default:
             s_log.error("Non interpreto tipo {} per col {}", nTyp, szNam);
             break;

@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -156,6 +157,34 @@ public class DBConnSQLite extends DBConn {
     try {
       if (dt != null) {
         String sz = Utils.s_fmtY4MD.format(dt);
+        p_stmt.setString(p_index, sz);
+      }
+    } catch (ArrayIndexOutOfBoundsException e) {
+      e.printStackTrace();
+    }
+  }
+
+  @Override
+  public void setStmtDatetime(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
+    // String sz = Utils.s_fmtY4MD.format(p_dt);
+    // String sz = Utils.s_fmtY4MDHMS.format(p_dt);
+    // p_stmt.setString(p_index, sz);
+    java.sql.Timestamp dt = null;
+    if (p_dt instanceof java.sql.Date pdt) {
+      dt = new Timestamp(pdt.getTime());
+    } else if (p_dt instanceof java.util.Date pdt) {
+      dt = new java.sql.Timestamp(pdt.getTime());
+    } else if (p_dt instanceof LocalDate ldt) {
+      java.util.Date udt = java.util.Date.from(ldt.atStartOfDay(ZoneId.systemDefault()).toInstant());
+      dt = new java.sql.Timestamp(udt.getTime());
+    } else if (p_dt instanceof LocalDateTime ldt) {
+      ZonedDateTime zo = ldt.atZone(ZoneId.systemDefault());
+      java.util.Date udt = java.util.Date.from(zo.toInstant());
+      dt = new java.sql.Timestamp(udt.getTime());
+    }
+    try {
+      if (dt != null) {
+        String sz = Utils.s_fmtY4MDHMS.format(dt);
         p_stmt.setString(p_index, sz);
       }
     } catch (ArrayIndexOutOfBoundsException e) {
