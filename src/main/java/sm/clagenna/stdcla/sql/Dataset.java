@@ -16,6 +16,7 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -131,6 +132,28 @@ public class Dataset implements Closeable {
   private void creaCsvCols(Path p_csvFil) throws IOException {
     // FIXME Impostare una var che tiene conto se l'elenco di colonne finisce con ';' finale vuoto
     List<List<String>> recs = null;
+
+    try (BufferedReader reader = Files.newBufferedReader(p_csvFil)) {
+      recs = reader.lines() //
+          .limit(4) //
+          .map(li -> Arrays.asList(li.split(csvdelim))) //
+          .collect(Collectors.toList());
+    } catch (Exception e) {
+      s_log.error("Errore Read CSV file {}, err={}", p_csvFil.getFileName().toString(), e.getMessage());
+    }
+    if (recs.size() > 0) {
+      List<String> li = recs.get(0);
+      if (li.size() == 1 && null != li.get(0)) {
+        String sz = li.get(0).toLowerCase().trim();
+        // forse ho una specifica "sep=c", quindi la interpreto
+        if (sz.startsWith("sep=")) {
+          sz = sz.replace("sep=", "");
+          setCsvdelim(sz);
+          s_log.warn("CSV file {} contiene la specifica \"sep={}\", imposto questa!", p_csvFil.getFileName().toString(), sz);
+        }
+      }
+    }
+
     try (BufferedReader reader = Files.newBufferedReader(p_csvFil)) {
       recs = reader.lines() //
           .limit(20) //
@@ -286,7 +309,9 @@ public class Dataset implements Closeable {
                 liRiga.add(cell.getStringCellValue());
                 break;
               default:
-                s_log.warn("Cella non riconosciuta:{}", cell.getStringCellValue());
+                s_log.warn("Cella del file {} HSSF non riconosciuta Riga.{} Col.{}", p_excelFil.toString(), qtaRighe,
+                    cell.getColumnIndex());
+                liRiga.add(null);
                 break;
             }
           }
@@ -373,13 +398,21 @@ public class Dataset implements Closeable {
               liRiga.add("");
             switch (cell.getCellType()) {
               case CellType.NUMERIC:
-                liRiga.add(Utils.formatDouble(cell.getNumericCellValue()));
+                String tipo = cell.getCellStyle().getDataFormatString();
+                if (null != tipo && tipo.toLowerCase().contains("yy")) {
+                  Date dt = cell.getDateCellValue();
+                  String sz = ParseData.s_fmtDtDate.format(dt);
+                  liRiga.add(sz);
+                } else
+                  liRiga.add(Utils.formatDouble(cell.getNumericCellValue()));
                 break;
               case CellType.STRING:
                 liRiga.add(cell.getStringCellValue());
                 break;
               default:
-                s_log.warn("Cella non riconosciuta:{}", cell.getStringCellValue());
+                s_log.warn("Cella del file {} XSSF non riconosciuta Riga.{} Col.{}", p_excelFil.toString(), qtaRighe,
+                    cell.getColumnIndex());
+                liRiga.add(null);
                 break;
             }
           }

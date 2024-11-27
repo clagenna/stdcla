@@ -23,9 +23,11 @@ public class AppProperties {
   private static AppProperties s_inst;
   public static final String   CSZ_PROPERTIES = "MyProperties.properties";
 
-  public static final String CSZ_PROP_LASTDIR    = "last.dir";
-  public static final String CSZ_PROP_LASTFIL    = "last.fil";
-  public static final String CSZ_PROP_LASTGPX    = "gps.last";
+  public static final String CSZ_PROP_LASTDIR = "last.dir";
+  public static final String CSZ_PROP_LASTFIL = "last.fil";
+  public static final String CSZ_PROP_LASTGPX = "gps.last";
+  public static final String CSZ_PROP_SKIN    = "skin.name";
+
   public static final String CSZ_PROP_DIMFRAME_X = "frame.dimx";
   public static final String CSZ_PROP_DIMFRAME_Y = "frame.dimy";
   public static final String CSZ_PROP_POSFRAME_X = "frame.posx";
@@ -110,7 +112,7 @@ public class AppProperties {
   /**
    * Legge il file di propreties specificato. Se <code>bForce</code> allora il
    * file <b>deve</b> esistere
-   * 
+   *
    * @param p_fiProp
    * @param bForce
    * @param bResJar
@@ -224,7 +226,7 @@ public class AppProperties {
       return 0f;
     return Double.parseDouble(sz);
   }
-  
+
   public double getDoubleProperty(String p_key, double def) {
     String sz = getProperty(p_key);
     if (sz == null || sz.length() == 0)

@@ -262,8 +262,7 @@ public class GeoCoordFoto extends GeoCoord {
   private void leggiDtParentDir() {
     Path parent = getFotoFile().getParent();
     String sz = parent.getName(parent.getNameCount() - 1).toString();
-    ParseData prs = new ParseData();
-    dtNomeDir = prs.guessData(sz);
+    dtNomeDir = ParseData.guessData(sz);
     if (dtNomeDir == null) {
       s_log.trace("Parent Dir name No e' DateTime :" + sz);
       dtNomeDir = LocalDateTime.MAX;
@@ -281,8 +280,7 @@ public class GeoCoordFoto extends GeoCoord {
       sz = sz.substring(0, n);
     //    if (sz.startsWith("23-"))
     //      System.out.println("Trovato");
-    ParseData prs = new ParseData();
-    setDtNomeFile(prs.guessData(sz));
+    setDtNomeFile(ParseData.guessData(sz));
     if (null == dtNomeFile) {
       if (EExifPriority.DirFileExif == exifPriority || //
           EExifPriority.FileDirExif == exifPriority)

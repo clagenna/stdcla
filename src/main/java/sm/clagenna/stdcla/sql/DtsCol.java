@@ -68,11 +68,14 @@ public class DtsCol implements Cloneable {
         case SqlTypes.FLOAT:
         case SqlTypes.DOUBLE:
         case SqlTypes.REAL:
-          sz2 = p_szv.trim();
-          if (sz2.length() > 0) {
-            //            sz2 = sz2.replace(",", ".");
-            //            obj = Double.parseDouble(sz2);
-            obj = Utils.parseDouble(sz2);
+          obj = Double.valueOf(0);
+          if (null != p_szv) {
+            sz2 = p_szv.trim();
+            if (sz2.length() > 0) {
+              //            sz2 = sz2.replace(",", ".");
+              //            obj = Double.parseDouble(sz2);
+              obj = Utils.parseDouble(sz2);
+            }
           }
           break;
         case SqlTypes.DATE:

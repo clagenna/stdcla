@@ -9,6 +9,7 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Locale;
@@ -172,11 +173,24 @@ public class Utils {
       return true;
     return false;
   }
+  
+  public static boolean isValue(Double p_v) {
+    if (p_v == null)
+      return false;
+    return p_v != 0;
+  }
 
   public static boolean isValue(Date p_dt) {
     if (p_dt == null)
       return false;
     return p_dt.getTime() > 0;
+  }
+
+  public static boolean isValue(LocalDateTime p_dt) {
+    if (null == p_dt)
+      return false;
+    Date dt = Date.from(p_dt.atZone(ZoneId.systemDefault()).toInstant());
+    return dt.getTime() > 0;
   }
 
   public static boolean isValue(Integer p_i) {
@@ -331,7 +345,7 @@ public class Utils {
 
   /**
    * Torna l'estensione del file (comprensiva del punto '.') in lowercase
-   * 
+   *
    * @param p_pth
    * @return
    */

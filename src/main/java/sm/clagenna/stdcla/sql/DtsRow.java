@@ -269,6 +269,11 @@ public class DtsRow implements Cloneable {
             szv = String.format(DtsCols.getColFmtR(), vv).trim();
             break;
 
+          case "Float":
+            szv = String.format(DtsCols.getColFmtDbl(), vv);
+            // szv = String.format(DtsCols.getColFmtR(), szv);
+            break;
+            
           case "Double":
             szv = String.format(DtsCols.getColFmtDbl(), vv);
             // szv = String.format(DtsCols.getColFmtR(), szv);
