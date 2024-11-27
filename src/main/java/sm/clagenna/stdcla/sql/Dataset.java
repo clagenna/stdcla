@@ -50,6 +50,8 @@ public class Dataset implements Closeable {
   private DBConn              db;
   @Getter @Setter
   private String              csvdelim;
+  @Getter @Setter
+  private boolean             csvBlankOnZero;
   @Getter
   private List<DtsRow>        righe;
   /**
