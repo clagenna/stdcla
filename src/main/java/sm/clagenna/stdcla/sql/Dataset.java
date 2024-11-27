@@ -148,7 +148,10 @@ public class Dataset implements Closeable {
         // forse ho una specifica "sep=c", quindi la interpreto
         if (sz.startsWith("sep=")) {
           sz = sz.replace("sep=", "");
-          setCsvdelim(sz);
+          if (sz.length() > 0)
+            setCsvdelim(sz);
+          else
+            sz = getCsvdelim();
           s_log.warn("CSV file {} contiene la specifica \"sep={}\", imposto questa!", p_csvFil.getFileName().toString(), sz);
         }
       }
