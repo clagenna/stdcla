@@ -210,7 +210,7 @@ public class GeoScanJpg {
       int n = sz.lastIndexOf(".");
       if (n > 0)
         sz = sz.substring(0, n);
-      dtNomeFile = prs.guessData(sz);
+      dtNomeFile = ParseData.guessData(sz);
 
       String[] arr = null;
       if (null != m_exif)

@@ -8,6 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -137,9 +138,6 @@ public class DBConnSQLite extends DBConn {
    */
   @Override
   public void setStmtDate(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
-    // String sz = Utils.s_fmtY4MD.format(p_dt);
-    // String sz = Utils.s_fmtY4MDHMS.format(p_dt);
-    // p_stmt.setString(p_index, sz);
     java.sql.Date dt = null;
     if (p_dt instanceof java.sql.Date) {
       dt = (java.sql.Date) p_dt;
@@ -159,6 +157,27 @@ public class DBConnSQLite extends DBConn {
         String sz = Utils.s_fmtY4MD.format(dt);
         p_stmt.setString(p_index, sz);
       }
+    } catch (ArrayIndexOutOfBoundsException e) {
+      e.printStackTrace();
+    }
+  }
+
+  @Override
+  public void setStmtInt(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
+    Integer iv = null;
+    if (p_dt instanceof Integer ii) {
+      iv = ii;
+    } else if (p_dt instanceof Short ii) {
+      iv = ii.intValue();
+
+    } else if (p_dt instanceof Long ii) {
+      iv = ii.intValue();
+    }
+    try {
+      if (iv != null) {
+        p_stmt.setInt(p_index, iv);
+      } else
+        p_stmt.setNull(p_index, Types.INTEGER);
     } catch (ArrayIndexOutOfBoundsException e) {
       e.printStackTrace();
     }
@@ -186,15 +205,11 @@ public class DBConnSQLite extends DBConn {
       if (dt != null) {
         String sz = Utils.s_fmtY4MDHMS.format(dt);
         p_stmt.setString(p_index, sz);
-      }
+      } else
+        p_stmt.setNull(p_index, Types.VARCHAR);
     } catch (ArrayIndexOutOfBoundsException e) {
       e.printStackTrace();
     }
-  }
-
-  @Override
-  public Logger getLog() {
-    return s_log;
   }
 
   @Override
@@ -206,4 +221,10 @@ public class DBConnSQLite extends DBConn {
   public void setStmtString(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
     p_stmt.setString(p_index, (String) p_dt);
   }
+
+  @Override
+  public Logger getLog() {
+    return s_log;
+  }
+
 }

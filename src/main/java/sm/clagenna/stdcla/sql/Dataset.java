@@ -29,6 +29,7 @@ import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -413,6 +414,24 @@ public class Dataset implements Closeable {
                 break;
               case CellType.STRING:
                 liRiga.add(cell.getStringCellValue());
+                break;
+              case CellType.FORMULA:
+              {
+                FormulaEvaluator eval = workbook.getCreationHelper().createFormulaEvaluator();
+                switch(eval.evaluateFormulaCell(cell)) {
+                  case STRING:
+                    liRiga.add(cell.getStringCellValue());
+                    break;
+                  case NUMERIC:
+                    liRiga.add(Utils.formatDouble(cell.getNumericCellValue()));
+                    break;
+                  default:
+                    s_log.warn("Cella Formula del file {} XSSF non riconosciuta Riga.{} Col.{}", p_excelFil.toString(), qtaRighe,
+                        cell.getColumnIndex());
+                    liRiga.add(null);
+                    break;
+                }
+              }
                 break;
               default:
                 s_log.warn("Cella del file {} XSSF non riconosciuta Riga.{} Col.{}", p_excelFil.toString(), qtaRighe,

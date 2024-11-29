@@ -102,6 +102,25 @@ public class DBConnSQL extends DBConn {
   }
 
   @Override
+  public void changePragma() {
+    // per compensare al SQLite pragma date 'yyyy-MM-dd'
+  }
+
+   /**
+   * SQL Server gestisce le date come java.sql.Date
+   *
+   * @param p_stmt
+   *          lo statement SQl su cui applicare il valore
+   * @param p_index
+   *          index della colonna nello statement
+   * @param p_dt
+   *          il valore da settare
+   *
+   * @see <a href="https://en.wikipedia.org/wiki/ISO_8601}">ISO 8601 Date
+   *      Format</a>
+   * @see <a href="https://sqlite.org/datatype3.html">SQLite data Types</a>
+   */
+  @Override
   public void setStmtDate(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
     java.sql.Date dt = null;
     if (p_dt instanceof java.sql.Date) {
@@ -121,6 +140,27 @@ public class DBConnSQL extends DBConn {
       p_stmt.setDate(p_index, dt);
     else
       p_stmt.setNull(p_index, Types.DATE);
+  }
+
+  @Override
+  public void setStmtInt(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
+    Integer iv = null;
+    if (p_dt instanceof Integer ii) {
+      iv = ii;
+    } else if (p_dt instanceof Short ii) {
+      iv = ii.intValue();
+
+    } else if (p_dt instanceof Long ii) {
+      iv = ii.intValue();
+    }
+    try {
+      if (iv != null) {
+        p_stmt.setInt(p_index, iv);
+      } else
+        p_stmt.setNull(p_index, Types.INTEGER);
+    } catch (ArrayIndexOutOfBoundsException e) {
+      e.printStackTrace();
+    }
   }
 
   @Override
@@ -174,8 +214,4 @@ public class DBConnSQL extends DBConn {
     return s_log;
   }
 
-  @Override
-  public void changePragma() {
-    // per compensare al SQLite pragma date 'yyyy-MM-dd'
-  }
 }
