@@ -56,7 +56,7 @@ public class ParseData {
 
   private static Pattern[] s_arrpatGuess = { //
       //               .* yyyy-MM-dd?*hh.mm.ss ?*
-      Pattern.compile(".*([0-9]{4})[\\-_.]([0-9]{2})[\\-_.]([0-9]{2}).*([0-9]{2})[\\-_.]([0-9]{2})[\\-_.]([0-9]{2}).*"), //
+      Pattern.compile(".*([0-9]{4})[\\-_.]([0-9]{2})[\\-_.]([0-9]{2}).*([0-9]{2})[\\-_.:]([0-9]{2})[\\-_.:]([0-9]{2}).*"), //
 
       //               .* yyyyMMdd?hhmmss .*
       Pattern.compile(".*([0-9]{4})([0-9]{2})([0-9]{2}).([0-9]{2})([0-9]{2})([0-9]{2}).*"), //
@@ -117,6 +117,7 @@ public class ParseData {
     if (p_sz == null)
       return null;
     String[] szFmtDt = { "2999", "01", "01", "06", "00", "00" };
+    
 
     for (Pattern pat : s_arrpatGuess) {
       Matcher mtch = pat.matcher(p_sz);

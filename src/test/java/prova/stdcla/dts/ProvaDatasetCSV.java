@@ -6,6 +6,8 @@ import java.nio.file.Paths;
 
 import org.junit.Test;
 
+import com.opencsv.exceptions.CsvException;
+
 import sm.clagenna.stdcla.sql.Dataset;
 import sm.clagenna.stdcla.sys.ex.DatasetException;
 
@@ -15,7 +17,7 @@ public class ProvaDatasetCSV {
   }
 
   @Test
-  public void provalo() throws DatasetException {
+  public void provalo() throws DatasetException, CsvException {
     Path pthFi = Paths.get("src", "test", "resources", "prova", "stdcla", "dts", "abitanti2.csv");
     Path pthCopia = Paths.get("src", "test", "resources", "prova", "stdcla", "dts", "abitanti_Copia.csv");
     try (Dataset dts = new Dataset()) {

@@ -397,4 +397,20 @@ public class Utils {
     ctx.updateLoggers(); // This causes all Loggers to refetch information from their LoggerConfig.
   }
 
+  public static LocalDateTime min(LocalDateTime ldtMin, LocalDateTime dtTest) {
+    if ( null == ldtMin || null == dtTest)
+      return dtTest;
+    if ( ldtMin.isAfter(dtTest))
+      return dtTest;
+    return ldtMin;
+  }
+  
+  public static LocalDateTime max(LocalDateTime ldtMax, LocalDateTime dtTest) {
+    if ( null == ldtMax || null == dtTest)
+      return dtTest;
+    if ( ldtMax.isBefore(dtTest))
+      return dtTest;
+    return ldtMax;
+  }
+
 }

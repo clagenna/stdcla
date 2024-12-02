@@ -21,16 +21,22 @@ public class FileCSV {
   @Getter @Setter
   private SimpleIntegerProperty size;
   @Getter @Setter
-  private SimpleIntegerProperty qtaRows;
+  private SimpleIntegerProperty qtaRecs;
   @Getter @Setter
-  private SimpleStringProperty  datereg;
+  private SimpleStringProperty  dtmin;
+  @Getter @Setter
+  private SimpleStringProperty  dtmax;
+  @Getter @Setter
+  private SimpleStringProperty  ultagg;
 
   public FileCSV() {
     name = new SimpleStringProperty();
     relPath = new SimpleStringProperty();
     size = new SimpleIntegerProperty();
-    qtaRows = new SimpleIntegerProperty();
-    datereg = new SimpleStringProperty();
+    qtaRecs = new SimpleIntegerProperty();
+    dtmin = new SimpleStringProperty();
+    dtmax = new SimpleStringProperty();
+    ultagg = new SimpleStringProperty();
   }
 
   public FileCSV assignPath(Path pth) {
@@ -44,8 +50,8 @@ public class FileCSV {
       e.printStackTrace();
     }
 
-    qtaRows.set(ThreadLocalRandom.current().nextInt(3, 520));
-    datereg.set("2023-07-23 15:32:44");
+    qtaRecs.set(ThreadLocalRandom.current().nextInt(3, 520));
+    ultagg.set("2023-07-23 15:32:44");
     return this;
   }
 

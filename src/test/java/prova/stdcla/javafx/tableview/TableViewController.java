@@ -22,7 +22,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 
 /**
@@ -39,8 +39,10 @@ public class TableViewController extends Application implements Initializable {
   private TableColumn<FileCSV, String> colName;
   private TableColumn<FileCSV, String> colRelPath;
   private TableColumn<FileCSV, Number> colSize;
-  private TableColumn<FileCSV, Number> colQtaRows;
-  private TableColumn<FileCSV, String> colDateReg;
+  private TableColumn<FileCSV, Number> colQtaRecs;
+  private TableColumn<FileCSV, String> colDtmin;
+  private TableColumn<FileCSV, String> colDtmax;
+  private TableColumn<FileCSV, String> colUltagg;
 
   private ObservableList<FileCSV> elenco;
 
@@ -60,21 +62,24 @@ public class TableViewController extends Application implements Initializable {
   private void creaForm(Stage stage) {
     Scene scene = new Scene(new Group());
     stage.setTitle("Table View Sample");
-    stage.setWidth(300);
+    stage.setWidth(800);
     stage.setHeight(500);
 
-    final Label label = new Label("Address Book");
+    final Label label = new Label("Files di Import CSV");
     // label.setFont(new Font("Arial", 20));
-    final VBox vbox = new VBox();
-    vbox.setSpacing(5);
-    vbox.setPadding(new Insets(10, 0, 0, 10));
-    vbox.getChildren().addAll(label, tblvw);
+    final AnchorPane ancp = new AnchorPane();
+    // ancp.setSpacing(5);
+    ancp.setPadding(new Insets(10, 0, 0, 10));
+    ancp.getChildren().addAll(label, tblvw);
+    AnchorPane.setBottomAnchor(tblvw, 0.);
+    AnchorPane.setLeftAnchor(tblvw, 0.);
+    AnchorPane.setTopAnchor(tblvw, 0.);
+    AnchorPane.setRightAnchor(tblvw, 0.);
 
-    ((Group) scene.getRoot()).getChildren().addAll(vbox);
+    ((Group) scene.getRoot()).getChildren().addAll(ancp);
 
     stage.setScene(scene);
     stage.show();
-
   }
 
   private void creaDati(String p_Relpath) {
@@ -110,14 +115,20 @@ public class TableViewController extends Application implements Initializable {
     colSize = new TableColumn<>("Dimensione");
     colSize.setCellValueFactory(cell -> cell.getValue().getSize());
 
-    colQtaRows = new TableColumn<>("Qta .rows");
-    colQtaRows.setCellValueFactory(cell -> cell.getValue().getQtaRows());
+    colQtaRecs = new TableColumn<>("Qta .rows");
+    colQtaRecs.setCellValueFactory(cell -> cell.getValue().getQtaRecs());
 
-    colDateReg = new TableColumn<>("Data Reg.");
-    colDateReg.setCellValueFactory(cell -> cell.getValue().getDatereg());
+    colDtmin = new TableColumn<>("Data min.");
+    colDtmin.setCellValueFactory(cell -> cell.getValue().getDtmin());
+
+    colDtmax = new TableColumn<>("Data Reg.");
+    colDtmax.setCellValueFactory(cell -> cell.getValue().getDtmax());
+
+    colUltagg = new TableColumn<>("Data Reg.");
+    colUltagg.setCellValueFactory(cell -> cell.getValue().getUltagg());
 
     tblvw = new TableView<FileCSV>();
-    tblvw.getColumns().addAll(colName, colRelPath, colSize, colQtaRows, colDateReg);
+    tblvw.getColumns().addAll(colName, colRelPath, colSize, colQtaRecs, colDtmin, colDtmax, colUltagg);
   }
 
   public static void main(String[] args) {

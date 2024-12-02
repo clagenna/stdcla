@@ -21,6 +21,7 @@
 		<sqlite3.version>3.45.0.0</sqlite3.version>
 		<apachePoi.version>5.2.4</apachePoi.version>
 		<commons-io.version>2.14.0</commons-io.version>
+		<opencsv.version>5.9</opencsv.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -78,6 +79,12 @@
 			<version>18-ea+7</version>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/com.opencsv/opencsv -->
+		<dependency>
+		    <groupId>com.opencsv</groupId>
+		    <artifactId>opencsv</artifactId>
+		    <version>${opencsv.version}</version>
+		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
 		<dependency>

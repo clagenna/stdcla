@@ -5,8 +5,10 @@ import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -33,6 +35,12 @@ import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import com.opencsv.CSVParser;
+import com.opencsv.CSVParserBuilder;
+import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
+import com.opencsv.exceptions.CsvException;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -104,13 +112,14 @@ public class Dataset implements Closeable {
    * @param p_csvFil
    * @return qta di records letti
    * @throws IOException
+   * @throws CsvException
    */
-  public Dataset readcsv(Path p_csvFil) throws IOException {
+  public Dataset readcsv(Path p_csvFil) throws IOException, CsvException {
     if (null == csvdelim)
       csvdelim = DEFAULT_CSV_DELIM;
     if (null == columns || columns.size() == 0)
       creaCsvCols(p_csvFil);
-    readCsvFile(p_csvFil);
+    readCsvFile2(p_csvFil);
     return this;
   }
 
@@ -136,7 +145,7 @@ public class Dataset implements Closeable {
     // FIXME Impostare una var che tiene conto se l'elenco di colonne finisce con ';' finale vuoto
     List<List<String>> recs = null;
 
-    try (BufferedReader reader = Files.newBufferedReader(p_csvFil)) {
+    try (BufferedReader reader = Files.newBufferedReader(p_csvFil, Charset.defaultCharset())) {
       recs = reader.lines() //
           .limit(4) //
           .map(li -> Arrays.asList(li.split(csvdelim))) //
@@ -144,12 +153,14 @@ public class Dataset implements Closeable {
     } catch (Exception e) {
       s_log.error("Errore Read CSV file {}, err={}", p_csvFil.getFileName().toString(), e.getMessage());
     }
+    // test se inizia il file con la specifica "sep=x"
     if (recs.size() > 0) {
       List<String> li = recs.get(0);
       if (li.size() == 1 && null != li.get(0)) {
-        String sz = li.get(0).toLowerCase().trim();
+        // tolgo l'UTF-8 BOM (maledetto!)
+        String sz = checkBOM(li.get(0).toLowerCase());
         // forse ho una specifica "sep=c", quindi la interpreto
-        if (sz.startsWith("sep=")) {
+        if (sz.contains("sep=")) {
           sz = sz.replace("sep=", "");
           if (sz.length() > 0)
             setCsvdelim(sz);
@@ -168,12 +179,14 @@ public class Dataset implements Closeable {
 
       List<String> liNames = recs.get(0);
       skipRows = 1;
-      if (liNames.size() == 1 && liNames.get(0).toString().startsWith("sep=")) {
+      if (liNames.size() == 1 && checkBOM(liNames.get(0).toString()).contains("sep=")) {
         liNames = recs.get(1);
         skipRows++;
       }
       int k = 0;
       for (String sz : liNames) {
+        if (k == 0)
+          sz = checkBOM(sz);
         if (sz.startsWith("\""))
           liNames.set(k, sz.replace("\"", ""));
         k++;
@@ -195,6 +208,27 @@ public class Dataset implements Closeable {
     }
   }
 
+  /**
+   * Il Byte Order Mark (BOM), per UTF-8 è EF BB BF ( 0xEF 0xBB 0xBF ). indica
+   * la codifica di un file ma può causare problemi se non lo gestiamo
+   * correttamente, specialmente quando elaboriamo dati di testo. Per questo, se
+   * presente lo tolgo
+   *
+   * @param psz
+   * @return
+   */
+  private String checkBOM(String psz) {
+    if (null == psz)
+      return psz;
+    psz = psz.trim();
+    if (psz.length() == 0)
+      return psz;
+    String szX = Integer.toHexString(psz.charAt(0));
+    if (szX.equalsIgnoreCase("feff"))
+      psz = psz.substring(1);
+    return psz;
+  }
+
   public void addCol(String szNam, SqlTypes p_ty) {
     columns.addCol(szNam, p_ty);
     for (DtsRow row : righe) {
@@ -204,6 +238,7 @@ public class Dataset implements Closeable {
 
   }
 
+  @SuppressWarnings("unused")
   private void readCsvFile(Path p_csvFil) throws IOException {
     try (BufferedReader reader = Files.newBufferedReader(p_csvFil)) {
       reader //
@@ -211,6 +246,16 @@ public class Dataset implements Closeable {
           .skip(skipRows) //
           .map(li -> Arrays.asList(li.split(csvdelim))) //
           .forEach(s -> parseRow(s));
+    }
+  }
+
+  private void readCsvFile2(Path p_csvFil) throws IOException, CsvException {
+    CSVParser csvParser = new CSVParserBuilder().withSeparator(csvdelim.charAt(0)).build(); // custom separator
+    try (CSVReader reader = new CSVReaderBuilder(new FileReader(p_csvFil.toFile())).withCSVParser(csvParser) // custom CSV parser
+        .withSkipLines(skipRows) // skip the first line, header info
+        .build()) {
+      List<String[]> recs = reader.readAll();
+      recs.forEach(s -> parseRow(Arrays.asList(s)));
     }
   }
 
@@ -415,10 +460,9 @@ public class Dataset implements Closeable {
               case CellType.STRING:
                 liRiga.add(cell.getStringCellValue());
                 break;
-              case CellType.FORMULA:
-              {
+              case CellType.FORMULA: {
                 FormulaEvaluator eval = workbook.getCreationHelper().createFormulaEvaluator();
-                switch(eval.evaluateFormulaCell(cell)) {
+                switch (eval.evaluateFormulaCell(cell)) {
                   case STRING:
                     liRiga.add(cell.getStringCellValue());
                     break;
