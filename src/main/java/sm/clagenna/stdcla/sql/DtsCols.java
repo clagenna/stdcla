@@ -86,6 +86,7 @@ public class DtsCols implements Cloneable {
       for (int i = 1; i <= colCount; i++) {
         String szNam = rsmd.getColumnName(i).trim();
         int nTyp = rsmd.getColumnType(i);
+        @SuppressWarnings("unused")
         String szTyp = "";
         String szFmt = "";
         DtsCol col = new DtsCol();
@@ -140,7 +141,7 @@ public class DtsCols implements Cloneable {
         col.setIndex(i - 1);
         col.setFormat(szFmt);
         addCol(col);
-        System.out.printf("%16s{%s}=%s\tcol=%s\n", szNam, szTyp, szFmt, col.toString());
+        // System.out.printf("%16s{%s}=%s\tcol=%s\n", szNam, szTyp, szFmt, col.toString());
         sbIntesta.append(szVirg).append(szNam);
         // sbFmt.append(szVirg).append(szFmt);
         szVirg = szVirg.length() == 0 ? "\t" : szVirg;

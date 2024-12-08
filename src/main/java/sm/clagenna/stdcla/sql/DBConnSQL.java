@@ -106,7 +106,7 @@ public class DBConnSQL extends DBConn {
     // per compensare al SQLite pragma date 'yyyy-MM-dd'
   }
 
-   /**
+  /**
    * SQL Server gestisce le date come java.sql.Date
    *
    * @param p_stmt
@@ -122,22 +122,21 @@ public class DBConnSQL extends DBConn {
    */
   @Override
   public void setStmtDate(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
-    java.sql.Date dt = null;
-    if (p_dt instanceof java.sql.Date) {
-      dt = (java.sql.Date) p_dt;
-    } else if (p_dt instanceof java.util.Date) {
-      java.util.Date udt = (java.util.Date) p_dt;
-      dt = new java.sql.Date(udt.getTime());
+    java.sql.Timestamp dt = null;
+    if (p_dt instanceof java.sql.Date dt1) {
+      dt = new java.sql.Timestamp(dt1.getTime());
+    } else if (p_dt instanceof java.util.Date dt1) {
+      dt = new java.sql.Timestamp(dt1.getTime());
     } else if (p_dt instanceof LocalDate ldt) {
       java.util.Date udt = java.util.Date.from(ldt.atStartOfDay(ZoneId.systemDefault()).toInstant());
-      dt = new java.sql.Date(udt.getTime());
+      dt = new java.sql.Timestamp(udt.getTime());
     } else if (p_dt instanceof LocalDateTime ldt) {
       ZonedDateTime zo = ldt.atZone(ZoneId.systemDefault());
       java.util.Date udt = java.util.Date.from(zo.toInstant());
-      dt = new java.sql.Date(udt.getTime());
+      dt = new java.sql.Timestamp(udt.getTime());
     }
     if (dt != null)
-      p_stmt.setDate(p_index, dt);
+      p_stmt.setTimestamp(p_index, dt);
     else
       p_stmt.setNull(p_index, Types.DATE);
   }

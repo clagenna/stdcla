@@ -154,7 +154,7 @@ public class DBConnSQLite extends DBConn {
     }
     try {
       if (dt != null) {
-        String sz = Utils.s_fmtY4MD.format(dt);
+        String sz = Utils.s_fmtY4MDHMS.format(dt);
         p_stmt.setString(p_index, sz);
       }
     } catch (ArrayIndexOutOfBoundsException e) {
