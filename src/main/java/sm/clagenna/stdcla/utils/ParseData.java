@@ -33,24 +33,26 @@ public class ParseData {
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"), // 01
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"), // 02
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"), // 02
-      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"), // 03
-      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"), // 04
-      DateTimeFormatter.ofPattern("yyyy-MM-dd"), // 05
-      DateTimeFormatter.ofPattern("yyyy_MM_dd"), // 05
-      DateTimeFormatter.ofPattern("yy-MM-dd"), // 06
-      DateTimeFormatter.ofPattern("yyyy-MM"), // 07
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"), // 03
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S"), // 04
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"), // 05
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"), // 06
+      DateTimeFormatter.ofPattern("yyyy-MM-dd"), // 07
+      DateTimeFormatter.ofPattern("yyyy_MM_dd"), // 08
+      DateTimeFormatter.ofPattern("yy-MM-dd"), // 09
+      DateTimeFormatter.ofPattern("yyyy-MM"), // 10
 
-      DateTimeFormatter.ofPattern("yyyyMMdd HHmmss"), // 08
-      DateTimeFormatter.ofPattern("yyyyMMdd HHmm"), // 09
-      DateTimeFormatter.ofPattern("yyyyMMdd"), // 10
+      DateTimeFormatter.ofPattern("yyyyMMdd HHmmss"), // 11
+      DateTimeFormatter.ofPattern("yyyyMMdd HHmm"), // 12
+      DateTimeFormatter.ofPattern("yyyyMMdd"), // 13
 
-      DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"), // 11
-      DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"), // 12
-      DateTimeFormatter.ofPattern("dd-MM-yyyy"), // 13
+      DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"), // 14
+      DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"), // 15
+      DateTimeFormatter.ofPattern("dd-MM-yyyy"), // 16
 
-      DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"), // 14
-      DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"), // 15
-      DateTimeFormatter.ofPattern("dd/MM/yyyy"), // 16
+      DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"), // 17
+      DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"), // 18
+      DateTimeFormatter.ofPattern("dd/MM/yyyy"), // 19
 
   };
 
