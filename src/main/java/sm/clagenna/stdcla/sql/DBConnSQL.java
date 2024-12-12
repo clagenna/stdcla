@@ -213,4 +213,18 @@ public class DBConnSQL extends DBConn {
     return s_log;
   }
 
+  @Override
+  public String addTopRecs(String qry, int qta) {
+    final String str = "select";
+    int n = qry.toLowerCase().indexOf(str);
+    if (n < 0)
+      return qry;
+    n += str.length();
+    StringBuilder sb = new StringBuilder();
+    sb.append(qry.substring(0, n));
+    sb.append(" top ").append(qta);
+    sb.append(qry.substring(n));
+    return sb.toString();
+  }
+
 }

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 
@@ -67,6 +68,8 @@ public abstract class DBConn implements Closeable {
 
   public abstract Map<String, String> getListDBViews();
 
+  public abstract String addTopRecs(String qry, int qta);
+
   public Connection doConn() {
     String szUrl = getURL();
     try {
@@ -102,6 +105,28 @@ public abstract class DBConn implements Closeable {
     setUser(szv);
     szv = p_props.getProperty(AppProperties.CSZ_PROP_DB_passwd);
     setPasswd(szv);
+  }
+
+  public boolean testQuery(String szQry) {
+    boolean bRet = false;
+    if ( null == szQry || szQry.length() < 3)
+      return bRet;
+    int n = szQry.toLowerCase().indexOf("order by");
+    String szQry2 = n > 0 ? szQry.substring(0, n) : szQry;
+
+    if (null == conn) {
+      getLog().error("No connection to test: {}", szQry2);
+      return bRet;
+    }
+    szQry2 = addTopRecs(szQry2, 1);
+    try (PreparedStatement stmt = conn.prepareStatement(szQry2)) {
+      try (ResultSet res = stmt.executeQuery()) {
+        bRet = true;
+      }
+    } catch (Exception e) {
+      getLog().error("Errore Query: {}", e.getMessage());
+    }
+    return bRet;
   }
 
 }

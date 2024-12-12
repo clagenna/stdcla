@@ -227,4 +227,9 @@ public class DBConnSQLite extends DBConn {
     return s_log;
   }
 
+  @Override
+  public String addTopRecs(String qry, int qta) {
+    return qry + " limit " + qta;
+  }
+
 }
