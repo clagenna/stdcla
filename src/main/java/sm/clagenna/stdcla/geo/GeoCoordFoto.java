@@ -156,12 +156,16 @@ public class GeoCoordFoto extends GeoCoord {
       // provo a leggere Time Offset
       if (null != m_exif)
         arr = m_exif.getFieldValue(EXIF_TAG_OFFSET_TIME);
-      if (arr != null && arr.length > 0)
+      if (arr != null && arr.length > 0) {
         szZoneOfset = arr[0];
+        if ( !Utils.isValue(szZoneOfset) && arr.length > 1)
+          szZoneOfset = arr[1];
+      }
+      if (Utils.isValue(szZoneOfset) && !szZoneOfset.matches("[+\\-][0-9:]+"))
+        szZoneOfset = "+" + szZoneOfset;
       try {
         // provo ad interpretare il ZoneOffset
-        @SuppressWarnings("unused")
-        ZoneOffset zof = null;
+        @SuppressWarnings("unused") ZoneOffset zof = null;
         if (null != szZoneOfset)
           zof = ZoneOffset.of(szZoneOfset);
         // arrivo qui se è interpretabile

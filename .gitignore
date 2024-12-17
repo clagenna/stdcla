@@ -1,5 +1,7 @@
 /target/
+/*.bak
 /*.zip
 /*.zipx
 /datiProva/
 /old/
+/zip/

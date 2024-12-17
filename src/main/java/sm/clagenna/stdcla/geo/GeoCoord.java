@@ -9,6 +9,7 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 
 import lombok.Data;
+import sm.clagenna.stdcla.utils.ParseData;
 import sm.clagenna.stdcla.utils.Utils;
 
 @Data
@@ -112,10 +113,17 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
   }
 
   public void assumeTStampNew() {
-    if ( null != tstampNew) {
+    if (null != tstampNew) {
       tstamp = tstampNew;
     }
     tstampNew = null;
+  }
+  
+  public LocalDateTime getMainTstamp() {
+    LocalDateTime  lts = tstamp;
+    if ( null != tstampNew)
+      lts = tstampNew;
+    return lts;
   }
 
   public static long getEpoch(LocalDateTime ts) {
@@ -218,12 +226,12 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     boolean bRet = false;
     if (tstamp == null || obj == null || ! (obj instanceof GeoCoord))
       return bRet;
-    GeoCoord geo = (GeoCoord) obj;
-    if (geo.tstamp == null)
+    GeoCoord altro = (GeoCoord) obj;
+    if (altro.getMainTstamp() == null)
       return bRet;
-    bRet = tstamp.equals(geo.tstamp);
+    bRet = getMainTstamp().equals(altro.getMainTstamp());
     if (bRet) {
-      bRet &= srcGeo == geo.srcGeo;
+      bRet &= srcGeo == altro.srcGeo;
     }
     return bRet;
   }
@@ -252,6 +260,8 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
       return;
     update(other);
     tstamp = other.tstamp;
+    if (null != other.tstampNew)
+      tstamp = other.tstampNew;
     srcGeo = other.srcGeo;
   }
 

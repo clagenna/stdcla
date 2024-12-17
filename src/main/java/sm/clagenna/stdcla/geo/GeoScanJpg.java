@@ -121,7 +121,7 @@ public class GeoScanJpg {
       stre //
           .filter(Files::isRegularFile) //
           .forEach(s -> scanFile(s));
-    } catch (IOException e) {
+    } catch (Exception e) {
       s_log.error("Errore scan dir {}, err={}", startDir.toString(), e.getMessage());
       throw new GeoFileException("Errore scan:" + startDir.toString(), e);
     }
