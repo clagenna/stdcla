@@ -15,6 +15,7 @@ import lombok.Getter;
 import lombok.Setter;
 import sm.clagenna.stdcla.enums.EServerId;
 import sm.clagenna.stdcla.utils.AppProperties;
+import sm.clagenna.stdcla.utils.Utils;
 
 public abstract class DBConn implements Closeable {
 
@@ -100,7 +101,8 @@ public abstract class DBConn implements Closeable {
     szv = p_props.getProperty(AppProperties.CSZ_PROP_DB_Host);
     setHost(szv);
     szv = p_props.getProperty(AppProperties.CSZ_PROP_DB_service);
-    setService(Integer.parseInt(szv));
+    if (Utils.isValue(szv))
+      setService(Integer.parseInt(szv));
     szv = p_props.getProperty(AppProperties.CSZ_PROP_DB_user);
     setUser(szv);
     szv = p_props.getProperty(AppProperties.CSZ_PROP_DB_passwd);
@@ -109,7 +111,7 @@ public abstract class DBConn implements Closeable {
 
   public boolean testQuery(String szQry) {
     boolean bRet = false;
-    if ( null == szQry || szQry.length() < 3)
+    if (null == szQry || szQry.length() < 3)
       return bRet;
     int n = szQry.toLowerCase().indexOf("order by");
     String szQry2 = n > 0 ? szQry.substring(0, n) : szQry;

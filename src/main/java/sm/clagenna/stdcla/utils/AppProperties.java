@@ -193,8 +193,8 @@ public class AppProperties {
       properties.remove(p_propName);
   }
 
-  public void setProperty(String p_name, int p_width) {
-    setProperty(p_name, String.valueOf(p_width));
+  public void setProperty(String p_name, int p_v) {
+    setProperty(p_name, String.valueOf(p_v));
   }
 
   public int getIntProperty(String p_propName) {

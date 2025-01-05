@@ -1,6 +1,9 @@
 package sm.clagenna.stdcla.sql;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -56,6 +59,10 @@ public class DBConnSQLite extends DBConn {
 
   @Override
   public String getURL() {
+    if ( !Files.exists(Paths.get(getDbname()), LinkOption.NOFOLLOW_LINKS)) {
+      getLog().error("Il DB SQLite \"{}\" *NON* esiste !", getDbname());
+      throw new UnsupportedOperationException("Non esiste il DB SQLite " + getDbname());
+    }
     String szUrl = String.format(CSZ_URL, getDbname());
     return szUrl;
   }
