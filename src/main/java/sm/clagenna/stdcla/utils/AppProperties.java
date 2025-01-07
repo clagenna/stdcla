@@ -108,6 +108,10 @@ public class AppProperties {
   public Properties leggiPropertyFile(String p_fiProp, boolean bForce) throws AppPropsException {
     return leggiPropertyFile(new File(p_fiProp), bForce, true);
   }
+  
+  public Properties leggiPropertyFile(String p_fiProp, boolean bForce, boolean bResJar) throws AppPropsException {
+    return leggiPropertyFile(new File(p_fiProp), bForce, bResJar);
+  }
 
   /**
    * Legge il file di propreties specificato. Se <code>bForce</code> allora il
