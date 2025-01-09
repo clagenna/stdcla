@@ -165,6 +165,14 @@ public class Utils {
     }
     return false;
   }
+  
+  public static boolean isValue(Object p_v) {
+    if (p_v == null)
+      return false;
+    if (p_v.toString().trim().length() > 0)
+      return true;
+    return false;
+  }
 
   public static boolean isValue(String p_v) {
     if (p_v == null)

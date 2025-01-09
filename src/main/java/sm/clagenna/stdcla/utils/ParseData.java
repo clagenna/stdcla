@@ -19,6 +19,7 @@ public class ParseData {
   public static DateTimeFormatter      s_fmtDtExif = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss");
   public static DateTimeFormatter      s_fmtDtFile = DateTimeFormatter.ofPattern("'f'yyyyMMdd'_'HHmmss");
   public static DateTimeFormatter      s_fmtY4MD   = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.systemDefault());
+  public static DateTimeFormatter      s_fmtPY4M   = DateTimeFormatter.ofPattern("yyyy.MM").withZone(ZoneId.systemDefault());
 
   private static final LocalDateTime s_dtMin;
   private static final LocalDateTime s_dtMax;
