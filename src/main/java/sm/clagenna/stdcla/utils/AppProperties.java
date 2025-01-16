@@ -173,7 +173,7 @@ public class AppProperties {
       propertyFile = new File(CSZ_PROPERTIES);
     try (FileOutputStream fos = new FileOutputStream(getPropertyFile())) {
       properties.store(fos, Utils.s_fmtY4MDHMS.format(new Date()));
-      s_log.info("salvato properties sul file:{}", getPropertyFile().getAbsolutePath());
+      s_log.debug("salvato properties sul file:{}", getPropertyFile().getAbsolutePath());
     } catch (IOException e) {
       s_log.error("Errore in salvataggio delle properties:{} err={}", getPropertyFile().getAbsolutePath(), e.getMessage());
     }

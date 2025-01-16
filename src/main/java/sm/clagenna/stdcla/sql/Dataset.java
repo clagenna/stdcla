@@ -185,8 +185,14 @@ public class Dataset implements Closeable {
       }
       int k = 0;
       for (String sz : liNames) {
-        if (k == 0)
-          sz = checkBOM(sz);
+        if (k == 0) {
+          String sz1 = checkBOM(sz);
+          // se c'è il BOM lo epuro ! (Maledetto!!)
+          if ( !sz1.equals(sz)) {
+            liNames.set(0, sz1);
+            sz = sz1;
+          }
+        }
         if (sz.startsWith("\""))
           liNames.set(k, sz.replace("\"", ""));
         k++;
@@ -643,6 +649,13 @@ public class Dataset implements Closeable {
     return righe.get(p_i);
   }
 
+  /**
+   * Torna una List<> dei valori della sola colonna p_colNam
+   *
+   * @param p_colNam
+   *          la colonna da estrarre
+   * @return
+   */
   public List<Object> colArray(String p_colNam) {
     List<Object> li = new ArrayList<>();
     int ii = columns.getColIndex(p_colNam);
@@ -758,6 +771,55 @@ public class Dataset implements Closeable {
     } catch (CloneNotSupportedException e) {
       e.printStackTrace();
     }
+    return ret;
+  }
+
+  /**
+   * Torna un nuovo dataset contenente le sole colonne specificate in
+   * <code>p_colList</code> e un solo row con la somma delle colonne specificate
+   *
+   * @param p_colList
+   *          le colonne da sommare
+   * @return
+   * @throws DatasetException
+   */
+  public Dataset sum(List<String> p_colList) throws DatasetException {
+    Dataset ret = new Dataset();
+    DtsCols cols = new DtsCols(ret);
+    try {
+      for (DtsCol col : getColumns().getColumns()) {
+        // ??? non so perche' non funziona
+        //        if (p_colList.stream().anyMatch(col.getName()::equalsIgnoreCase))
+        //          cols.addCol((DtsCol) col.clone());
+        // !! Scoperto !!
+        //        szColNam.getBytes()
+        //        (byte[]) [-17, -69, -65, 99, 111, 100, 105, 115, 115]
+        //                  ^????????????^  <-- cos'e' sta roba ?!? E' il BOM (Maledetto!)
+        //     p_colList.get(0).getBytes()
+        //        (byte[]) [               99, 111, 100, 105, 115, 115]      szColNam.getBytes()
+        //        String szColNam = col.getName();
+        //        if (p_colList.contains(szColNam))
+        //          cols.addCol((DtsCol) col.clone());
+        if (p_colList.stream().anyMatch(col.getName()::equalsIgnoreCase))
+          cols.addCol((DtsCol) col.clone());
+      }
+    } catch (CloneNotSupportedException e) {
+      e.printStackTrace();
+    }
+    if (cols.size() == 0)
+      throw new DatasetException("No cols for " + p_colList.toString());
+    ret.creaCols(cols);
+    DtsRow newro = new DtsRow(ret);
+
+    for (String colnam : p_colList) {
+      List<Object> colv = colArray(colnam);
+      double somma = colv //
+          .stream() //
+          .mapToDouble(s -> Double.parseDouble(s.toString())) //
+          .sum();
+      newro.set(colnam, somma);
+    }
+    ret.addRow(newro);
     return ret;
   }
 

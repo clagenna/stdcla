@@ -3,6 +3,8 @@ package prova.stdcla.dts;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -29,6 +31,13 @@ public class ProvaDatasetCSV {
 
       dts.savecsv(pthCopia);
       System.out.println("Scritto:" + pthCopia);
+
+      // prova della Somma di colonne
+      List<String> liCols = Arrays.asList(new String[] { "codiss", "altezza" });
+      Dataset dtsum = dts.sum(liCols);
+      System.out.println();
+      System.out.println("Somma di " + liCols);
+      System.out.println(dtsum);
 
       // calcolo delle medie
       System.out.printf("%20s:%f\n", "Eta media", dts.mean("eta"));
