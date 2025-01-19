@@ -1,7 +1,12 @@
 package sm.clagenna.stdcla.javafx;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.Semaphore;
 
 import org.apache.logging.log4j.LogManager;
@@ -21,21 +26,45 @@ import sm.clagenna.stdcla.sql.Dataset;
 import sm.clagenna.stdcla.sql.DtsCol;
 import sm.clagenna.stdcla.sql.DtsCols;
 import sm.clagenna.stdcla.sql.DtsRow;
+import sm.clagenna.stdcla.sys.ex.DatasetException;
 
 public class TableViewFiller extends Task<String> {
-  private static final Logger s_log       = LogManager.getLogger(TableViewFiller.class);
-  private static String       CSZ_NULLVAL = "**null**";
+  private static final Logger s_log           = LogManager.getLogger(TableViewFiller.class);
+  private static String       CSZ_NULLVAL     = "**null**";
+  private static String       QRY_WHE_NOTRASF = "AND abicaus not in ('45','S3','S4') AND descr NOT LIKE '%wise%'";
 
+  private static DecimalFormat fmtDbl;
+
+//  @Getter @Setter
+//  private ResultView resView;
   @Getter @Setter
-  private String                  szQry;
+  private String     szQry;
+  //  @Getter @Setter
+  //  private boolean                 fltrParolaRegEx;
+  @Getter @Setter
+  private String                  fltrParola;
   @Getter @Setter
   private TableView<List<Object>> tableview;
-  private DBConn                  m_db;
+  @Getter @Setter
+  private DBConn                  dbconn;
   private Dataset                 m_dts;
+  private boolean                 m_bScartaImpTrasf;
+  @Getter @Setter
+  private boolean                 conRecTotali;
 
-  public TableViewFiller(TableView<List<Object>> tblview, DBConn p_conn) {
+  // private List<IRigaBanca>        excludeCols;
+  private List<String> excludeCols;
+
+  static {
+    fmtDbl = (DecimalFormat) NumberFormat.getInstance(Locale.getDefault()); // ("#,##0.00", Locale.getDefault())
+    fmtDbl.applyPattern("#,##0.00");
+  }
+
+  public TableViewFiller(TableView<List<Object>> tblview, DBConn p_dbc) {
     setTableview(tblview);
-    m_db = p_conn;
+    setDbconn(p_dbc);
+    conRecTotali = false;
+    // m_db = LoadBancaMainApp.getInst().getConnSQL();
   }
 
   public static void setNullRetValue(String vv) {
@@ -43,38 +72,39 @@ public class TableViewFiller extends Task<String> {
   }
 
   @Override
-  protected String call() throws Exception {
-    s_log.debug("Start creazione Table View con i dati...");
-    openDataSet();
-    if (null == m_dts) {
-      s_log.warn("Nulla da mostrare sulla tabella");
-      return ".. nulla da mostrare";
-    }
-    // creato semaforo altrimenti la "runlater" parte dopo la fillTableView
-    Semaphore semaf = new Semaphore(0);
-    Platform.runLater(new Runnable() {
-      @Override
-      public void run() {
-        creaTableView(m_dts);
-        semaf.release();
+  public String call() throws Exception {
+    s_log.debug("Start creazione Table View con i dati(B)...");
+
+    try {
+      openDataSet();
+      if (null == m_dts) {
+        s_log.warn("Nulla da mostrare sulla tabella");
+        return ".. nulla da mostrare";
       }
-    });
-    semaf.acquire();
-    fillTableView();
+      clearColumsTableView();
+      //      creaTableView(m_dts);
+      //      fillTableView();
+    } catch (Exception e) {
+      s_log.error("Errore Task riempi table view: {}", e.getMessage(), e);
+    }
     return "..Finito!";
   }
-  //
-  //  private TableView<List<Object>> openQuery(String szQryFltr) {
-  //    szQry = szQryFltr;
-  //    openDataSet();
-  //    if (null == m_dts) {
-  //      s_log.warn("Nulla da mostrare sulla tabella");
-  //      return tableview;
-  //    }
-  //    creaTableView(m_dts);
-  //    fillTableView();
-  //    return tableview;
-  //  }
+
+  private void clearColumsTableView() {
+    Semaphore semaf = new Semaphore(0);
+    Platform.runLater(() -> {
+      tableview.getItems().clear();
+      tableview.getColumns().clear();
+      creaTableView(m_dts);
+      fillTableView();
+      semaf.release();
+    });
+    try {
+      semaf.acquire();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+  }
 
   public Dataset getDataset() {
     return m_dts;
@@ -82,26 +112,70 @@ public class TableViewFiller extends Task<String> {
 
   private Dataset openDataSet() {
     m_dts = null;
+    if (m_bScartaImpTrasf) {
+      int ndx = szQry.toLowerCase().indexOf("order");
+      if (ndx > 0) {
+        StringBuilder szQry2 = new StringBuilder();
+        szQry2.append(szQry.substring(0, ndx)) //
+            .append(QRY_WHE_NOTRASF) //
+            .append(" ") //
+            .append(szQry.substring(ndx));
+        szQry = szQry2.toString();
+      }
+    }
     s_log.debug("Lancio query:{}", szQry);
-    try (Dataset dtset = new Dataset(m_db)) {
+
+    try (Dataset dtset = new Dataset(dbconn)) {
       if ( !dtset.executeQuery(szQry)) {
-        s_log.error("Lettura andata male !");
-      } else
+        s_log.error("errore lettura query {}", szQry);
+      } else {
         m_dts = dtset;
+        datasetReady();
+      }
     } catch (IOException e) {
-      e.printStackTrace();
+      s_log.error("errore creazione DataSet con query {}, err= {}", szQry, e.getMessage());
     }
     return m_dts;
   }
 
+  public void datasetReady() {
+    //
+  }
+
+  @SuppressWarnings("unused")
+  private void creaRecTotali() throws DatasetException {
+    List<String> liCols = Arrays.asList(new String[] { "dare", "avere" });
+    // Dataset dts = m_dts.sum(liCols);
+    // FIXME mi fermo qui altrimenti il dataset e Table view non è esportabile
+  }
+
+  public boolean isExcludedCol(String p_colNam) {
+    if (null == excludeCols || null == p_colNam)
+      return false;
+    //    IRigaBanca rb = IRigaBanca.parse(p_colNam);
+    //    if (null == rb)
+    //      return false;
+    //    return excludeCols.contains(rb);
+    return excludeCols.contains(p_colNam.toLowerCase());
+  }
+
+  public void addExcludedCols(String[] cols) {
+    if (null == cols || cols.length == 0)
+      return;
+    if (null == excludeCols)
+      excludeCols = new ArrayList<String>();
+    excludeCols.addAll(Arrays.asList(cols));
+  }
+
   private void creaTableView(Dataset p_dts) {
     DtsCols cols = p_dts.getColumns();
-    tableview.getItems().clear();
-    tableview.getColumns().clear();
+    // System.out.printf("creaTableView.nCols=%d\n", cols.size());
     int k = 0;
     for (DtsCol col : cols.getColumns()) {
       final int j = k++;
       String szColNam = col.getName();
+      if (isExcludedCol(szColNam))
+        continue;
       String cssAlign = "-fx-alignment: center-left;";
       switch (col.getType()) {
         case BIGINT:
@@ -117,19 +191,24 @@ public class TableViewFiller extends Task<String> {
         default:
           break;
       }
+      // System.out.printf("\tcreaTableView(%s(%s),\"%s\")\n", col.getName(), col.getType().toString(), cssAlign);
       TableColumn<List<Object>, Object> tbcol = new TableColumn<>(szColNam);
+      //      tbcol.setCellFactory(tc -> {
+      //        TableCell<List<Object>, Object> cel = new TableCell<List<Object>, Object>();
+      //        cel.setOnMouseClicked(e -> {
+      //          if ( !cel.isEmpty()) {
+      //            Object ob = cel.getItem();
+      //            System.out.printf("TableViewFiller.cellMouseClick(%s)\n", ob.toString());
+      //          }
+      //        });
+      //        return cel;
+      //      });
       tbcol.setCellValueFactory(param -> {
         SimpleObjectProperty<Object> cel = new SimpleObjectProperty<Object>(formattaCella(param.getValue().get(j)));
         return cel;
       });
-
       tbcol.setStyle(cssAlign);
-      Platform.runLater(new Runnable() {
-        @Override
-        public void run() {
-          tableview.getColumns().add(tbcol);
-        }
-      });
+      Platform.runLater(() -> tableview.getColumns().add(tbcol));
     }
   }
 
@@ -141,12 +220,29 @@ public class TableViewFiller extends Task<String> {
       s_log.info("Nessuna informazione da mostrare");
       return;
     }
+    //    Pattern patt = null;
+    //    if (fltrParolaRegEx)
+    //      patt = Pattern.compile(fltrParola.toLowerCase());
     for (DtsRow riga : m_dts.getRighe()) {
+      if (scartaRiga(riga))
+        continue;
+      //      if (fltrParolaRegEx) {
+      //        String desc = (String) riga.get(IRigaBanca.DESCR.getColNam());
+      //        if ( !Utils.isValue(desc))
+      //          continue;
+      //        var lo = desc.toLowerCase();
+      //        if ( !patt.matcher(lo).find())
+      //          continue;
+      //      }
       ObservableList<Object> tbRiga = FXCollections.observableArrayList();
       tbRiga.addAll(riga.getValues(true));
       dati.add(tbRiga);
     }
     tableview.setItems(dati);
+  }
+
+  public boolean scartaRiga(DtsRow riga) {
+    return false;
   }
 
   private Object formattaCella(Object p_o) {
@@ -157,19 +253,24 @@ public class TableViewFiller extends Task<String> {
       case "String":
         return p_o;
       case "Integer":
-        if ( ((Integer) p_o) == 0)
+        if ((Integer) p_o == 0)
           return "";
         return p_o;
       case "Float":
-        if ( ((Float) p_o) == 0)
+        if ((Float) p_o == 0)
           return "";
         return p_o;
       case "Double":
-        if ( ((Double) p_o) == 0)
+        if ((Double) p_o == 0)
           return "";
-        return p_o;
+        // return Utils.formatDouble((Double) p_o);
+        return fmtDbl.format(p_o);
     }
     return p_o;
+  }
+
+  public void setScartaImpTrasf(boolean selected) {
+    m_bScartaImpTrasf = selected;
   }
 
 }
