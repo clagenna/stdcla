@@ -292,7 +292,7 @@ public class DtsRow implements Cloneable {
             break;
 
           default:
-            szv = vv.toString().replaceAll(csvdelim, escsep);
+            szv = String.format("\"%s\"", vv.toString().replaceAll(csvdelim, escsep));
             break;
         }
         sb.append(szv);

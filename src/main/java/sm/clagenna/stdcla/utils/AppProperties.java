@@ -108,7 +108,7 @@ public class AppProperties {
   public Properties leggiPropertyFile(String p_fiProp, boolean bForce) throws AppPropsException {
     return leggiPropertyFile(new File(p_fiProp), bForce, true);
   }
-  
+
   public Properties leggiPropertyFile(String p_fiProp, boolean bForce, boolean bResJar) throws AppPropsException {
     return leggiPropertyFile(new File(p_fiProp), bForce, bResJar);
   }
@@ -189,6 +189,13 @@ public class AppProperties {
     return szValue;
   }
 
+  public String getProperty(String p_propName, String p_default) {
+    String sz = getProperty(p_propName);
+    if (null == sz)
+      sz = p_default;
+    return sz;
+  }
+
   public void setProperty(String p_propName, String p_value) {
     getProperties();
     if (Utils.isValue(p_value))
@@ -237,9 +244,13 @@ public class AppProperties {
       return def;
     return Double.parseDouble(sz);
   }
-
+  
   public boolean getBooleanProperty(String p_prop) {
-    boolean bRet = false;
+    return getBooleanProperty(p_prop, false);
+  }
+
+  public boolean getBooleanProperty(String p_prop, boolean p_def) {
+    boolean bRet = p_def;
     String sz = getProperty(p_prop);
     if (sz == null)
       return bRet;

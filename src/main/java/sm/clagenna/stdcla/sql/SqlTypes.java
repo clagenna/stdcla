@@ -196,4 +196,130 @@ public enum SqlTypes {
     }
     return obj;
   }
+
+  public static SqlTypes parse(String p_sz) {
+    SqlTypes vv = null;
+    if (null == p_sz)
+      return vv;
+    switch (p_sz.toLowerCase()) {
+      case "array":
+        vv = ARRAY;
+        break;
+      case "bigint":
+        vv = BIGINT;
+        break;
+      case "binary":
+        vv = BINARY;
+        break;
+      case "bit":
+        vv = BIT;
+        break;
+      case "blob":
+        vv = BLOB;
+        break;
+      case "char":
+        vv = CHAR;
+        break;
+      case "clob":
+        vv = CLOB;
+        break;
+      case "date":
+        vv = DATE;
+        break;
+      case "decimal":
+        vv = DECIMAL;
+        break;
+      case "distinct":
+        vv = DISTINCT;
+        break;
+      case "double":
+        vv = DOUBLE;
+        break;
+      case "float":
+        vv = FLOAT;
+        break;
+      case "integer":
+        vv = INTEGER;
+        break;
+      case "java_object":
+        vv = JAVA_OBJECT;
+        break;
+      case "longvarbinary":
+        vv = LONGVARBINARY;
+        break;
+      case "longvarchar":
+        vv = LONGVARCHAR;
+        break;
+      case "null":
+        vv = NULL;
+        break;
+      case "numeric":
+        vv = NUMERIC;
+        break;
+      case "other":
+        vv = OTHER;
+        break;
+      case "real":
+        vv = REAL;
+        break;
+      case "ref":
+        vv = REF;
+        break;
+      case "smallint":
+        vv = SMALLINT;
+        break;
+      case "struct":
+        vv = STRUCT;
+        break;
+      case "time":
+        vv = TIME;
+        break;
+      case "timestamp":
+        vv = TIMESTAMP;
+        break;
+      case "tinyint":
+        vv = TINYINT;
+        break;
+      case "varbinary":
+        vv = VARBINARY;
+        break;
+      case "varchar":
+        vv = VARCHAR;
+        break;
+      case "boolean":
+        vv = BOOLEAN;
+        break;
+      case "datalink":
+        vv = DATALINK;
+        break;
+      case "longnvarchar":
+        vv = LONGNVARCHAR;
+        break;
+      case "nchar":
+        vv = NCHAR;
+        break;
+      case "nclob":
+        vv = NCLOB;
+        break;
+      case "nvarchar":
+        vv = NVARCHAR;
+        break;
+      case "ref_cursor":
+        vv = REF_CURSOR;
+        break;
+      case "rowid":
+        vv = ROWID;
+        break;
+      case "sqlxml":
+        vv = SQLXML;
+        break;
+      case "timestamp_with_timezone":
+        vv = TIMESTAMP_WITH_TIMEZONE;
+        break;
+      case "time_with_timezone":
+        vv = TIME_WITH_TIMEZONE;
+        break;
+    }
+    return vv;
+  }
 }

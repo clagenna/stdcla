@@ -183,18 +183,8 @@ public class TableViewFiller extends Task<String> {
         default:
           break;
       }
-      // System.out.printf("\tcreaTableView(%s(%s),\"%s\")\n", col.getName(), col.getType().toString(), cssAlign);
+
       TableColumn<List<Object>, Object> tbcol = new TableColumn<>(szColNam);
-      //      tbcol.setCellFactory(tc -> {
-      //        TableCell<List<Object>, Object> cel = new TableCell<List<Object>, Object>();
-      //        cel.setOnMouseClicked(e -> {
-      //          if ( !cel.isEmpty()) {
-      //            Object ob = cel.getItem();
-      //            System.out.printf("TableViewFiller.cellMouseClick(%s)\n", ob.toString());
-      //          }
-      //        });
-      //        return cel;
-      //      });
       tbcol.setCellValueFactory(param -> {
         SimpleObjectProperty<Object> cel = new SimpleObjectProperty<Object>(formattaCella(param.getValue().get(j)));
         return cel;
@@ -205,28 +195,16 @@ public class TableViewFiller extends Task<String> {
   }
 
   private void fillTableView() {
-    // System.out.println("TableViewFiller.fillTableView()");
     ObservableList<List<Object>> dati = FXCollections.observableArrayList();
     List<DtsRow> righe = m_dts.getRighe();
     if (righe == null) {
       s_log.info("Nessuna informazione da mostrare");
       return;
     }
-    //    Pattern patt = null;
-    //    if (fltrParolaRegEx)
-    //      patt = Pattern.compile(fltrParola.toLowerCase());
     for (DtsRow riga : m_dts.getRighe()) {
       if (scartaRiga(riga))
         continue;
       addRiga(riga);
-      //      if (fltrParolaRegEx) {
-      //        String desc = (String) riga.get(IRigaBanca.DESCR.getColNam());
-      //        if ( !Utils.isValue(desc))
-      //          continue;
-      //        var lo = desc.toLowerCase();
-      //        if ( !patt.matcher(lo).find())
-      //          continue;
-      //      }
       ObservableList<Object> tbRiga = FXCollections.observableArrayList();
       tbRiga.addAll(riga.getValues(true));
       dati.add(tbRiga);

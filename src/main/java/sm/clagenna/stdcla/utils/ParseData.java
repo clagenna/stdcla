@@ -1,5 +1,6 @@
 package sm.clagenna.stdcla.utils;
 
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -164,5 +165,9 @@ public class ParseData {
       // e.printStackTrace();
     }
     return szRet;
+  }
+  
+  public static Timestamp toTimestamp(LocalDateTime p_ldt) {
+    return Timestamp.valueOf(p_ldt);
   }
 }

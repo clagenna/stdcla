@@ -39,6 +39,9 @@ public class Utils {
 
   private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
+  public static final DecimalFormat s_fmtDbl;
+  public static final DecimalFormat s_fmtInt;
+
   public static final SimpleDateFormat s_fmtY4MDHMSm   = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
   public static final SimpleDateFormat s_fmtY4MDHMS    = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
   public static final SimpleDateFormat s_fmtY4MDHMS_F  = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
@@ -53,6 +56,13 @@ public class Utils {
   public static final SimpleDateFormat s_fmt_ymdThms   = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
   public static final SimpleDateFormat s_sfmtTMZ       = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
   public static final SimpleDateFormat s_sfmtTMZ2      = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+
+  static {
+    s_fmtDbl = (DecimalFormat) NumberFormat.getInstance(Locale.getDefault()); // ("#,##0.00", Locale.getDefault())
+    s_fmtDbl.applyPattern("#,##0.00");
+    s_fmtInt = (DecimalFormat) NumberFormat.getInstance(Locale.getDefault());
+    s_fmtInt.applyPattern("#,##0");
+  }
 
   public Utils() {
     //
@@ -165,7 +175,7 @@ public class Utils {
     }
     return false;
   }
-  
+
   public static boolean isValue(Object p_v) {
     if (p_v == null)
       return false;
@@ -181,7 +191,7 @@ public class Utils {
       return true;
     return false;
   }
-  
+
   public static boolean isValue(Double p_v) {
     if (p_v == null)
       return false;
@@ -252,6 +262,12 @@ public class Utils {
     return retDbl;
   }
 
+  public static Integer parseInt(Object vv) {
+    if (null == vv)
+      return null;
+    return Utils.parseInt(vv.toString());
+  }
+
   public static Integer parseInt(String psz) {
     if (null == S_LOCALE)
       Utils.setLocale(Locale.getDefault());
@@ -278,6 +294,12 @@ public class Utils {
       //
     }
     return ii;
+  }
+
+  public static double parseDouble(Object vv) {
+    if (null == vv)
+      return 0;
+    return Utils.parseDouble(vv.toString());
   }
 
   public static Double parseDouble(String psz) {
@@ -406,17 +428,13 @@ public class Utils {
   }
 
   public static LocalDateTime min(LocalDateTime ldtMin, LocalDateTime dtTest) {
-    if ( null == ldtMin || null == dtTest)
-      return dtTest;
-    if ( ldtMin.isAfter(dtTest))
+    if (null == ldtMin || null == dtTest || ldtMin.isAfter(dtTest))
       return dtTest;
     return ldtMin;
   }
-  
+
   public static LocalDateTime max(LocalDateTime ldtMax, LocalDateTime dtTest) {
-    if ( null == ldtMax || null == dtTest)
-      return dtTest;
-    if ( ldtMax.isBefore(dtTest))
+    if (null == ldtMax || null == dtTest || ldtMax.isBefore(dtTest))
       return dtTest;
     return ldtMax;
   }

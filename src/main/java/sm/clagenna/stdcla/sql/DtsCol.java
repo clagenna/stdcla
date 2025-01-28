@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 
 import lombok.Getter;
 import lombok.Setter;
+import sm.clagenna.stdcla.utils.ECurrencies;
 import sm.clagenna.stdcla.utils.ParseData;
 import sm.clagenna.stdcla.utils.Utils;
 
@@ -71,6 +72,12 @@ public class DtsCol implements Cloneable {
           obj = Double.valueOf(0);
           if (null != p_szv) {
             sz2 = p_szv.trim();
+            if (sz2.contains(ECurrencies.Euro.getSymbol()))
+              sz2 = sz2.replaceAll(ECurrencies.Euro.getSymbol(), "");
+            if (sz2.contains(ECurrencies.Dollar.getSymbol()))
+              sz2 = sz2.replaceAll(ECurrencies.Dollar.getSymbol(), "");
+            sz2 = sz2.trim();
+
             if (sz2.length() > 0) {
               //            sz2 = sz2.replace(",", ".");
               //            obj = Double.parseDouble(sz2);

@@ -46,6 +46,7 @@ import lombok.Getter;
 import lombok.Setter;
 import sm.clagenna.stdcla.enums.EServerId;
 import sm.clagenna.stdcla.sys.ex.DatasetException;
+import sm.clagenna.stdcla.utils.ECurrencies;
 import sm.clagenna.stdcla.utils.ParseData;
 import sm.clagenna.stdcla.utils.Utils;
 
@@ -118,7 +119,7 @@ public class Dataset implements Closeable {
     if (null == csvdelim)
       csvdelim = DEFAULT_CSV_DELIM;
     if (null == columns || columns.size() == 0)
-      creaCsvCols(p_csvFil);
+      creaCsvCols2(p_csvFil);
     readCsvFile2(p_csvFil);
     return this;
   }
@@ -141,10 +142,12 @@ public class Dataset implements Closeable {
     s_log.info("Salvato file CSV {}", p_fil.toString());
   }
 
+  @SuppressWarnings("unused")
   private void creaCsvCols(Path p_csvFil) throws IOException {
     // FIXME Impostare una var che tiene conto se l'elenco di colonne finisce con ';' finale vuoto
     List<List<String>> recs = null;
-
+    // leggo le prime 4 per capire il nome delle colonne
+    // ogni riga e' split(csvDelim) in un Array
     try (BufferedReader reader = Files.newBufferedReader(p_csvFil, Charset.defaultCharset())) {
       recs = reader.lines() //
           .limit(4) //
@@ -156,8 +159,9 @@ public class Dataset implements Closeable {
     // test se inizia il file con la specifica "sep=x"
     if (recs.size() > 0) {
       List<String> li = recs.get(0);
+      // se c'e' 1 solo elem allora probabile la direttiva "sep=x"
       if (li.size() == 1 && null != li.get(0)) {
-        // tolgo l'UTF-8 BOM (maledetto!)
+        // tolgo l'eventuale UTF-8 BOM (maledetto!)
         String sz = checkBOM(li.get(0).toLowerCase());
         // forse ho una specifica "sep=c", quindi la interpreto
         if (sz.contains("sep=")) {
@@ -170,7 +174,7 @@ public class Dataset implements Closeable {
         }
       }
     }
-
+    // analizzo i primi 20 records
     try (BufferedReader reader = Files.newBufferedReader(p_csvFil)) {
       recs = reader.lines() //
           .limit(20) //
@@ -183,8 +187,10 @@ public class Dataset implements Closeable {
         liNames = recs.get(1);
         skipRows++;
       }
+      // analizzo i nomi delle colonne
       int k = 0;
       for (String sz : liNames) {
+        // solo per il primo nome di colonna (epuro il BOM)
         if (k == 0) {
           String sz1 = checkBOM(sz);
           // se c'è il BOM lo epuro ! (Maledetto!!)
@@ -193,10 +199,12 @@ public class Dataset implements Closeable {
             sz = sz1;
           }
         }
+        // epuro le virgolette se ci sono
         if (sz.startsWith("\""))
           liNames.set(k, sz.replace("\"", ""));
         k++;
       }
+      // indovino le tipologie delle colonne
       List<SqlTypes> liTypes = guessSqlTypes(recs);
       int diff = liNames.size() - liTypes.size();
       for (; diff > 0; diff--)
@@ -211,6 +219,100 @@ public class Dataset implements Closeable {
         s_log.error("Errore crea DataSet su file {}, err={}", p_csvFil.getFileName().toString(), e.getMessage());
       }
       creaCols(mpCols);
+    }
+  }
+
+  private void creaCsvCols2(Path p_csvFil) throws IOException {
+    // FIXME Impostare una var che tiene conto se l'elenco di colonne finisce con ';' finale vuoto
+    List<List<String>> recs = null;
+    // leggo le prime 4 per capire il nome delle colonne
+    // ogni riga e' split(csvDelim) in un Array
+
+    CSVParser csvParser = new CSVParserBuilder().withSeparator(csvdelim.charAt(0)).build(); // custom separator
+    try (CSVReader reader = new CSVReaderBuilder(new FileReader(p_csvFil.toFile())).withCSVParser(csvParser) // custom CSV parser
+        .withSkipLines(skipRows) // skip the first line, header info
+        .build()) {
+      recs = reader.readAll() //
+          .stream() //
+          .limit(4) //
+          // .map(li -> Arrays.asList(li.split(csvdelim))) //
+          .map(li -> Arrays.asList(li)) //
+          .collect(Collectors.toList());
+    } catch (CsvException e) {
+      s_log.error("Errore Read CSV file {}, err={}", p_csvFil.getFileName().toString(), e.getMessage());
+    }
+
+    // test se inizia il file con la specifica "sep=x"
+    if (recs.size() > 0) {
+      List<String> li = recs.get(0);
+      // se c'e' 1 solo elem allora probabile la direttiva "sep=x"
+      if (li.size() == 1 && null != li.get(0)) {
+        // tolgo l'eventuale UTF-8 BOM (maledetto!)
+        String sz = checkBOM(li.get(0).toLowerCase());
+        // forse ho una specifica "sep=c", quindi la interpreto
+        if (sz.contains("sep=")) {
+          sz = sz.replace("sep=", "");
+          if (sz.length() > 0)
+            setCsvdelim(sz);
+          else
+            sz = getCsvdelim();
+          s_log.warn("CSV file {} contiene la specifica \"sep={}\", imposto questa!", p_csvFil.getFileName().toString(), sz);
+        }
+      }
+    }
+    // analizzo i primi 20 records
+
+    csvParser = new CSVParserBuilder().withSeparator(csvdelim.charAt(0)).build(); // custom separator
+    try (CSVReader reader = new CSVReaderBuilder(new FileReader(p_csvFil.toFile())).withCSVParser(csvParser) // custom CSV parser
+        .withSkipLines(skipRows) // skip the first line, header info
+        .build()) {
+      recs = reader.readAll() //
+          .stream() //
+          .limit(20) //
+          // .map(li -> Arrays.asList(li.split(csvdelim))) //
+          .map(li -> Arrays.asList(li)) //
+          .collect(Collectors.toList());
+
+      List<String> liNames = recs.get(0);
+      skipRows = 1;
+      if (liNames.size() == 1 && checkBOM(liNames.get(0).toString()).contains("sep=")) {
+        liNames = recs.get(1);
+        skipRows++;
+      }
+      // analizzo i nomi delle colonne
+      int k = 0;
+      for (String sz : liNames) {
+        // solo per il primo nome di colonna (epuro il BOM)
+        if (k == 0) {
+          String sz1 = checkBOM(sz);
+          // se c'è il BOM lo epuro ! (Maledetto!!)
+          if ( !sz1.equals(sz)) {
+            liNames.set(0, sz1);
+            sz = sz1;
+          }
+        }
+        // epuro le virgolette se ci sono
+        if (sz.startsWith("\""))
+          liNames.set(k, sz.replace("\"", ""));
+        k++;
+      }
+      // indovino le tipologie delle colonne
+      List<SqlTypes> liTypes = guessSqlTypes(recs);
+      int diff = liNames.size() - liTypes.size();
+      for (; diff > 0; diff--)
+        liTypes.add(SqlTypes.VARCHAR);
+
+      Map<String, SqlTypes> mpCols = new LinkedHashMap<>();
+      int i = 0;
+      try {
+        for (String na : liNames)
+          mpCols.put(na.trim(), liTypes.get(i++));
+      } catch (Exception e) {
+        s_log.error("Errore crea DataSet su file {}, err={}", p_csvFil.getFileName().toString(), e.getMessage());
+      }
+      creaCols(mpCols);
+    } catch (CsvException e1) {
+      s_log.error("Errore parse CSV file {}, err={}", p_csvFil.getFileName().toString(), e1.getMessage());
     }
   }
 
@@ -236,7 +338,11 @@ public class Dataset implements Closeable {
   }
 
   public void addCol(String szNam, SqlTypes p_ty) {
+    if ( null == columns)
+      columns=new DtsCols(this);
     columns.addCol(szNam, p_ty);
+    if ( null == righe)
+      return;
     for (DtsRow row : righe) {
       row.setDataset(this);
       row.addCol(p_ty);
@@ -257,11 +363,23 @@ public class Dataset implements Closeable {
 
   private void readCsvFile2(Path p_csvFil) throws IOException, CsvException {
     CSVParser csvParser = new CSVParserBuilder().withSeparator(csvdelim.charAt(0)).build(); // custom separator
+    //    try (CSVReader reader = new CSVReaderBuilder(new FileReader(p_csvFil.toFile())).withCSVParser(csvParser) // custom CSV parser
+    //        .withSkipLines(skipRows) // skip the first line, header info
+    //        .build()) {
+    //      List<String[]> recs = reader.readAll();
+    //
+    //      recs.forEach(s -> parseRow(Arrays.asList(s)));
+    //    }
+    //
+    // List<List<String>> recs;
     try (CSVReader reader = new CSVReaderBuilder(new FileReader(p_csvFil.toFile())).withCSVParser(csvParser) // custom CSV parser
         .withSkipLines(skipRows) // skip the first line, header info
         .build()) {
-      List<String[]> recs = reader.readAll();
-      recs.forEach(s -> parseRow(Arrays.asList(s)));
+      reader.readAll() //
+          .stream() //
+          .skip(skipRows) //
+          .map(li -> Arrays.asList(li)) //
+          .forEach(s -> parseRow(s));
     }
   }
 
@@ -540,14 +658,19 @@ public class Dataset implements Closeable {
 
   private SqlTypes guessSqlType(String p_sz) {
     // ******   date *********
-    LocalDateTime dt = ParseData.parseData(p_sz.replace("\"", ""));
+    String lsz = p_sz.replace("\"", "");
+    if (lsz.contains(ECurrencies.Euro.getSymbol()))
+      lsz = lsz.replaceAll(ECurrencies.Euro.getSymbol(), "");
+    if (lsz.contains(ECurrencies.Dollar.getSymbol()))
+      lsz = lsz.replaceAll(ECurrencies.Dollar.getSymbol(), "");
+    LocalDateTime dt = ParseData.parseData(lsz);
     if (null != dt)
       return SqlTypes.DATE;
     // ******* double ********
-    if (p_sz.contains(".") || p_sz.contains(",") || isIntToDouble()) {
+    if (lsz.contains(".") || lsz.contains(",") || isIntToDouble()) {
       Double dbl = null;
       try {
-        dbl = Double.parseDouble(p_sz.replace(",", "."));
+        dbl = Double.parseDouble(lsz.replace(",", "."));
         if (null != dbl)
           return SqlTypes.DOUBLE;
       } catch (NumberFormatException e) {
@@ -557,7 +680,7 @@ public class Dataset implements Closeable {
     // ***** integer *******
     Integer ii = null;
     try {
-      ii = Integer.parseInt(p_sz);
+      ii = Integer.parseInt(lsz);
       if (ii != null)
         return SqlTypes.INTEGER;
     } catch (NumberFormatException e) {
