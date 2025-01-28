@@ -26,7 +26,6 @@ import sm.clagenna.stdcla.sql.Dataset;
 import sm.clagenna.stdcla.sql.DtsCol;
 import sm.clagenna.stdcla.sql.DtsCols;
 import sm.clagenna.stdcla.sql.DtsRow;
-import sm.clagenna.stdcla.sys.ex.DatasetException;
 
 public class TableViewFiller extends Task<String> {
   private static final Logger s_log           = LogManager.getLogger(TableViewFiller.class);
@@ -35,10 +34,10 @@ public class TableViewFiller extends Task<String> {
 
   private static DecimalFormat fmtDbl;
 
-//  @Getter @Setter
-//  private ResultView resView;
+  //  @Getter @Setter
+  //  private ResultView resView;
   @Getter @Setter
-  private String     szQry;
+  private String szQry;
   //  @Getter @Setter
   //  private boolean                 fltrParolaRegEx;
   @Getter @Setter
@@ -110,7 +109,7 @@ public class TableViewFiller extends Task<String> {
     return m_dts;
   }
 
-  private Dataset openDataSet() {
+  public Dataset openDataSet() {
     m_dts = null;
     if (m_bScartaImpTrasf) {
       int ndx = szQry.toLowerCase().indexOf("order");
@@ -140,13 +139,6 @@ public class TableViewFiller extends Task<String> {
 
   public void datasetReady() {
     //
-  }
-
-  @SuppressWarnings("unused")
-  private void creaRecTotali() throws DatasetException {
-    List<String> liCols = Arrays.asList(new String[] { "dare", "avere" });
-    // Dataset dts = m_dts.sum(liCols);
-    // FIXME mi fermo qui altrimenti il dataset e Table view non è esportabile
   }
 
   public boolean isExcludedCol(String p_colNam) {
@@ -226,6 +218,7 @@ public class TableViewFiller extends Task<String> {
     for (DtsRow riga : m_dts.getRighe()) {
       if (scartaRiga(riga))
         continue;
+      addRiga(riga);
       //      if (fltrParolaRegEx) {
       //        String desc = (String) riga.get(IRigaBanca.DESCR.getColNam());
       //        if ( !Utils.isValue(desc))
@@ -239,10 +232,19 @@ public class TableViewFiller extends Task<String> {
       dati.add(tbRiga);
     }
     tableview.setItems(dati);
+    tableViewFilled();
   }
 
   public boolean scartaRiga(DtsRow riga) {
     return false;
+  }
+
+  public void addRiga(DtsRow riga) {
+    //
+  }
+
+  public void tableViewFilled() {
+    //
   }
 
   private Object formattaCella(Object p_o) {
