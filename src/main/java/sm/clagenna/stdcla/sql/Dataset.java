@@ -227,7 +227,7 @@ public class Dataset implements Closeable {
     List<List<String>> recs = null;
     // leggo le prime 4 per capire il nome delle colonne
     // ogni riga e' split(csvDelim) in un Array
-
+    skipRows = 0;
     CSVParser csvParser = new CSVParserBuilder().withSeparator(csvdelim.charAt(0)).build(); // custom separator
     try (CSVReader reader = new CSVReaderBuilder(new FileReader(p_csvFil.toFile())).withCSVParser(csvParser) // custom CSV parser
         .withSkipLines(skipRows) // skip the first line, header info
@@ -246,15 +246,19 @@ public class Dataset implements Closeable {
     if (recs.size() > 0) {
       List<String> li = recs.get(0);
       // se c'e' 1 solo elem allora probabile la direttiva "sep=x"
-      if (li.size() == 1 && null != li.get(0)) {
+      if (li.size() <= 2 && null != li.get(0)) {
         // tolgo l'eventuale UTF-8 BOM (maledetto!)
         String sz = checkBOM(li.get(0).toLowerCase());
         // forse ho una specifica "sep=c", quindi la interpreto
         if (sz.contains("sep=")) {
           sz = sz.replace("sep=", "");
-          if (sz.length() > 0)
+          if (sz.length() == 0 && li.size() == 2) {
+            // qui e il caso sep='csvdelim' 
+            skipRows++;
+          } else if (sz.length() > 0) {
             setCsvdelim(sz);
-          else
+            skipRows++;
+          } else
             sz = getCsvdelim();
           s_log.warn("CSV file {} contiene la specifica \"sep={}\", imposto questa!", p_csvFil.getFileName().toString(), sz);
         }
@@ -274,7 +278,7 @@ public class Dataset implements Closeable {
           .collect(Collectors.toList());
 
       List<String> liNames = recs.get(0);
-      skipRows = 1;
+      skipRows++;
       if (liNames.size() == 1 && checkBOM(liNames.get(0).toString()).contains("sep=")) {
         liNames = recs.get(1);
         skipRows++;
@@ -338,10 +342,10 @@ public class Dataset implements Closeable {
   }
 
   public void addCol(String szNam, SqlTypes p_ty) {
-    if ( null == columns)
-      columns=new DtsCols(this);
+    if (null == columns)
+      columns = new DtsCols(this);
     columns.addCol(szNam, p_ty);
-    if ( null == righe)
+    if (null == righe)
       return;
     for (DtsRow row : righe) {
       row.setDataset(this);
@@ -481,6 +485,7 @@ public class Dataset implements Closeable {
                 liRiga.add(Utils.formatDouble(cell.getNumericCellValue()));
                 break;
               case CellType.STRING:
+              case CellType.BLANK:
                 liRiga.add(cell.getStringCellValue());
                 break;
               default:
