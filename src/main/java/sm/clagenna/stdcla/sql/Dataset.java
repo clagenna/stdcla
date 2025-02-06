@@ -94,11 +94,13 @@ public class Dataset implements Closeable {
   public boolean executeQuery(String p_qry) {
     boolean bRet = false;
     Connection conn = db.getConn();
+    // TimerMeter tm1 = new TimerMeter("prep qry" + p_qry);
     try (PreparedStatement stmt = conn.prepareStatement(p_qry); //
         ResultSet res = stmt.executeQuery()) {
       creaCols(stmt);
       addRows(res);
       bRet = true;
+      // System.out.println(tm1.stop());
     } catch (SQLException | DatasetException e) {
       s_log.error("Error execute Query, err={}", e.getMessage());
     }
@@ -253,7 +255,7 @@ public class Dataset implements Closeable {
         if (sz.contains("sep=")) {
           sz = sz.replace("sep=", "");
           if (sz.length() == 0 && li.size() == 2) {
-            // qui e il caso sep='csvdelim' 
+            // qui e il caso sep='csvdelim'
             skipRows++;
           } else if (sz.length() > 0) {
             setCsvdelim(sz);

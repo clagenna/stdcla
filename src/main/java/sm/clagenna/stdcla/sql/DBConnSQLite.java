@@ -1,23 +1,17 @@
 package sm.clagenna.stdcla.sql;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
-import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
@@ -35,9 +29,6 @@ public class DBConnSQLite extends DBConn {
 
   private static final String QRY_LASTID     = "select last_insert_rowid()";
   private static final String QRY_LIST_VIEWS = "SELECT name FROM sqlite_master WHERE type = 'view'";
-  private static final String QRY_PATT_VIEW  = "SELECT * FROM %s WHERE 1=1";
-
-  private PreparedStatement m_stmt_lastid;
 
   static {
     try {
@@ -48,9 +39,12 @@ public class DBConnSQLite extends DBConn {
   }
 
   public DBConnSQLite() {
-    //    if (s_inst != null)
-    //      throw new UnsupportedOperationException("DBConn gia istanziata");
-    //    s_inst = this;
+    super();
+  }
+
+  @Override
+  public String getQueryListViews() {
+    return QRY_LIST_VIEWS;
   }
 
   public DBConnSQLite(String p_dbNam) {
@@ -73,47 +67,8 @@ public class DBConnSQLite extends DBConn {
   }
 
   @Override
-  public int getLastIdentity() throws SQLException {
-    if (getConn() == null)
-      throw new SQLException("No connection yet");
-    if (m_stmt_lastid == null)
-      m_stmt_lastid = getConn().prepareStatement(QRY_LASTID);
-    int retId = -1;
-    try (ResultSet res = m_stmt_lastid.executeQuery()) {
-      while (res.next()) {
-        retId = res.getInt(1);
-      }
-    }
-    return retId;
-  }
-
-  @Override
-  public Map<String, String> getListDBViews() {
-    Connection conn = getConn();
-    Map<String, String> liViews = new HashMap<>();
-    // liViews.put((String)null, null);
-    try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(QRY_LIST_VIEWS)) {
-      while (rs.next()) {
-        String view = rs.getString(1);
-        String qry = String.format(QRY_PATT_VIEW, view);
-        liViews.put(view, qry);
-      }
-    } catch (SQLException e) {
-      s_log.error("Query {}; err={}", QRY_LIST_VIEWS, e.getMessage(), e);
-    }
-    return liViews;
-  }
-
-  @Override
-  public void close() throws IOException {
-    try {
-      if (m_stmt_lastid != null)
-        m_stmt_lastid.close();
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-    m_stmt_lastid = null;
-    super.close();
+  public String getQueryLastRowID() {
+    return QRY_LASTID;
   }
 
   @Override
@@ -192,9 +147,6 @@ public class DBConnSQLite extends DBConn {
 
   @Override
   public void setStmtDatetime(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
-    // String sz = Utils.s_fmtY4MD.format(p_dt);
-    // String sz = Utils.s_fmtY4MDHMS.format(p_dt);
-    // p_stmt.setString(p_index, sz);
     java.sql.Timestamp dt = null;
     if (p_dt instanceof java.sql.Date pdt) {
       dt = new Timestamp(pdt.getTime());

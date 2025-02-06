@@ -1,19 +1,13 @@
 package sm.clagenna.stdcla.sql;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,12 +28,9 @@ public class DBConnSQL extends DBConn {
       + "loginTimeout=10;";
   private static final String QRY_LASTID     = "select @@identity";
   private static final String QRY_LIST_VIEWS = "SELECT name FROM sys.views ORDER BY name";
-  private static final String QRY_PATT_VIEW  = "SELECT * FROM %s WHERE 1=1";
-
-  private PreparedStatement m_stmt_lastid;
-
+  
   public DBConnSQL() {
-    //
+   super();
   }
 
   @Override
@@ -58,47 +49,13 @@ public class DBConnSQL extends DBConn {
   }
 
   @Override
-  public int getLastIdentity() throws SQLException {
-    if (getConn() == null)
-      throw new SQLException("No connection yet");
-    if (m_stmt_lastid == null)
-      m_stmt_lastid = getConn().prepareStatement(QRY_LASTID);
-    int retId = -1;
-    try (ResultSet res = m_stmt_lastid.executeQuery()) {
-      while (res.next()) {
-        retId = res.getInt(1);
-      }
-    }
-    return retId;
+  public String getQueryLastRowID() {
+    return QRY_LASTID;
   }
 
   @Override
-  public Map<String, String> getListDBViews() {
-    Connection conn = getConn();
-    Map<String, String> liViews = new HashMap<>();
-    // liViews.put((String)null, null);
-    try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(QRY_LIST_VIEWS)) {
-      while (rs.next()) {
-        String view = rs.getString(1);
-        String qry = String.format(QRY_PATT_VIEW, view);
-        liViews.put(view, qry);
-      }
-    } catch (SQLException e) {
-      s_log.error("Query {}; err={}", QRY_LIST_VIEWS, e.getMessage(), e);
-    }
-    return liViews;
-  }
-
-  @Override
-  public void close() throws IOException {
-    try {
-      if (m_stmt_lastid != null)
-        m_stmt_lastid.close();
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-    m_stmt_lastid = null;
-    super.close();
+  public String getQueryListViews() {
+    return QRY_LIST_VIEWS;
   }
 
   @Override

@@ -35,9 +35,13 @@ public class DBConnFactory {
 
   public DBConn get(String p_id) {
     EServerId tip = EServerId.parse(p_id);
+    return get(tip);
+  }
+
+  public DBConn get(EServerId tip) {
     if (tip == null) {
-      s_log.error("Non capisco il tipo di DB: {}", p_id);
-      throw new UnsupportedOperationException("Non capisco il tipo di DB:" + p_id);
+      s_log.error("Non capisco il tipo di DB: {}", tip);
+      throw new UnsupportedOperationException("Non capisco il tipo di DB:" + tip);
     }
     conn = null;
     switch (tip) {

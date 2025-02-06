@@ -7,6 +7,9 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Savepoint;
+import java.sql.Statement;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.logging.log4j.Logger;
@@ -19,18 +22,23 @@ import sm.clagenna.stdcla.utils.Utils;
 
 public abstract class DBConn implements Closeable {
 
+  private static final String QRY_PATT_VIEW = "SELECT * FROM %s WHERE 1=1";
+
   @Getter @Setter
-  private String     host;
+  private String            host;
   @Getter @Setter
-  private int        service;
+  private int               service;
   @Getter @Setter
-  private String     dbname;
+  private String            dbname;
   @Getter @Setter
-  private String     user;
+  private String            user;
   @Getter @Setter
-  private String     passwd;
+  private String            passwd;
   @Getter
-  private Connection conn;
+  private Connection        conn;
+  private Savepoint         m_savePoint;
+  private PreparedStatement stmtLastRowId;
+  private int               lastRowid;
 
   public DBConn() {
     //
@@ -42,9 +50,13 @@ public abstract class DBConn implements Closeable {
 
   public abstract EServerId getServerId();
 
-  public abstract int getLastIdentity() throws SQLException;
+  // public abstract int getLastIdentity() throws SQLException;
 
   public abstract void changePragma();
+
+  public abstract String getQueryLastRowID();
+
+  public abstract String getQueryListViews();
 
   /**
    * La funzione serve per suplire alla (pessima) caratteristica di SQLite3 che
@@ -67,8 +79,6 @@ public abstract class DBConn implements Closeable {
 
   public abstract void setStmtString(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException;
 
-  public abstract Map<String, String> getListDBViews();
-
   public abstract String addTopRecs(String qry, int qta);
 
   public Connection doConn() {
@@ -84,11 +94,91 @@ public abstract class DBConn implements Closeable {
     return conn;
   }
 
+  /**
+   * Trova il Last Row ID dell'ultimo record inserito
+   */
+  public int getLastIdentity() throws SQLException {
+    if (getConn() == null)
+      throw new SQLException("No connection yet");
+    if (null == stmtLastRowId) {
+      try {
+        String szQry = getQueryLastRowID();
+        stmtLastRowId = conn.prepareStatement(szQry);
+      } catch (SQLException e) {
+        getLog().error("Errore prep statement Last RowID with err={}", e.getMessage());
+        return -1;
+      }
+    }
+    lastRowid = 0;
+    try {
+      ResultSet res = stmtLastRowId.executeQuery();
+      while (res.next()) {
+        lastRowid = res.getInt(1);
+      }
+    } catch (SQLException e) {
+      getLog().error("Errore Last Row ID with err={}", e.getMessage());
+    }
+    return lastRowid;
+  }
+
+  /**
+   * Ritorna una Map con tutte le views presenti nel DB
+   * 
+   * @return
+   */
+  public Map<String, String> getListDBViews() {
+    Connection conn = getConn();
+    Map<String, String> liViews = new HashMap<>();
+
+    String szQry = getQueryListViews();
+    try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(szQry)) {
+      while (rs.next()) {
+        String view = rs.getString(1);
+        String qry = String.format(QRY_PATT_VIEW, view);
+        liViews.put(view, qry);
+      }
+    } catch (SQLException e) {
+      getLog().error("Query {}; err={}", szQry, e.getMessage(), e);
+    }
+    return liViews;
+  }
+
+  public void beginTrans() {
+    try {
+      conn.setAutoCommit(false);
+      m_savePoint = conn.setSavepoint();
+    } catch (SQLException e) {
+      getLog().error("BEGIN TRAN Error {}", e.getMessage());
+    }
+  }
+
+  public void commitTrans() {
+    try {
+      conn.setAutoCommit(true);
+      m_savePoint = null;
+    } catch (SQLException e) {
+      getLog().error("COMMIT TRAN Error {}", e.getMessage());
+    }
+  }
+
+  public void rollBackTrans() {
+    try {
+      conn.rollback(m_savePoint);
+      m_savePoint = null;
+    } catch (SQLException e) {
+      getLog().error("BEGIN TRAN Error {}", e.getMessage());
+    }
+  }
+
   @Override
   public void close() throws IOException {
     try {
+      if ( null!=  stmtLastRowId )
+        stmtLastRowId.close();
+      stmtLastRowId = null;
       if (conn != null)
         conn.close();
+      conn=null;
     } catch (SQLException e) {
       getLog().error("Error in close connection:{}", e.getMessage(), e);
     }

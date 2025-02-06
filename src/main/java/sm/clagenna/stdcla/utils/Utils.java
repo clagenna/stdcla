@@ -305,10 +305,18 @@ public class Utils {
   public static Double parseDouble(String psz) {
     if (null == S_LOCALE)
       Utils.setLocale(Locale.getDefault());
-    NumberFormat fmt = NumberFormat.getInstance(S_LOCALE);
     Double ii = null;
     if (null == psz)
       return ii;
+    // ---------------------------------------------------
+    // questo perche' dagli USA mi arrivano double della forma "-9,99" ?!?
+    // devo sovrascrivere il tipo di formatter
+    Locale locale = Utils.getLocale();
+    int nv =psz.length() - psz.lastIndexOf(",");
+    if ( nv == 3)
+      locale = Locale.ITALY;
+    // ----------------------------------------------------
+    NumberFormat fmt = NumberFormat.getInstance(locale);
     try {
       // cambiare i "." e "," a priori è un arbitrio, va chiamata la Utils.setLocale()
       // String sz = psz.trim().replace(S_Group_Sep, "").replace(S_Decimal_Sep, ".");
