@@ -17,6 +17,7 @@ public class ParseData {
   public static final SimpleDateFormat s_fmt       = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
   public static SimpleDateFormat       s_fmtDtDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
   public static DateTimeFormatter      s_fmtTs     = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+  public static DateTimeFormatter      s_fmtTsT     = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
   public static DateTimeFormatter      s_fmtDtExif = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss");
   public static DateTimeFormatter      s_fmtDtFile = DateTimeFormatter.ofPattern("'f'yyyyMMdd'_'HHmmss");
   public static DateTimeFormatter      s_fmtY4MD   = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.systemDefault());
@@ -121,7 +122,6 @@ public class ParseData {
     if (p_sz == null)
       return null;
     String[] szFmtDt = { "2999", "01", "01", "06", "00", "00" };
-    
 
     for (Pattern pat : s_arrpatGuess) {
       Matcher mtch = pat.matcher(p_sz);
@@ -166,8 +166,26 @@ public class ParseData {
     }
     return szRet;
   }
-  
+
   public static Timestamp toTimestamp(LocalDateTime p_ldt) {
+    if (null == p_ldt)
+      return null;
     return Timestamp.valueOf(p_ldt);
+  }
+
+  public static LocalDateTime toLocalDateTime(Object p_ldt) {
+    if (null == p_ldt)
+      return null;
+    if (p_ldt instanceof LocalDateTime ldt)
+      return ldt;
+    if (p_ldt instanceof Timestamp tms)
+      return ParseData.toLocalDateTime(tms);
+    return ParseData.parseData(p_ldt.toString());
+  }
+
+  public static LocalDateTime toLocalDateTime(Timestamp p_ldt) {
+    if (null == p_ldt)
+      return null;
+    return p_ldt.toLocalDateTime();
   }
 }
