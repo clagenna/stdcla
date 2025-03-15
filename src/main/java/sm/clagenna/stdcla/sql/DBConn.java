@@ -38,7 +38,6 @@ public abstract class DBConn implements Closeable {
   private Connection        conn;
   private Savepoint         m_savePoint;
   private PreparedStatement stmtLastRowId;
-  private int               lastRowid;
 
   public DBConn() {
     //
@@ -77,6 +76,8 @@ public abstract class DBConn implements Closeable {
 
   public abstract void setStmtImporto(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException;
 
+  public abstract void setStmtDouble(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException;
+
   public abstract void setStmtString(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException;
 
   public abstract String addTopRecs(String qry, int qta);
@@ -109,7 +110,7 @@ public abstract class DBConn implements Closeable {
         return -1;
       }
     }
-    lastRowid = 0;
+    int lastRowid = 0;
     try {
       ResultSet res = stmtLastRowId.executeQuery();
       while (res.next()) {
@@ -123,7 +124,7 @@ public abstract class DBConn implements Closeable {
 
   /**
    * Ritorna una Map con tutte le views presenti nel DB
-   * 
+   *
    * @return
    */
   public Map<String, String> getListDBViews() {
@@ -173,12 +174,12 @@ public abstract class DBConn implements Closeable {
   @Override
   public void close() throws IOException {
     try {
-      if ( null!=  stmtLastRowId )
+      if (null != stmtLastRowId)
         stmtLastRowId.close();
       stmtLastRowId = null;
       if (conn != null)
         conn.close();
-      conn=null;
+      conn = null;
     } catch (SQLException e) {
       getLog().error("Error in close connection:{}", e.getMessage(), e);
     }

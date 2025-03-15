@@ -179,6 +179,8 @@ public class Utils {
   public static boolean isValue(Object p_v) {
     if (p_v == null)
       return false;
+    if (p_v.getClass().getSimpleName().equals("Object"))
+      return false;
     if (p_v.toString().trim().length() > 0)
       return true;
     return false;
@@ -312,8 +314,8 @@ public class Utils {
     // questo perche' dagli USA mi arrivano double della forma "-9,99" ?!?
     // devo sovrascrivere il tipo di formatter
     Locale locale = Utils.getLocale();
-    int nv =psz.length() - psz.lastIndexOf(",");
-    if ( nv == 3)
+    int nv = psz.length() - psz.lastIndexOf(",");
+    if (nv == 3)
       locale = Locale.ITALY;
     // ----------------------------------------------------
     NumberFormat fmt = NumberFormat.getInstance(locale);

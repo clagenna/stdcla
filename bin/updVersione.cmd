@@ -29,5 +29,3 @@ if "%DEBUG%" == "1" @echo sono in %CD%
 pwsh -f UpdVersionJava.ps1 %searchd% %ConPOM%
 popd
 @echo %ESC%7mFine UpdVersione%ESC%0m
-
-

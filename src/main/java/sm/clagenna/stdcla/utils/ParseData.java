@@ -9,6 +9,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -180,6 +181,8 @@ public class ParseData {
       return ldt;
     if (p_ldt instanceof Timestamp tms)
       return ParseData.toLocalDateTime(tms);
+    if ( p_ldt instanceof Date dt)
+      return dt.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
     return ParseData.parseData(p_ldt.toString());
   }
 

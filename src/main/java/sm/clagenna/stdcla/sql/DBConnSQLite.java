@@ -175,6 +175,11 @@ public class DBConnSQLite extends DBConn {
   public void setStmtImporto(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
     p_stmt.setDouble(p_index, (Double) p_dt);
   }
+  
+  @Override
+  public void setStmtDouble(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
+    p_stmt.setDouble(p_index, (Double) p_dt);
+  }
 
   @Override
   public void setStmtString(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {

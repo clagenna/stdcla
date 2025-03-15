@@ -336,10 +336,11 @@ $form.Text = "Aumenta il valore di versione di un file JAVA"
 $pan1 = $form.Controls[0]
 $txStartDir = $pan1.Controls['txStartDir']
 $lbFileVers = $pan1.Controls['lbFileVers']
-$lbVersione  = $pan1.Controls['lbVersione']
+$lbVersione = $pan1.Controls['lbVersione']
 $btCerca    = $pan1.Controls['btCerca']
 $btAnalizza = $pan1.Controls['btAnalizza']
 $btUpdVers  = $pan1.Controls['btUpdVers']
+
 if ( $null -ne $script:szStartDir) {
     $txStartDir.Text = $script:szStartDir
     $btAnalizza.Enabled = $true

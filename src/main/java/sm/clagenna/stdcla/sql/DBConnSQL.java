@@ -28,9 +28,9 @@ public class DBConnSQL extends DBConn {
       + "loginTimeout=10;";
   private static final String QRY_LASTID     = "select @@identity";
   private static final String QRY_LIST_VIEWS = "SELECT name FROM sys.views ORDER BY name";
-  
+
   public DBConnSQL() {
-   super();
+    super();
   }
 
   @Override
@@ -152,6 +152,20 @@ public class DBConnSQL extends DBConn {
       p_stmt.setBigDecimal(p_index, bd);
     else
       p_stmt.setNull(p_index, Types.DECIMAL);
+  }
+
+  @Override
+  public void setStmtDouble(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
+    Double bd = null;
+    if (p_dt instanceof Double dbl) {
+      bd = dbl;
+    } else if (p_dt instanceof Integer ii) {
+      bd = Double.valueOf(ii);
+    }
+    if (bd != null)
+      p_stmt.setDouble(p_index, bd);
+    else
+      p_stmt.setNull(p_index, Types.DOUBLE);
   }
 
   @Override
