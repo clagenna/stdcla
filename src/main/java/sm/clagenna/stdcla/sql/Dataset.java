@@ -769,6 +769,13 @@ public class Dataset implements Closeable {
     return columns.getCol(p_i);
   }
 
+  /**
+   * Torna l'indice della colonna con quel nome
+   * 
+   * @param p_nam
+   *          nome colonna
+   * @return l'indice colonnoa, oppure -1 se non trovata
+   */
   public int getColumNo(String p_nam) {
     return columns.getColIndex(p_nam);
   }

@@ -20,7 +20,8 @@
 		<lombok.version>1.18.32</lombok.version>
 		<sqlite3.version>3.45.0.0</sqlite3.version>
 		<apachePoi.version>5.2.4</apachePoi.version>
-		<commons-io.version>2.14.0</commons-io.version>
+		<!-- commons-io.version>2.14.0</!commons-io.version -->
+		<commons.imaging.version>1.0.0-alpha5</commons.imaging.version>
 		<opencsv.version>5.9</opencsv.version>
 	</properties>
 	<dependencies>
@@ -43,7 +44,7 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-imaging</artifactId>
-			<version>1.0-alpha2</version>
+			<version>${commons.imaging.version}</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.openjfx/javafx -->
 		<!--	questa **non ci va**, e' il progetto padre dei tutte le JavaFx -->

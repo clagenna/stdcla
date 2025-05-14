@@ -3,7 +3,6 @@ package sm.clagenna.stdcla.sql;
 import java.sql.PreparedStatement;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +63,7 @@ public class DtsCols implements Cloneable {
 
   public int parseColsStatement(PreparedStatement p_stmt) throws DatasetException {
     String szVirg = "";
-    int decplace = 6;
+    // int decplace = 6;
     sbIntesta = new StringBuilder();
     ResultSetMetaData rsmd = null;
     try {
@@ -85,59 +84,12 @@ public class DtsCols implements Cloneable {
     try {
       for (int i = 1; i <= colCount; i++) {
         String szNam = rsmd.getColumnName(i).trim();
-        int nTyp = rsmd.getColumnType(i);
-        @SuppressWarnings("unused")
-        String szTyp = "";
-        String szFmt = "";
+        int nJavaSqlTyp = rsmd.getColumnType(i);
+        SqlTypes mySqlType = DtsCol.decoType(nJavaSqlTyp);
+        String szFmt = DtsCol.getSzFmt();
         DtsCol col = new DtsCol();
-        switch (nTyp) {
-          case Types.SMALLINT:
-            szFmt = String.format("%%%dd ", colWidth);
-            szTyp = "INTEGER";
-            break;
-          case Types.INTEGER:
-            szFmt = String.format("%%%dd ", colWidth);
-            szTyp = "INTEGER";
-            break;
-          case Types.NVARCHAR:
-          case Types.VARCHAR:
-            szFmt = String.format("%%-%ds ", colWidth);
-            szTyp = "VARCHAR";
-            break;
-          case Types.NUMERIC:
-            szFmt = String.format("%%-%ds ", colWidth);
-            szTyp = "NUMERIC";
-            break;
-          case Types.DECIMAL:
-            szFmt = String.format("%%%d.%df ", colWidth, decplace);
-            szTyp = "DECIMAL";
-            break;
-          case Types.FLOAT:
-            szFmt = String.format("%%%d.%df ", colWidth, decplace);
-            szTyp = "FLOAT";
-            break;
-          case Types.DOUBLE:
-            szFmt = String.format("%%%d.%df ", colWidth, decplace);
-            szTyp = "DOUBLE";
-            break;
-          case Types.REAL:
-            szFmt = String.format("%%%d.%df ", colWidth, decplace);
-            szTyp = "REAL";
-            break;
-          case Types.DATE:
-            szFmt = String.format("%%%ds ", colWidth);
-            szTyp = "DATE";
-            break;
-          case Types.TIMESTAMP:
-            szFmt = String.format("%%%ds ", colWidth);
-            szTyp = "DATE";
-            break;
-          default:
-            s_log.error("Non interpreto tipo {} per col {}", nTyp, szNam);
-            break;
-        }
         col.setName(szNam);
-        col.setType(SqlTypes.decode(nTyp));
+        col.setType(mySqlType);
         col.setIndex(i - 1);
         col.setFormat(szFmt);
         addCol(col);

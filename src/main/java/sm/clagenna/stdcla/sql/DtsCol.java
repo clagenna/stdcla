@@ -1,5 +1,7 @@
 package sm.clagenna.stdcla.sql;
 
+import java.sql.Types;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -10,23 +12,36 @@ import sm.clagenna.stdcla.utils.ParseData;
 import sm.clagenna.stdcla.utils.Utils;
 
 public class DtsCol implements Cloneable {
-
   private static final Logger s_log = LogManager.getLogger(DtsCol.class);
+  // campi per la decoType()
+  @Getter @Setter
+  private static String       szFmt;
+  @Getter @Setter
+  private static String       szTyp;
+  @Getter @Setter
+  private static int          decPlace;
+
   /** Il nome <b>univoco</b> e <b>case insensitive</b> della colonna */
   @Getter @Setter
-  private String              name;
+  private String   name;
   /** la posizione 0-based nel dataset */
   @Getter @Setter
-  private int                 index;
+  private int      index;
   @Getter
-  private SqlTypes            type;
+  private SqlTypes type;
   @Getter @Setter
-  private String              format;
+  private String   format;
   @Getter
-  private boolean             inferredDate;
+  private boolean  inferredDate;
 
   public DtsCol() {
     index = -1;
+  }
+
+  public DtsCol(String pName, SqlTypes pType) {
+    index = -1;
+    setName(pName);
+    setType(pType);
   }
 
   @Override
@@ -103,6 +118,196 @@ public class DtsCol implements Cloneable {
       s_log.error("Excp: interpreto tipo {} per col {}, err={}", type, name, e.getMessage());
     }
     return obj;
+  }
+
+  public static SqlTypes decoType(int nTyp) {
+    SqlTypes sqlt = SqlTypes.decode(nTyp);
+    szFmt = null;
+    szTyp = null;
+    decPlace = 6;
+    int colWidth = DtsCols.getColWidth();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    switch (nTyp) {
+      case Types.SMALLINT:
+        szFmt = String.format("%%%dd ", colWidth);
+        szTyp = "INTEGER";
+        break;
+      case Types.INTEGER:
+        szFmt = String.format("%%%dd ", colWidth);
+        szTyp = "INTEGER";
+        break;
+      case Types.NVARCHAR:
+      case Types.VARCHAR:
+        szFmt = String.format("%%-%ds ", colWidth);
+        szTyp = "VARCHAR";
+        break;
+      case Types.NUMERIC:
+        szFmt = String.format("%%-%ds ", colWidth);
+        szTyp = "NUMERIC";
+        break;
+      case Types.DECIMAL:
+        szFmt = String.format("%%%d.%df ", colWidth, decPlace);
+        szTyp = "DECIMAL";
+        break;
+      case Types.FLOAT:
+        szFmt = String.format("%%%d.%df ", colWidth, decPlace);
+        szTyp = "FLOAT";
+        break;
+      case Types.DOUBLE:
+        szFmt = String.format("%%%d.%df ", colWidth, decPlace);
+        szTyp = "DOUBLE";
+        break;
+      case Types.REAL:
+        szFmt = String.format("%%%d.%df ", colWidth, decPlace);
+        szTyp = "REAL";
+        break;
+      case Types.DATE:
+        szFmt = String.format("%%%ds ", colWidth);
+        szTyp = "DATE";
+        break;
+      case Types.TIMESTAMP:
+        szFmt = String.format("%%%ds ", colWidth);
+        szTyp = "DATE";
+        break;
+      default:
+        s_log.error("Non interpreto tipo {}", nTyp);
+        break;
+    }
+//    if (null != szTyp)
+//      sqlt = SqlTypes.parse(szTyp);
+    return sqlt;
+  }
+  
+  public static int decoType(SqlTypes pSql) {
+    int ret = 0;
+    switch( pSql) {
+      case SMALLINT:
+        ret = Types.SMALLINT;
+        break;
+      case BIGINT:
+        ret = Types.BIGINT;
+        break;
+      case BINARY:
+        ret = Types.BINARY;
+        break;
+      case BIT:
+        ret = Types.BIT;
+        break;
+      case BLOB:
+        ret = Types.BLOB;
+        break;
+      case BOOLEAN:
+        ret = Types.BOOLEAN;
+        break;
+      case CHAR:
+        ret = Types.CHAR;
+        break;
+      case CLOB:
+        ret = Types.CLOB;
+        break;
+      case DATALINK:
+        ret = Types.DATALINK;
+        break;
+      case DATE:
+        ret = Types.DATE;
+        break;
+      case DECIMAL:
+        ret = Types.DECIMAL;
+        break;
+      case DISTINCT:
+        ret = Types.DISTINCT;
+        break;
+      case DOUBLE:
+        ret = Types.DOUBLE;
+        break;
+      case FLOAT:
+        ret = Types.FLOAT;
+        break;
+      case INTEGER:
+        ret = Types.INTEGER;
+        break;
+      case JAVA_OBJECT:
+        ret = Types.JAVA_OBJECT;
+        break;
+      case LONGNVARCHAR:
+        ret = Types.LONGNVARCHAR;
+        break;
+      case LONGVARBINARY:
+        ret = Types.LONGVARBINARY;
+        break;
+      case LONGVARCHAR:
+        ret = Types.LONGVARCHAR;
+        break;
+      case NCHAR:
+        ret = Types.NCHAR;
+        break;
+      case NCLOB:
+        ret = Types.NCLOB;
+        break;
+      case NULL:
+        ret = Types.NULL;
+        break;
+      case NUMERIC:
+        ret = Types.NUMERIC;
+        break;
+      case NVARCHAR:
+        ret = Types.BIGINT;
+        break;
+      case OTHER:
+        ret = Types.BIGINT;
+        break;
+      case REAL:
+        ret = Types.BIGINT;
+        break;
+      case REF:
+        ret = Types.BIGINT;
+        break;
+      case REF_CURSOR:
+        ret = Types.BIGINT;
+        break;
+      case ROWID:
+        ret = Types.BIGINT;
+        break;
+      case SQLXML:
+        ret = Types.BIGINT;
+        break;
+      case STRUCT:
+        ret = Types.BIGINT;
+        break;
+      case TIME:
+        ret = Types.BIGINT;
+        break;
+      case TIMESTAMP:
+        ret = Types.BIGINT;
+        break;
+      case TIMESTAMP_WITH_TIMEZONE:
+        ret = Types.BIGINT;
+        break;
+      case TIME_WITH_TIMEZONE:
+        ret = Types.BIGINT;
+        break;
+      case TINYINT:
+        ret = Types.BIGINT;
+        break;
+      case VARBINARY:
+        ret = Types.BIGINT;
+        break;
+      case VARCHAR:
+        ret = Types.BIGINT;
+        break;
+      default:
+        break;
+    }
+    return ret;
   }
 
   @Override

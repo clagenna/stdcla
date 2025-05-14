@@ -32,7 +32,7 @@ public class FSDir extends FSFile {
 
   private void analizzaSeDate() {
     String szNome = getPath().getFileName().toString();
-    LocalDateTime dt = ParseData.parseData(szNome);
+    LocalDateTime dt = ParseData.guessData(szNome);
     //    Matcher mtch = s_pad.matcher(szNome);
     //    if ( !mtch.matches()) {
     //      getLogger().warn("Il dir non contiene una data:" + szNome);

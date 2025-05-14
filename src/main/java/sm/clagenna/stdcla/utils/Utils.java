@@ -247,6 +247,14 @@ public class Utils {
     return p_v1.equals(p_v2);
   }
 
+  public static boolean isValueEq(LocalDateTime dtExam, LocalDateTime dtExam2) {
+    if (null == dtExam || null == dtExam2)
+      return false;
+    Date dt1 = Date.from(dtExam.atZone(ZoneId.systemDefault()).toInstant());
+    Date dt2 = Date.from(dtExam2.atZone(ZoneId.systemDefault()).toInstant());
+    return isValueEq(dt1, dt2);
+  }
+
   public static double getDoubleProp(Properties p_prop, String p_propName) {
     return Utils.getDoubleProp(p_prop, p_propName, 0D);
   }

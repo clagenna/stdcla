@@ -12,13 +12,12 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 
-import org.apache.commons.imaging.ImageReadException;
-import org.apache.commons.imaging.ImageWriteException;
 import org.apache.commons.imaging.Imaging;
+import org.apache.commons.imaging.ImagingException;
 import org.apache.commons.imaging.common.ImageMetadata;
 import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
 import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
-import org.apache.commons.imaging.formats.tiff.TiffImageMetadata.GPSInfo;
+import org.apache.commons.imaging.formats.tiff.TiffImageMetadata.GpsInfo;
 import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.TiffDirectoryType;
 import org.apache.commons.imaging.formats.tiff.taginfos.TagInfoAscii;
@@ -135,7 +134,7 @@ public class GeoCoordFoto extends GeoCoord {
   private void leggiExifInfos2() {
     try {
       readMetadataJpg();
-    } catch (ImageReadException | ImageWriteException | IOException e) {
+    } catch (IOException e) {
       s_log.error("Errore lettura EXIF \"{}\", err={}", getFotoFile().toString(), e.getMessage());
       return;
     }
@@ -176,19 +175,21 @@ public class GeoCoordFoto extends GeoCoord {
       }
       if ( !Utils.isValue(szZoneOfset))
         szZoneOfset = "+01:00";
-    } catch (ImageReadException | DateTimeParseException e) {
+    } catch (ImagingException | DateTimeParseException e) {
       s_log.error("Errore leggi Dt ORIGINAL \"{}\", err={}", szDt, e.getMessage());
     }
     // provo a leggere le info GPS
-    GPSInfo gpsi = null;
+    GpsInfo gpsi = null;
     try {
       if (null != m_exif)
-        gpsi = m_exif.getGPS();
+        gpsi = m_exif.getGpsInfo();
       if (gpsi != null) {
-        setLongitude(gpsi.getLongitudeAsDegreesEast());
-        setLatitude(gpsi.getLatitudeAsDegreesNorth());
+        // setLongitude(gpsi.getLongitudeAsDegreesEast());
+        // setLatitude(gpsi.getLatitudeAsDegreesNorth());
+        setLongitude(getLongitudeAsDegreesEast(gpsi));
+        setLatitude(getLatitudeAsDegreesNorth(gpsi));
       }
-    } catch (ImageReadException | DateTimeParseException e) {
+    } catch (ImagingException | DateTimeParseException e) {
       s_log.error("Errore leggi GPS \"{}\", err={}", getFotoFile().getFileName().toString(), e.getMessage());
     }
     if (null != dtAcquisizione)
@@ -197,7 +198,53 @@ public class GeoCoordFoto extends GeoCoord {
     setSrcGeo(EGeoSrcCoord.foto);
   }
 
-  private ImageMetadata readMetadataJpg() throws ImageReadException, IOException, ImageWriteException {
+  /**
+   * Visto un bug nella classe {@link TiffImageMetadata.GpsInfo} nella funzione
+   * <code>getLongitudeAsDegreesEast</code> dove cerca di interpretare
+   * <code>longitudeRef</code> contenente &quot;S?&quot;<br/>
+   * Es: per north - "N" ho <code>hex:4e ef bf bd</code><br/>
+   * che e' la conversione in UTF-8 del carattere per il replace per UNICODE che
+   * non e' convertibile in un certo Code Page
+   *
+   * @param gpsi
+   * @return
+   * @throws ImagingException
+   */
+  private double getLongitudeAsDegreesEast(GpsInfo gpsi) throws ImagingException {
+    final double result = gpsi.longitudeDegrees.doubleValue() //
+        + gpsi.longitudeMinutes.doubleValue() / 60.0 //
+        + gpsi.longitudeSeconds.doubleValue() / 3600.0;
+    //    byte[] bb = gpsi.longitudeRef.getBytes();
+    //    byte[] bb1 = gpsi.longitudeRef.getBytes(StandardCharsets.UTF_8);
+    //    byte[] b2 = gpsi.longitudeRef.substring(0, 1).getBytes();
+    //    HexFormat hex = HexFormat.of();
+    //    String sz = hex.formatHex(bb);
+    //    String sz1 = hex.formatHex(bb1);
+    //    String sz2 = hex.formatHex(b2);
+    if (gpsi.longitudeRef.trim().substring(0, 1).equalsIgnoreCase("e")) {
+      return result;
+    }
+    if (gpsi.longitudeRef.trim().substring(0, 1).equalsIgnoreCase("w")) {
+      return -result;
+    }
+    throw new ImagingException("Unknown longitude ref: \"" + gpsi.longitudeRef + "\"");
+  }
+
+  private double getLatitudeAsDegreesNorth(GpsInfo gpsi) throws ImagingException {
+    final double result = gpsi.latitudeDegrees.doubleValue() //
+        + gpsi.latitudeMinutes.doubleValue() / 60.0 //
+        + gpsi.latitudeSeconds.doubleValue() / 3600.0;
+
+    if (gpsi.latitudeRef.trim().substring(0, 1).equalsIgnoreCase("n")) {
+      return result;
+    }
+    if (gpsi.latitudeRef.trim().substring(0, 1).equalsIgnoreCase("s")) {
+      return -result;
+    }
+    throw new ImagingException("Unknown longitude ref: \"" + gpsi.longitudeRef + "\"");
+  }
+
+  private ImageMetadata readMetadataJpg() throws ImagingException, IOException {
     File jpegImageFile = getFotoFile().toFile();
     m_exif = null;
     m_outputSet = null;
@@ -208,7 +255,7 @@ public class GeoCoordFoto extends GeoCoord {
 
     try {
       m_metadata = Imaging.getMetadata(jpegImageFile);
-    } catch (IllegalArgumentException | ImageReadException | IOException e) {
+    } catch (IllegalArgumentException | IOException e) {
       return m_jpegMetadata;
     }
     m_jpegMetadata = (JpegImageMetadata) m_metadata;

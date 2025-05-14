@@ -27,29 +27,25 @@ import sm.clagenna.stdcla.sql.DtsCol;
 import sm.clagenna.stdcla.sql.DtsCols;
 import sm.clagenna.stdcla.sql.DtsRow;
 
-public class TableViewFiller extends Task<String> {
-  private static final Logger s_log           = LogManager.getLogger(TableViewFiller.class);
-  private static String       CSZ_NULLVAL     = "**null**";
-  private static String       QRY_WHE_NOTRASF = "AND abicaus not in ('45','S3','S4') AND descr NOT LIKE '%wise%'";
-
+public class TableViewFiller extends Task<String> implements ITableColBuilder {
+  private static final Logger  s_log       = LogManager.getLogger(TableViewFiller.class);
+  private static String        CSZ_NULLVAL = "**null**";
   private static DecimalFormat fmtDbl;
 
   //  @Getter @Setter
   //  private ResultView resView;
   @Getter @Setter
-  private String szQry;
-  //  @Getter @Setter
-  //  private boolean                 fltrParolaRegEx;
+  private String                                               szQry;
   @Getter @Setter
-  private String                  fltrParola;
+  private String                                               fltrParola;
   @Getter @Setter
-  private TableView<List<Object>> tableview;
+  private TableView<List<Object>>                              tableview;
   @Getter @Setter
-  private DBConn                  dbconn;
-  private Dataset                 m_dts;
-  private boolean                 m_bScartaImpTrasf;
+  private DBConn                                               dbconn;
+  private Dataset                                              m_dts;
   @Getter @Setter
-  private boolean                 conRecTotali;
+  private boolean                                              conRecTotali;
+  private List<ITableColBuilderListener<List<Object>, Object>> liBuildCol;
 
   // private List<IRigaBanca>        excludeCols;
   private List<String> excludeCols;
@@ -63,7 +59,6 @@ public class TableViewFiller extends Task<String> {
     setTableview(tblview);
     setDbconn(p_dbc);
     conRecTotali = false;
-    // m_db = LoadBancaMainApp.getInst().getConnSQL();
   }
 
   public static void setNullRetValue(String vv) {
@@ -80,7 +75,7 @@ public class TableViewFiller extends Task<String> {
         s_log.warn("Nulla da mostrare sulla tabella");
         return ".. nulla da mostrare";
       }
-      clearColumsTableView();
+      populateTableView();
       //      creaTableView(m_dts);
       //      fillTableView();
     } catch (Exception e) {
@@ -89,13 +84,10 @@ public class TableViewFiller extends Task<String> {
     return "..Finito!";
   }
 
-  private void clearColumsTableView() {
+  public void clearColumsTableViewBackground() {
     Semaphore semaf = new Semaphore(0);
     Platform.runLater(() -> {
-      tableview.getItems().clear();
-      tableview.getColumns().clear();
-      creaTableView(m_dts);
-      fillTableView();
+      populateTableView();
       semaf.release();
     });
     try {
@@ -105,23 +97,24 @@ public class TableViewFiller extends Task<String> {
     }
   }
 
+  public void populateTableView() {
+    tableview.getItems().clear();
+    tableview.getColumns().clear();
+    creaTableView(m_dts);
+    fillTableView();
+  }
+
+  public void setDataset(Dataset p_dt) {
+    m_dts = p_dt;
+  }
+
   public Dataset getDataset() {
     return m_dts;
   }
 
   public Dataset openDataSet() {
     m_dts = null;
-    if (m_bScartaImpTrasf) {
-      int ndx = szQry.toLowerCase().indexOf("order");
-      if (ndx > 0) {
-        StringBuilder szQry2 = new StringBuilder();
-        szQry2.append(szQry.substring(0, ndx)) //
-            .append(QRY_WHE_NOTRASF) //
-            .append(" ") //
-            .append(szQry.substring(ndx));
-        szQry = szQry2.toString();
-      }
-    }
+    szQry = modifyQuery(szQry);
     s_log.debug("Lancio query:{}", szQry);
 
     try (Dataset dtset = new Dataset(dbconn)) {
@@ -135,6 +128,10 @@ public class TableViewFiller extends Task<String> {
       s_log.error("errore creazione DataSet con query {}, err= {}", szQry, e.getMessage());
     }
     return m_dts;
+  }
+
+  public String modifyQuery(String szQry) {
+    return szQry;
   }
 
   public void datasetReady() {
@@ -185,11 +182,16 @@ public class TableViewFiller extends Task<String> {
       }
 
       TableColumn<List<Object>, Object> tbcol = new TableColumn<>(szColNam);
+      //      if (j == 0)
+      //        tbcol.setCellFactory(p -> new LockedTableCell<List<Object>, Object>());
       tbcol.setCellValueFactory(param -> {
         SimpleObjectProperty<Object> cel = new SimpleObjectProperty<Object>(formattaCella(param.getValue().get(j)));
         return cel;
       });
+
+      tbcol.setId(String.format("tbcol_%02d", j));
       tbcol.setStyle(cssAlign);
+      colBuilded(tbcol);
       Platform.runLater(() -> tableview.getColumns().add(tbcol));
     }
   }
@@ -249,8 +251,18 @@ public class TableViewFiller extends Task<String> {
     return p_o;
   }
 
-  public void setScartaImpTrasf(boolean selected) {
-    m_bScartaImpTrasf = selected;
+  @Override
+  public void addTableColBuilderListener(ITableColBuilderListener<List<Object>, Object> liste) {
+    if (null == liBuildCol)
+      liBuildCol = new ArrayList<>();
+    liBuildCol.add(liste);
+  }
+
+  private void colBuilded(TableColumn<List<Object>, Object> pcol) {
+    if (null == liBuildCol)
+      return;
+    for (ITableColBuilderListener<List<Object>, Object> ll : liBuildCol)
+      ll.tableColBuilded(pcol);
   }
 
 }

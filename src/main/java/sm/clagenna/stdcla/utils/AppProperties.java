@@ -244,7 +244,7 @@ public class AppProperties {
       return def;
     return Double.parseDouble(sz);
   }
-  
+
   public boolean getBooleanProperty(String p_prop) {
     return getBooleanProperty(p_prop, false);
   }
@@ -298,7 +298,8 @@ public class AppProperties {
 
   public void setLastFile(String p_last) {
     getProperties();
-    properties.setProperty(CSZ_PROP_LASTFIL, p_last);
+    if (null != p_last)
+      properties.setProperty(CSZ_PROP_LASTFIL, p_last);
   }
 
   public String getLastDir() {
@@ -308,7 +309,10 @@ public class AppProperties {
 
   public void setLastDir(String p_last) {
     getProperties();
-    properties.setProperty(CSZ_PROP_LASTDIR, p_last);
+    if (Utils.isValue(p_last))
+      properties.setProperty(CSZ_PROP_LASTDIR, p_last);
+    else
+      properties.remove(CSZ_PROP_LASTDIR);
   }
 
   public ETipoCambioNome getTipoCambioNome() {

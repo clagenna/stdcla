@@ -27,18 +27,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.commons.imaging.ImageReadException;
-import org.apache.commons.imaging.ImageWriteException;
 import org.apache.commons.imaging.Imaging;
+import org.apache.commons.imaging.ImagingException;
 import org.apache.commons.imaging.common.ImageMetadata;
 import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
 import org.apache.commons.imaging.formats.jpeg.exif.ExifRewriter;
 import org.apache.commons.imaging.formats.tiff.TiffField;
 import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
-import org.apache.commons.imaging.formats.tiff.TiffImageMetadata.GPSInfo;
+import org.apache.commons.imaging.formats.tiff.TiffImageMetadata.GpsInfo;
 import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.TiffDirectoryType;
-import org.apache.commons.imaging.formats.tiff.fieldtypes.FieldType;
+import org.apache.commons.imaging.formats.tiff.fieldtypes.AbstractFieldType;
 import org.apache.commons.imaging.formats.tiff.taginfos.TagInfoShort;
 import org.apache.commons.imaging.formats.tiff.write.TiffOutputDirectory;
 import org.apache.commons.imaging.formats.tiff.write.TiffOutputField;
@@ -123,7 +122,7 @@ public abstract class FSFoto extends FSFile {
     File fi = getPath().toFile();
     try {
       metadata = Imaging.getMetadata(fi);
-    } catch (ImageReadException | IOException e) {
+    } catch (IOException e) {
       // manda in crisi la pipe in FileSystemVisitatore:34
       // setFileInError(true);
       getLogger().error("Errore Lettura metadata:" + fi.getAbsolutePath(), e);
@@ -143,13 +142,17 @@ public abstract class FSFoto extends FSFile {
       return;
     String szDt = null;
     try {
-      String[] arr = exif.getFieldValue(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
-      if (arr != null && arr.length > 0) {
-        szDt = arr[0];
+      // String[] arr = exif.getFieldValue(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
+      //      if (arr != null && arr.length > 0) {
+      //        szDt = arr[0];
+      //      }
+      TiffField tfld = exif.findField(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
+      if (tfld != null) {
+        szDt = tfld.getStringValue();
       }
       if (szDt != null)
         dtAcquisizione = LocalDateTime.from(ParseData.s_fmtDtExif.parse(szDt));
-    } catch (ImageReadException | DateTimeParseException e) {
+    } catch (DateTimeParseException | ImagingException e) {
       // setFileInError(true);
       getLogger().error("Errore leggi Dt ORIGINAL \"{}\", err={}", szDt, e.getMessage());
     }
@@ -159,20 +162,22 @@ public abstract class FSFoto extends FSFile {
       setRotation(EExifRotation.Horizontal);
       Short rot = (Short) exif.getFieldValue(EXIF_TAG_ORIENTATION);
       // System.out.printf("FSFoto.leggiExifDtOriginal(%s)\n", obj.getClass().getSimpleName());
-      rotation = EExifRotation.parse(rot);
-    } catch (ImageReadException e) {
+      if (null != rot)
+        rotation = EExifRotation.parse(rot);
+    } catch (ImagingException e) {
       // e.printStackTrace();
       getLogger().error("Errore leggi Rotation, err={}", e.getMessage());
     }
     // -------------------------------------
 
     try {
-      GPSInfo gpsi = exif.getGPS();
+      // GPSInfo gpsi = exif.getGPS();
+      GpsInfo gpsi = exif.getGpsInfo();
       if (gpsi != null) {
         setLongitude(gpsi.getLongitudeAsDegreesEast());
         setLatitude(gpsi.getLatitudeAsDegreesNorth());
       }
-    } catch (ImageReadException | DateTimeParseException e) {
+    } catch (ImagingException | DateTimeParseException e) {
       // setFileInError(true);
       getLogger().error("Errore leggi Dt ORIGINAL \"{}\", err={}", szDt, e.getMessage());
     }
@@ -184,7 +189,7 @@ public abstract class FSFoto extends FSFile {
     ImageMetadata metadata = null;
     try {
       metadata = Imaging.getMetadata(getPath().toFile());
-    } catch (ImageReadException | IOException e) {
+    } catch (IOException e) {
       getLogger().error("Lettura metadata", e);
       return null;
     }
@@ -259,20 +264,19 @@ public abstract class FSFoto extends FSFile {
     double altitude = 0;
     for (TiffImageMetadata.TiffMetadataItem item : items) {
       TiffField fld;
-      String sz="";
+      String sz = "";
       try {
         fld = item.getTiffField();
         String szNam = fld.getTagInfo().name;
-        if ( szNam.startsWith("GPSAlt")) {
+        if (szNam.startsWith("GPSAlt")) {
           altitude = fld.getDoubleValue();
           continue;
         }
-        if ( szNam.startsWith("GPS")) {
-          if ( bGPSDone)
+        if (szNam.startsWith("GPS")) {
+          if (bGPSDone)
             continue;
           bGPSDone = true;
-          GPSInfo gpsi = null;
-          gpsi = exif.getGPS();
+          GpsInfo gpsi = exif.getGpsInfo();
           if (null != gpsi) {
             // lonRef = gpsi.longitudeRef;
             setLongitude(gpsi.getLongitudeAsDegreesEast());
@@ -282,9 +286,7 @@ public abstract class FSFoto extends FSFile {
                 gpsi.longitudeRef, //
                 gpsi.getLongitudeAsDegreesEast(), //
                 gpsi.latitudeRef, //
-                gpsi.getLatitudeAsDegreesNorth(),
-                altitude
-                );
+                gpsi.getLatitudeAsDegreesNorth(), altitude);
           }
         } else {
           sz = String.format("0x%04X\t(%s[%d])\t%-16s %s", //
@@ -297,7 +299,7 @@ public abstract class FSFoto extends FSFile {
         }
         System.out.println(sz);
         sb.append(sz).append("\n");
-      } catch (ImageReadException e) {
+      } catch (ImagingException e) {
         e.printStackTrace();
       }
     }
@@ -327,7 +329,7 @@ public abstract class FSFoto extends FSFile {
       sz = sz.substring(0, n);
     //    if (sz.startsWith("23-"))
     //      System.out.println("Trovato");
-    setDtNomeFile(ParseData.parseData(sz));
+    setDtNomeFile(ParseData.guessData(sz));
     if (dtNomeFile == null)
       getLogger().debug("File name no e' DateTime :" + sz);
 
@@ -754,13 +756,13 @@ public abstract class FSFoto extends FSFile {
       // se devo cambio le coordinate GPS alla foto
       var fLatLon = getLongitude() * getLatitude();
       if (isInterpolato() && fLatLon != 0) {
-        outputSet.setGPSInDegrees(getLongitude(), getLatitude());
+        outputSet.setGpsInDegrees(getLongitude(), getLatitude());
       }
       // sovrascrivo la dtAcq con la data ottenuta perche adesso deve diventare quella!
       dtAcquisizione = getPiuVecchiaData();
       String szDt = ParseData.s_fmtDtExif.format(dtAcquisizione);
 
-      TiffOutputField dd = new TiffOutputField(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL, FieldType.ASCII, szDt.length(),
+      TiffOutputField dd = new TiffOutputField(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL, AbstractFieldType.ASCII, szDt.length(),
           szDt.getBytes());
       exifDirectory.removeField(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
       exifDirectory.add(dd);
@@ -773,10 +775,7 @@ public abstract class FSFoto extends FSFile {
     } catch (IOException e) {
       bOk = false;
       getLogger().error("Errore I/O sul file {}", pthCopy.toString(), e);
-    } catch (ImageReadException | ImageWriteException e) {
-      bOk = false;
-      getLogger().error("Errore lettura EXIF sul file {}", pthCopy.toString(), e);
-    }
+    } 
     try {
       if (bOk)
         Files.delete(pthCopy);
@@ -835,7 +834,7 @@ public abstract class FSFoto extends FSFile {
       if (null == outputSet)
         outputSet = new TiffOutputSet();
       // final TiffOutputDirectory exifDirectory = outputSet.getOrCreateExifDirectory();
-      outputSet.setGPSInDegrees(getLongitude(), getLatitude());
+      outputSet.setGpsInDegrees(getLongitude(), getLatitude());
       new ExifRewriter().updateExifMetadataLossless(jpegImageFile, os, outputSet);
     } catch (FileNotFoundException e) {
       bOk = false;
@@ -843,10 +842,7 @@ public abstract class FSFoto extends FSFile {
     } catch (IOException e) {
       bOk = false;
       getLogger().error("Errore I/O sul file {}", pthCopy.toString(), e);
-    } catch (ImageReadException | ImageWriteException e) {
-      bOk = false;
-      getLogger().error("Errore lettura EXIF sul file {}", pthCopy.toString(), e);
-    }
+    } 
     try {
       if (bOk)
         Files.delete(pthCopy);

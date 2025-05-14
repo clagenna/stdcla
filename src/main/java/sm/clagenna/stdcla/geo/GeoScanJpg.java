@@ -18,14 +18,13 @@ import java.time.format.DateTimeParseException;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import org.apache.commons.imaging.ImageReadException;
-import org.apache.commons.imaging.ImageWriteException;
 import org.apache.commons.imaging.Imaging;
+import org.apache.commons.imaging.ImagingException;
 import org.apache.commons.imaging.common.ImageMetadata;
 import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
 import org.apache.commons.imaging.formats.jpeg.exif.ExifRewriter;
 import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
-import org.apache.commons.imaging.formats.tiff.TiffImageMetadata.GPSInfo;
+import org.apache.commons.imaging.formats.tiff.TiffImageMetadata.GpsInfo;
 import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.TiffDirectoryType;
 import org.apache.commons.imaging.formats.tiff.taginfos.TagInfoAscii;
@@ -192,7 +191,7 @@ public class GeoScanJpg {
           return geox;
         }
       }
-    } catch (ImageReadException | ImageWriteException | IOException e) {
+    } catch (IOException e) {
       s_log.error("Errore lettura EXIF \"{}\", err={}", p_jpg.toString(), e.getMessage());
     }
 
@@ -235,20 +234,20 @@ public class GeoScanJpg {
       }
       if ( !Utils.isValue(szZoneOfset))
         szZoneOfset = "+01:00";
-    } catch (ImageReadException | DateTimeParseException e) {
+    } catch (ImagingException | DateTimeParseException e) {
       // setFileInError(true);
       s_log.error("Errore leggi Dt ORIGINAL \"{}\", err={}", szDt, e.getMessage());
     }
 
-    GPSInfo gpsi = null;
+    GpsInfo gpsi = null;
     try {
       if (null != m_exif)
-        gpsi = m_exif.getGPS();
+        gpsi = m_exif.getGpsInfo();
       if (gpsi != null) {
         longitude = gpsi.getLongitudeAsDegreesEast();
         latitude = gpsi.getLatitudeAsDegreesNorth();
       }
-    } catch (ImageReadException | DateTimeParseException e) {
+    } catch (ImagingException | DateTimeParseException e) {
       s_log.error("Errore leggi GPS \"{}\", err={}", p_jpg.getFileName().toString(), e.getMessage());
     }
     if (dtAcquisizione != null
@@ -342,7 +341,7 @@ public class GeoScanJpg {
           arr = m_exif.getFieldValue(EXIF_TAG_OFFSET_TIME);
           if (null != arr && arr.length > 0)
             zoneOffset = ZoneOffset.of(arr[0]);
-        } catch (ImageReadException | DateTimeParseException e) {
+        } catch (ImagingException | DateTimeParseException e) {
           s_log.error("Errore leggi Dt ORIGINAL \"{}\", err={}", szDt, e.getMessage());
         }
       }
@@ -351,7 +350,7 @@ public class GeoScanJpg {
           zoneOffset = ZoneOffset.of("+01:00");
         s_log.debug("Foto {} dt acquiziz. {} {}", pth.toString(), szDt, zoneOffset != null ? zoneOffset.toString() : " - ");
       }
-      m_outputSet.setGPSInDegrees(lon, lat);
+      m_outputSet.setGpsInDegrees(lon, lat);
       new ExifRewriter().updateExifMetadataLossless(jpegImageFile, os, m_outputSet);
       p_geo.setGuessed(false);
     } catch (FileNotFoundException e) {
@@ -360,9 +359,6 @@ public class GeoScanJpg {
     } catch (IOException e) {
       bOk = false;
       s_log.error("Errore I/O sul file {}", pthCopy.toString(), e);
-    } catch (ImageReadException | ImageWriteException e) {
-      bOk = false;
-      s_log.error("Errore lettura EXIF sul file {}", pthCopy.toString(), e);
     }
     try {
       Path pthNew = removeJpgCopy(bOk, pthCopy, pth);
@@ -451,9 +447,6 @@ public class GeoScanJpg {
     } catch (IOException e) {
       bOk = false;
       s_log.error("Errore I/O sul file {}", pthCopy.toString(), e);
-    } catch (ImageReadException | ImageWriteException e) {
-      bOk = false;
-      s_log.error("Errore lettura EXIF sul file {}", pthCopy.toString(), e);
     }
     try {
       Path pthNew = removeJpgCopy(bOk, pthCopy, pth);
@@ -467,7 +460,7 @@ public class GeoScanJpg {
     return p_geo;
   }
 
-  private ImageMetadata readMetadataJPG(Path p_jpg) throws ImageReadException, IOException, ImageWriteException {
+  private ImageMetadata readMetadataJPG(Path p_jpg) throws ImagingException, IOException {
     File jpegImageFile = p_jpg.toFile();
     m_exif = null;
     m_outputSet = null;
@@ -478,7 +471,7 @@ public class GeoScanJpg {
 
     try {
       m_metadata = Imaging.getMetadata(jpegImageFile);
-    } catch (IllegalArgumentException | ImageReadException | IOException e) {
+    } catch (IllegalArgumentException | IOException e) {
       return m_jpegMetadata;
     }
     m_jpegMetadata = (JpegImageMetadata) m_metadata;
