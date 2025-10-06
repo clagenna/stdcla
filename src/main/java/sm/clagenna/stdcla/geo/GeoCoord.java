@@ -12,7 +12,6 @@ import lombok.Data;
 import sm.clagenna.stdcla.utils.Utils;
 
 @Data
-@SuppressWarnings("this-escape")
 public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
   private static final long serialVersionUID = -6542631194264470411L;
   // private static final Logger      s_log     = LogManager.getLogger(GeoCoord.class);
@@ -26,7 +25,7 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
   private boolean       guessed;
   private double        altitude;
   private EGeoSrcCoord  srcGeo;
-  private Path          fotoFile;
+  private transient Path fotoFile;
 
   public GeoCoord() {
     setLatitude(0);

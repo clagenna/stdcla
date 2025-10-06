@@ -2,6 +2,7 @@ package sm.clagenna.stdcla.geo;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -52,12 +53,12 @@ public class GeoCoordFoto extends GeoCoord {
   private LocalDateTime dtUltModif;
   private LocalDateTime dtAcquisizione;
 
-  private ImageMetadata       m_metadata;
-  private JpegImageMetadata   m_jpegMetadata;
-  private TiffImageMetadata   m_exif;
-  private TiffOutputSet       m_outputSet;
-  private TiffOutputDirectory m_rootDir;
-  private TiffOutputDirectory m_exifDir;
+  private transient ImageMetadata       m_metadata;
+  private transient JpegImageMetadata   m_jpegMetadata;
+  private transient TiffImageMetadata   m_exif;
+  private transient TiffOutputSet       m_outputSet;
+  private transient TiffOutputDirectory m_rootDir;
+  private transient TiffOutputDirectory m_exifDir;
 
   static {
     s_zoneOffSet = OffsetDateTime.now().getOffset();

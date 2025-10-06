@@ -527,11 +527,16 @@ public class HtmlValue implements Comparable<HtmlValue>, Cloneable {
     double occupy = calcLenTx + fx;
     double diffX = Math.abs(p_succ.fx - occupy);
     //    if (diffX < 10.)
-    if (isText() && p_succ.isText() && (diffX <= 10.))
-      return true;
-    if ( !isText() || !p_succ.isText() || (diffY >= 1))
-      return false;
-    return true;
+    if (isText() && p_succ.isText()) {
+      if (diffY >= 1)
+        return false;
+      if (diffX <= 10.)
+        return true;
+    }
+    //    if ( !isText() || !p_succ.isText() || (diffY >= 1))
+    //      return false;
+    //    return true;
+    return false;
   }
 
   public static void setCorrettivo(double p_v) {
