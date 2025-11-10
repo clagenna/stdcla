@@ -12,19 +12,34 @@ import java.util.Map;
  *
  */
 public enum ETipiDato {
-  IntN15("i15", "(\\d{15})", true), //
-  Intero("i", "(-{0,1}\\d+[\\.]*\\d*)", true), //
-  Float("f", "(-{0,1}[\\d\\.]*\\d+[,]\\d+)", true), //
-  Importo("cy", "(-{0,1}[\\d\\.]*\\d+,\\d{2})", true), //
-  Barrato("br", "(\\d+/\\d+)", false), //
-  Stringa("s", "([a-zA-Z]+)", false), //
-  Data("d", "(\\d{2}/\\d{2}/\\d{4})", false), //
+  IntN15("i15", "(\\d{15})", true), // *
+  Intero("i", "(-{0,1}\\d+[\\.]*\\d*)", true), // *
+  Float("f", "(-{0,1}[\\d\\.]*\\d+[,]\\d+)", true), // *
+  // importo: -nn.nnn,nn
+  // Importo("cy", "(-{0,1}[\\d\\.]*\\d+,\\d{2})", true), // *
+  Barrato("br", "(\\d+/\\d+)", false), // *
+  Stringa("s", "([a-zA-Z]+)", false), // *
+  // data: nn/nn/nnnn
+  Data("d", "(\\d{2}/\\d{2}/\\d{4})", false), // *
+  Ora("o", "(\\d*\\d{1}[:.]\\d{2}[:.]\\d{2})", false), // *
+  Email("Emai", "[a-z]([0-9 \\.\\-]+@[a-z][0-9\\-]+\\.[a-z]+)", false), // *
   // ---- caratteri speciali -----
-  Minus("mns", "(\\-)", false), //
-  Perc("prc", "(%)", false), //
-  Aster("ast", "(\\*)", false), //
+  Plus("plu", "(\\+)", false), // *
+  Minus("mns", "(\\-)", false), // *
+  PAper("pap", "(\\()", false), // *
+  PChiu("pch", "(\\))", false), // *
+  QAper("qap", "(\\[)", false), // *
+  QChiu("qch", "(\\])", false), // *
+  Minor("mnr", "(\\<)", false), // *
+  Great("gtr", "(\\>)", false), // *
+  Perc("prc", "(%)", false), // *
+  Aster("ast", "(\\*)", false), // *
+
+  // ---- aggregati delle analisi sangue ----
   Less("les", "([\\-<>]+)[ \\t]*([0-9]+[,\\\\.]*[0-9]*)", true), //
-  MinMax("mmx", "([0-9]+[,\\.]*[0-9]*)[ \t]*([\\-<>]+)[ \\t]*([0-9]+[,\\\\.]*[0-9]*)", true);
+  MinMax("mmx", "([0-9]+[,\\.]*[0-9]*)[ \t]*([\\-<>]+)[ \\t]*([0-9]+[,\\\\.]*[0-9]*)", true), //
+  // ---- il restante HTML non interpretato -----
+  HTML("htm", ".*", false); // *
 
   // Pattern patMMx1 = Pattern.compile("([0-9]+[,\\.]*[0-9]*)[ \t]*([\\-<>]+)[ \\t]*([0-9]+[,\\\\.]*[0-9]*)");
   // Pattern patMMx2 = Pattern.compile("([\\-<>]+)[ \\t]*([0-9]+[,\\\\.]*[0-9]*)");
@@ -75,9 +90,10 @@ public enum ETipiDato {
         bRet = p_altro.equals(Data);
         break;
       case Float:
-      case Importo:
+        //      case Importo:
         bRet = p_altro.equals(Float) || //
-            p_altro.equals(Importo) || p_altro.equals(Intero);
+        // p_altro.equals(Importo) || //
+            p_altro.equals(Intero);
         break;
       case IntN15:
       case Intero:
@@ -128,6 +144,34 @@ public enum ETipiDato {
         break;
     }
     return bret;
+  }
+
+  public static ETipiDato parseChar(String txt) {
+    ETipiDato ret = null;
+    if (null == txt)
+      return ret;
+    for (ETipiDato tp : values()) {
+      switch (tp) {
+        // case Intero:
+        case Barrato:
+        case Plus:
+        case Minus:
+        // case PAper:
+        case PChiu:
+        case QAper:
+        case QChiu:
+        case Minor:
+        case Great:
+        case Perc:
+        case Aster:
+          if (txt.matches(tp.regex))
+            ret = tp;
+          break;
+        default:
+          break;
+      }
+    }
+    return ret;
   }
 
 }

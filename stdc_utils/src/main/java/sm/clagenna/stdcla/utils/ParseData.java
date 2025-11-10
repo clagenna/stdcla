@@ -17,6 +17,7 @@ public class ParseData {
   public static final SimpleDateFormat s_fmt       = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
   public static SimpleDateFormat       s_fmtDtDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
   public static DateTimeFormatter      s_fmtTs     = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+  public static DateTimeFormatter      s_fmtOra    = DateTimeFormatter.ofPattern("HH:mm:ss");
   public static DateTimeFormatter      s_fmtTsT    = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
   public static DateTimeFormatter      s_fmtDtExif = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss");
   public static DateTimeFormatter      s_fmtDtFile = DateTimeFormatter.ofPattern("'f'yyyyMMdd'_'HHmmss");
@@ -158,12 +159,33 @@ public class ParseData {
     return odt;
   }
 
+  public static String formatDate(java.util.Date p_ldt) {
+    return formatDate(toLocalDateTime(p_ldt));
+  }
+
   public static String formatDate(LocalDateTime p_ldt) {
     String szRet = null;
     if (null == p_ldt)
       return szRet;
     try {
       szRet = s_fmtTs.format(p_ldt);
+      szRet = szRet.replace(" 00:00:00", "");
+    } catch (Exception e) {
+      // e.printStackTrace();
+    }
+    return szRet;
+  }
+
+  public static String formatOra(java.util.Date p_ldt) {
+    return formatOra(toLocalDateTime(p_ldt));
+  }
+
+  public static String formatOra(LocalDateTime p_ldt) {
+    String szRet = null;
+    if (null == p_ldt)
+      return szRet;
+    try {
+      szRet = s_fmtOra.format(p_ldt);
       szRet = szRet.replace(" 00:00:00", "");
     } catch (Exception e) {
       // e.printStackTrace();

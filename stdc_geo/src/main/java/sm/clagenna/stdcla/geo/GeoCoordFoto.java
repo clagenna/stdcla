@@ -60,6 +60,7 @@ public class GeoCoordFoto extends GeoCoord implements Serializable {
   private static final long   serialVersionUID = 5812233941539440255L;
   private static final Logger s_log            = LogManager.getLogger(GeoCoordFoto.class);
 
+  @SuppressWarnings("unused")
   private static final int          MIN_WIDTH_FOTO       = 64;
   private static final int          TAG_OFFSET_TIME      = 0x9010;
   private static final TagInfoAscii EXIF_TAG_OFFSET_TIME = new TagInfoAscii("OffsetTime", TAG_OFFSET_TIME, 20,

@@ -40,7 +40,7 @@ public class ValoreBySeq {
    */
   public boolean goodStart(HtmlValue p_cmp) {
     ValoreByTag primo = m_liSeq.get(0);
-    boolean bRet = p_cmp.getTipo().isCompatible(primo.getTipoDato());
+    boolean bRet = p_cmp.getTipoDato().isCompatible(primo.getTipoDato());
     if (bRet) {
       // il tipo combacia, vediamo se anche il campo civetta
       if (primo.hasCivetta())
@@ -123,7 +123,7 @@ public class ValoreBySeq {
         return 0;
       htmlV = p_liCmp.get(indx);
       ETipiDato seqTip = tg.getTipoDato();
-      ETipiDato tgvTip = htmlV.getTipo();
+      ETipiDato tgvTip = htmlV.getTipoDato();
       if (s_debEstraiVal)
         debugEstrVal("?", p_liCmp, p_k, j - 1);
       // if ( ! (seqTip.isCompatible(tgvTip) && tg.verificaCivetta(tgv))) {
@@ -135,7 +135,7 @@ public class ValoreBySeq {
               tg.getFieldName(), //
               tg.getTipoDato(), //
               htmlV.getTxt(), //
-              htmlV.getTipo()); //
+              htmlV.getTipoDato()); //
           return 0;
         }
       }

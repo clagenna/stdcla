@@ -78,7 +78,6 @@ public class HtmlValue implements Comparable<HtmlValue>, Cloneable {
 
   private double                     timParse;
   public static final DateFormat     fmtData   = new SimpleDateFormat("dd/MM/yyyy");
-  public static final DateFormat     fmtOraP   = new SimpleDateFormat("HH.mm.ss");
   public static final DateFormat     fmtOra    = new SimpleDateFormat("HH:mm:ss");
   @SuppressWarnings("unused")
   private static final DecimalFormat s_dblFmt2 = new DecimalFormat("#,###.00");
@@ -150,7 +149,7 @@ public class HtmlValue implements Comparable<HtmlValue>, Cloneable {
     id = lastId++;
   }
   //
-  //  public PHtmlValue(double p_x, double p_y, double p_fwidth, double p_FSiz, int page, String txt, String szRiHtml) {
+  //  public HtmlValue(double p_x, double p_y, double p_fwidth, double p_FSiz, int page, String txt, String szRiHtml) {
   //    id = lastId++;
   //    setFx(p_x);
   //    setFy(p_y);
@@ -413,10 +412,7 @@ public class HtmlValue implements Comparable<HtmlValue>, Cloneable {
     // ------------- ORA ------------------
     if (patOra.matcher(lTxt).matches()) {
       try {
-        if (lTxt.indexOf(".") > 0)
-          valData = fmtOraP.parse(lTxt);
-        else
-          valData = fmtOra.parse(lTxt);
+        valData = fmtOra.parse(lTxt);
         tipoDato = ETipiDato.Ora;
       } catch (Exception e) {
         s_log.error("Parse ora:" + txt, e);
@@ -660,10 +656,8 @@ public class HtmlValue implements Comparable<HtmlValue>, Cloneable {
     // int fSize = (int) fontSize;
     //    if (diffX < 10.)
     // se "needtext" prec e succ *devono* essere stringhe
-    if (needText && (isText() && p_succ.isText()))
-      return false;
     // prec e succ *devono* essere sulla stessa riga
-    if (diffY >= 1)
+    if ((needText && isText() && p_succ.isText()) || (diffY >= 1))
       return false;
     // se !needText non interessa la consecutio asse X
     if ( !needText)

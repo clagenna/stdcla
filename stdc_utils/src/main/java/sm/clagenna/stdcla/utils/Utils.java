@@ -15,6 +15,8 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -36,6 +38,7 @@ public class Utils {
   private static DecimalFormatSymbols S_FMT_SYMS;
   private static String               S_Decimal_Sep;
   private static String               S_Group_Sep;
+  private static Pattern              patEmail;
 
   private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
@@ -461,6 +464,26 @@ public class Utils {
     if (null == ldtMax || null == dtTest || ldtMax.isBefore(dtTest))
       return dtTest;
     return ldtMax;
+  }
+
+  public static boolean isEmail(String txt) {
+    final String szPatEmail = "" //
+        + "^" // 
+        + "[a-zA-Z0-9" // lettera e num
+        + "_!#$%&'*+/=?`{|}~^-" // chars
+        + "]+" // da 1-...
+        + "(?:\\." //
+        + "[a-zA-Z0-9" //
+        + "_!#$%&'*+/=?`{|}~^-" //
+        + "]+)*" //
+        + "@" //
+        + "(?:[a-zA-Z0-9-]+\\.)+" //
+        + "[a-zA-Z]{2,6}" //
+        + "$";
+    if (null == patEmail)
+      patEmail = Pattern.compile(szPatEmail);
+    Matcher mtch = patEmail.matcher(txt);
+    return mtch.find();
   }
 
 }

@@ -93,6 +93,12 @@ public class AppProperties {
     }
   }
 
+  public int size() {
+    if (null == properties)
+      return 0;
+    return properties.size();
+  }
+
   public Properties leggiPropertyFile() throws AppPropsException {
     return leggiPropertyFile(getPropertyFile(), true, true);
   }
@@ -115,7 +121,9 @@ public class AppProperties {
 
   /**
    * Legge il file di propreties specificato. Se <code>bForce</code> allora il
-   * file <b>deve</b> esistere
+   * file <b>deve</b> esistere.<br/>
+   * Se <code>bResJar</code> allora vado a cercare il file nella radice del jar
+   * come "/nome_file.properties"
    *
    * @param p_fiProp
    * @param bForce
@@ -127,7 +135,7 @@ public class AppProperties {
   public Properties leggiPropertyFile(File p_fiProp, boolean bForce, boolean bResJar) throws AppPropsException {
     properties = new Properties();
     if ( !bResJar) {
-      if (p_fiProp == null || !p_fiProp.exists()) {
+      if (null == p_fiProp || !p_fiProp.exists()) {
         if (bForce)
           throw new AppPropsException(
               "Il file properties non esiste:" + (p_fiProp != null ? p_fiProp.getAbsolutePath() : "*NULL*"));
@@ -139,7 +147,7 @@ public class AppProperties {
     s_log.info("Apro il file di  properties: {}", p_fiProp.getAbsolutePath());
     propertyFile = p_fiProp;
     setPropertyFile(p_fiProp);
-    if ( !bResJar) {
+    if ( !bResJar || p_fiProp.exists()) {
       // leggo dal direttorio
       try (InputStream is = new FileInputStream(p_fiProp)) {
         if (is != null)

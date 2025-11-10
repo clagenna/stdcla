@@ -76,7 +76,7 @@ public class ValoreByTag extends Valore {
   @Override
   public int estraiValori(List<HtmlValue> p_liCmp, int p_k) throws ReadPDFValoreException {
     HtmlValue cmpVal = p_liCmp.get(p_k);
-    if (cmpVal.getTipo() != m_tipoc) {
+    if (cmpVal.getTipoDato() != m_tipoc) {
       s_log.debug("Non assegno a {} il tag {}", this.toString(), cmpVal.toString());
       return 0;
     }

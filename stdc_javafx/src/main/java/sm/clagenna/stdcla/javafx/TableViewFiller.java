@@ -1,5 +1,7 @@
 package sm.clagenna.stdcla.javafx;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -39,6 +41,8 @@ public class TableViewFiller extends Task<String> implements ITableColBuilder {
   //  private ResultView resView;
   @Getter @Setter
   private String                                               szQry;
+  @Getter @Setter
+  private PropertyChangeSupport                                propChanger;
   @Getter @Setter
   private String                                               fltrParola;
   @Getter @Setter
@@ -103,11 +107,11 @@ public class TableViewFiller extends Task<String> implements ITableColBuilder {
 
   public void populateTableView() {
     Platform.runLater(() -> {
-      populateNewTableView();
+      populateLaterTableView();
     });
   }
 
-  private void populateNewTableView() {
+  private void populateLaterTableView() {
     // System.out.println("TableViewFiller.populateNewTableView()");
     tableview.getItems().clear();
     tableview.getColumns().clear();

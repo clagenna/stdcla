@@ -1,4 +1,4 @@
-package sm.clagenna.stdcla.pdf;
+package prove.stdc_pdf.ansan;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -17,54 +17,41 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.fit.pdfdom.PDFDomTree;
+import org.junit.Test;
 
 import lombok.Getter;
 import lombok.Setter;
+import sm.clagenna.stdcla.pdf.ETipiDato;
+import sm.clagenna.stdcla.pdf.IPdfGestore;
+import sm.clagenna.stdcla.pdf.HtmlValue;
+import sm.clagenna.stdcla.pdf.TextPrint;
 
-public class FromPdf2Html implements IPdfGestore {
-  private static final Logger s_log = LogManager.getLogger(FromPdf2Html.class);
+public class ProvaNuovoHtmlValue implements IPdfGestore {
+  private static final Logger s_log = LogManager.getLogger(ProvaNuovoHtmlValue.class);
 
   @Getter @Setter
-  private Path             filePDF;
+  private int    nPage;
+  @Getter @Setter
+  private double maxTop;
+
   private List<String>     m_outHtml;
-  /** list of HtmlValue UN-ordered */
   private List<HtmlValue> liHtmlValues;
-  /** list of HtmlValue Ordered */
   private List<HtmlValue> liHtmlValues2;
+  private Path             pthPdf;
 
-  @Getter @Setter
-  private boolean          debug;
-  @Getter @Setter
-  private boolean          saveHTML;
-  @Getter @Setter
-  private boolean          saveCSV;
-  @Getter @Setter
-  private boolean          saveTXT;
-  @Getter @Setter
-  private IParseHtmlValues parserHtml;
-  @Getter @Setter
-  private int              nPage;
-  @Getter @Setter
-  private double           maxTop;
-
-  public FromPdf2Html() {
-    debug = false;
-    saveHTML = false;
-    saveCSV = false;
-    saveTXT = false;
+  public ProvaNuovoHtmlValue() {
+    //
   }
 
-  public boolean parsePDF(Path p_fiPdf) {
-    setFilePDF(p_fiPdf);
-    if ( !convToHtml(p_fiPdf))
-      return false;
-    if (saveHTML)
-      saveHtml0();
-    if (debug) {
-      System.out.printf("Conv 2 HTML, %d righe\n---------------\n", m_outHtml.size());
-      m_outHtml.stream().limit(24).forEach(System.out::println);
-      System.out.println("...");
-    }
+  @Test
+  public void doIt() {
+    pthPdf = Paths.get("data/Analisi_2025-10-07.pdf");
+    if ( !convToHtml(pthPdf))
+      return;
+    saveHtml0();
+    System.out.printf("Conv 2 HTML, %d righe\n---------------\n", m_outHtml.size());
+    m_outHtml.stream().limit(24).forEach(System.out::println);
+    System.out.println("...");
     scanRigheHTML();
     saveHtml(liHtmlValues, "1");
     saveCSVFile(liHtmlValues, "1");
@@ -73,11 +60,19 @@ public class FromPdf2Html implements IPdfGestore {
     saveCSVFile(liHtmlValues2, "2");
     saveTxtFile(liHtmlValues2, "2");
     parseHtmlValues(liHtmlValues2);
-    return true;
   }
 
-  public List<HtmlValue> getLiHtml() {
-    return liHtmlValues2;
+  private boolean convToHtml(Path p_fiPdf) {
+    try (PDDocument pdf = PDDocument.load(p_fiPdf.toFile()); StringWriter swr = new StringWriter();) {
+      new PDFDomTree().writeText(pdf, swr);
+      m_outHtml = new ArrayList<>();
+      String[] arr = swr.toString().split("\n");
+      m_outHtml.addAll(Arrays.asList(arr));
+    } catch (IOException e) {
+      System.err.printf("Errore \"%s\" in lettura file PDF: %s\n", e.getMessage(), p_fiPdf.toString());
+      return false;
+    }
+    return true;
   }
 
   private boolean scanRigheHTML() {
@@ -142,21 +137,8 @@ public class FromPdf2Html implements IPdfGestore {
     return true;
   }
 
-  private boolean convToHtml(Path p_fiPdf) {
-    try (PDDocument pdf = PDDocument.load(p_fiPdf.toFile()); StringWriter swr = new StringWriter();) {
-      new PDFDomTree().writeText(pdf, swr);
-      m_outHtml = new ArrayList<>();
-      String[] arr = swr.toString().split("\n");
-      m_outHtml.addAll(Arrays.asList(arr));
-    } catch (IOException e) {
-      s_log.error("Errore \"{}\" in lettura file PDF: {}", e.getMessage(), p_fiPdf.toString());
-      return false;
-    }
-    return true;
-  }
-
   private void saveHtml0() {
-    String szFi = getFilePDF().toAbsolutePath().toString();
+    String szFi = pthPdf.toAbsolutePath().toString();
     int n = szFi.toLowerCase().indexOf(".pdf");
     if (n > 0)
       szFi = szFi.substring(0, n) + "_0.htm";
@@ -172,9 +154,7 @@ public class FromPdf2Html implements IPdfGestore {
   }
 
   private void saveHtml(List<HtmlValue> li, String sufx) {
-    if ( !saveHTML)
-      return;
-    String szFi = getFilePDF().toAbsolutePath().toString();
+    String szFi = pthPdf.toAbsolutePath().toString();
     int n = szFi.toLowerCase().indexOf(".pdf");
     if (n > 0)
       szFi = String.format("%s_%s.htm", szFi.substring(0, n), sufx);
@@ -191,9 +171,7 @@ public class FromPdf2Html implements IPdfGestore {
   }
 
   private void saveCSVFile(List<HtmlValue> li, String sufx) {
-    if ( !saveCSV)
-      return;
-    String szFi = getFilePDF().toAbsolutePath().toString();
+    String szFi = pthPdf.toAbsolutePath().toString();
     int n = szFi.toLowerCase().indexOf(".pdf");
     if (n > 0)
       szFi = String.format("%s_%s.csv", szFi.substring(0, n), sufx);
@@ -218,9 +196,7 @@ public class FromPdf2Html implements IPdfGestore {
   }
 
   public void saveTxtFile(List<HtmlValue> li, String sufx) {
-    if ( !saveTXT)
-      return;
-    String szFi = getFilePDF().toAbsolutePath().toString();
+    String szFi = pthPdf.toAbsolutePath().toString();
     int n = szFi.toLowerCase().indexOf(".pdf");
     if (n > 0)
       szFi = String.format("%s_%s.txt", szFi.substring(0, n), sufx);
@@ -243,10 +219,10 @@ public class FromPdf2Html implements IPdfGestore {
   }
 
   private void parseHtmlValues(List<HtmlValue> liHtmlValues22) {
-    // IParseHtmlValues prs = new PParserHtmlValues();
-    parserHtml.setDebug(debug);
-    int qta = parserHtml.parse(liHtmlValues22);
-    s_log.debug("Generato {} record Analisi. Sangue\n", qta);
+    //    PParserHtmlValues prs = new PParserHtmlValues();
+    //    PParserHtmlValues.setDebug(true);
+    //    int qta = prs.parse(liHtmlValues22);
+    //    System.out.printf("Generato %d record Anal. Sangue\n", qta);
   }
 
 }

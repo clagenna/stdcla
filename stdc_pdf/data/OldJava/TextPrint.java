@@ -43,7 +43,7 @@ public class TextPrint {
         m_a4.add(sb.toString());
   }
 
-  public void scrivi(HtmlValue p_cm) {
+  public void scrivi(PHtmlValue p_cm) {
     //    int px = (int) (p_cm.left() / DBL_XMAX * F_XCharMax);
     //    int py = (int) (p_cm.top() / DBL_YMAX * F_YRigheMax);
     //    // salto alla pagina
@@ -56,9 +56,6 @@ public class TextPrint {
       throw new IndexOutOfBoundsException(p_cm.getTop());
     }
     String riga = m_a4.get(p_cm.getTop());
-    String szTxt = p_cm.getTxt();
-    if ( null == szTxt || szTxt.trim().length() == 0)
-      return;
     int lMax = (p_cm.getLeft() + p_cm.getTxt().length());
     if (riga.length() < lMax) {
       int n = lMax - riga.length();

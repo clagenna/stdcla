@@ -60,13 +60,13 @@ public abstract class Valore {
     Object vv = null;
     switch (m_tipoc) {
       case Data:
-        vv = p_cmp.getvData();
+        vv = p_cmp.getValData();
         break;
       case Barrato:
         vv = p_cmp.getFattNo();
         break;
       case Intero:
-        vv = p_cmp.getvInt();
+        vv = p_cmp.getIntero();
         break;
       case Float:
         vv = p_cmp.getvDbl();
@@ -74,10 +74,10 @@ public abstract class Valore {
       case Stringa:
         vv = p_cmp.getTxt();
         break;
-      case Importo:
-        String sz = p_cmp.getTxt().replace(".", "").replace(",", ".");
-        vv = new BigDecimal(sz);
-        break;
+      //      case Importo:
+      //        String sz = p_cmp.getTxt().replace(".", "").replace(",", ".");
+      //        vv = new BigDecimal(sz);
+      //        break;
       case IntN15:
         vv = p_cmp.getTxt();
         break;
