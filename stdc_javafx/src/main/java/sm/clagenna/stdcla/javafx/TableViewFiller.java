@@ -1,6 +1,5 @@
 package sm.clagenna.stdcla.javafx;
 
-import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.text.DecimalFormat;

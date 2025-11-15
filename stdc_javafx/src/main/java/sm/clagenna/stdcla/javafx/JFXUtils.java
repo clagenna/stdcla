@@ -38,8 +38,8 @@ public class JFXUtils {
     return new ScreenDim(lposX, lposY, wi, he);
   }
 
-  public static void savePosStage(Stage prim, AppProperties props, String prefix) {
-    Scene sce = prim.getScene();
+  public static void savePosStage(Stage stag, AppProperties props, String prefix) {
+    Scene sce = stag.getScene();
     double px = sce.getWindow().getX();
     double py = sce.getWindow().getY();
     double dx = sce.getWindow().getWidth();
@@ -56,7 +56,7 @@ public class JFXUtils {
     props.setProperty(szHeig, (int) dy);
   }
   
-  public static void readPosStage(Stage prim, AppProperties props, String prefix) {
+  public static void readPosStage(Stage stag, AppProperties props, String prefix) {
     String szPosX = String.format("%s.posX", prefix);
     String szPosY = String.format("%s.posY", prefix);
     String szwidt = String.format("%s.width", prefix);
@@ -69,10 +69,10 @@ public class JFXUtils {
 
     var mm = JFXUtils.getScreenMinMax(px, py, dx, dy);
     if (mm.poxX() != -1 && mm.posY() != -1 && mm.poxX() * mm.posY() != 0) {
-      prim.setX(mm.poxX());
-      prim.setY(mm.posY());
-      prim.setWidth(mm.width());
-      prim.setHeight(mm.height());
+      stag.setX(mm.poxX());
+      stag.setY(mm.posY());
+      stag.setWidth(mm.width());
+      stag.setHeight(mm.height());
     }
   }
   
