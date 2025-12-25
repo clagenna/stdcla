@@ -16,8 +16,7 @@ public class JFXUtils {
   }
 
   public static ScreenDim getScreenMinMax(int posX, int posY, int wi, int he) {
-    @SuppressWarnings("unused")
-    int minx = 0, maxx = 0, miny = 0, maxy = 0, maxWi = 0, maxHe = 0;
+    @SuppressWarnings("unused") int minx = 0, maxx = 0, miny = 0, maxy = 0, maxWi = 0, maxHe = 0;
     for (Screen scr : Screen.getScreens()) {
       Rectangle2D schermo = scr.getBounds();
       // System.out.println(schermo);
@@ -44,7 +43,7 @@ public class JFXUtils {
     double py = sce.getWindow().getY();
     double dx = sce.getWindow().getWidth();
     double dy = sce.getWindow().getHeight();
-    
+
     String szPosX = String.format("%s.posX", prefix);
     String szPosY = String.format("%s.posY", prefix);
     String szwidt = String.format("%s.width", prefix);
@@ -55,7 +54,7 @@ public class JFXUtils {
     props.setProperty(szwidt, (int) dx);
     props.setProperty(szHeig, (int) dy);
   }
-  
+
   public static void readPosStage(Stage stag, AppProperties props, String prefix) {
     String szPosX = String.format("%s.posX", prefix);
     String szPosY = String.format("%s.posY", prefix);
@@ -68,12 +67,12 @@ public class JFXUtils {
     int dy = props.getIntProperty(szHeig);
 
     var mm = JFXUtils.getScreenMinMax(px, py, dx, dy);
-    if (mm.poxX() != -1 && mm.posY() != -1 && mm.poxX() * mm.posY() != 0) {
+    if (mm.poxX() != -1 && mm.posY() != -1 && mm.poxX() != -1 && mm.posY() != -1) {
       stag.setX(mm.poxX());
       stag.setY(mm.posY());
       stag.setWidth(mm.width());
       stag.setHeight(mm.height());
     }
   }
-  
+
 }

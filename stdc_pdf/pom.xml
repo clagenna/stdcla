@@ -11,8 +11,9 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	    <javafx.version>23.0.1</javafx.version>
 	    <common.text.version>1.13.0</common.text.version>
-	    <apache.pdfbox.version>2.0.4</apache.pdfbox.version>
+	    <apache.pdfbox.version>2.0.35</apache.pdfbox.version>
 	    <pdf2dom.version>2.0.3</pdf2dom.version>
+	    <logback.version>1.5.18</logback.version>
 	</properties>
 	<dependencies>
 		<!-- https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc -->
@@ -68,7 +69,20 @@
 			<artifactId>commons-text</artifactId>
 			<version>${common.text.version}</version>
 		</dependency>
-
+<!--		Pensavo potesse servire per mascherare i log del org.mabb.fontverter.opentype.TtfInstructions.TtfInstructionParser.class
+		purtroppo non ne è valsa la pena questa strada
+-->	
+	<!-- dependency>
+          <groupId>ch.qos.logback</groupId>
+          <artifactId>logback-core</artifactId>
+          <version>${logback.version}</version>
+        </dependency>
+        <dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${logback.version}</version>
+		</dependency>
+  -->
 		
 	</dependencies>
 </project>

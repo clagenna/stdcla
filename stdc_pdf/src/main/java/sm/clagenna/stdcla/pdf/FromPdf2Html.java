@@ -20,32 +20,34 @@ import org.fit.pdfdom.PDFDomTree;
 
 import lombok.Getter;
 import lombok.Setter;
+import sm.clagenna.stdcla.utils.sys.TimerMeter;
 
 public class FromPdf2Html implements IPdfGestore {
-  private static final Logger s_log = LogManager.getLogger(FromPdf2Html.class);
+  private static final Logger s_log           = LogManager.getLogger(FromPdf2Html.class);
+  private static final String CSZ_SAVE_SUBDIR = "AcqInfo";
 
   @Getter @Setter
-  private Path             filePDF;
-  private List<String>     m_outHtml;
+  private Path            filePDF;
+  private List<String>    m_outHtml;
   /** list of HtmlValue UN-ordered */
   private List<HtmlValue> liHtmlValues;
   /** list of HtmlValue Ordered */
   private List<HtmlValue> liHtmlValues2;
 
   @Getter @Setter
-  private boolean          debug;
+  private boolean debug;
   @Getter @Setter
-  private boolean          saveHTML;
+  private boolean saveHTML;
   @Getter @Setter
-  private boolean          saveCSV;
+  private boolean saveCSV;
   @Getter @Setter
-  private boolean          saveTXT;
+  private boolean saveTXT;
+  //  @Getter @Setter
+  //  private IParseHtmlValues parserHtml;
   @Getter @Setter
-  private IParseHtmlValues parserHtml;
+  private int    nPage;
   @Getter @Setter
-  private int              nPage;
-  @Getter @Setter
-  private double           maxTop;
+  private double maxTop;
 
   public FromPdf2Html() {
     debug = false;
@@ -66,13 +68,12 @@ public class FromPdf2Html implements IPdfGestore {
       System.out.println("...");
     }
     scanRigheHTML();
-    saveHtml(liHtmlValues, "1");
-    saveCSVFile(liHtmlValues, "1");
+    saveHtml(liHtmlValues, "_1");
+    saveCSVFile(liHtmlValues, "_1");
     liHtmlValues2 = liHtmlValues.stream().sorted().toList();
-    saveHtml(liHtmlValues2, "2");
-    saveCSVFile(liHtmlValues2, "2");
-    saveTxtFile(liHtmlValues2, "2");
-    parseHtmlValues(liHtmlValues2);
+    saveHtml(liHtmlValues2, "_2");
+    saveCSVFile(liHtmlValues2, "_2");
+    saveTxtFile(liHtmlValues2, "_2");
     return true;
   }
 
@@ -143,11 +144,14 @@ public class FromPdf2Html implements IPdfGestore {
   }
 
   private boolean convToHtml(Path p_fiPdf) {
+    String threadName = Thread.currentThread().getName();
+    TimerMeter tt = new TimerMeter("convToHtml:" + p_fiPdf.toString());
     try (PDDocument pdf = PDDocument.load(p_fiPdf.toFile()); StringWriter swr = new StringWriter();) {
       new PDFDomTree().writeText(pdf, swr);
       m_outHtml = new ArrayList<>();
       String[] arr = swr.toString().split("\n");
       m_outHtml.addAll(Arrays.asList(arr));
+      s_log.debug("{},{}", threadName, tt.stop());
     } catch (IOException e) {
       s_log.error("Errore \"{}\" in lettura file PDF: {}", e.getMessage(), p_fiPdf.toString());
       return false;
@@ -156,35 +160,76 @@ public class FromPdf2Html implements IPdfGestore {
   }
 
   private void saveHtml0() {
-    String szFi = getFilePDF().toAbsolutePath().toString();
-    int n = szFi.toLowerCase().indexOf(".pdf");
-    if (n > 0)
-      szFi = szFi.substring(0, n) + "_0.htm";
-    try (BufferedWriter bw = new BufferedWriter(new FileWriter(szFi))) {
+    //    Path pthPadre = getFilePDF().getParent();
+    //    String szFi = getFilePDF().getFileName().toString();
+    //    int n = szFi.toLowerCase().indexOf(".pdf");
+    //    if (n > 0)
+    //      szFi = szFi.substring(0, n);
+    //    //    Path pthOut = Paths.get(pthPadre.toString(), CSZ_SAVE_SUBDIR, szFi + "_0.html");
+    //    Path pthOut = Paths.get(pthPadre.toString(), CSZ_SAVE_SUBDIR);
+    //    try {
+    //      if ( !Files.exists(pthOut))
+    //        Files.createDirectory(pthOut);
+    //    } catch (IOException e) {
+    //      s_log.error("SaveHTML0:Non sono riuscito a creare il dir {}, err={}", pthOut.toString(), e.getMessage());
+    //      return;
+    //    }
+    //    Path fiOut = Paths.get(pthOut.toString(), szFi + "_0.html");
+    Path pthOut = creaOutFile(getFilePDF(), "_0", "html");
+    if (null == pthOut)
+      return;
+    try (BufferedWriter bw = new BufferedWriter(new FileWriter(pthOut.toFile()))) {
       String szHtml = m_outHtml //
           .stream() //
           .collect(Collectors.joining(System.lineSeparator()));
       bw.write(szHtml);
-      s_log.info("Scritto HTML file {}", szFi);
+      s_log.info("Scritto HTML file {}", pthOut.toString());
     } catch (IOException e) {
       s_log.error("Errore scrittura HTML 0", e);
     }
   }
 
-  private void saveHtml(List<HtmlValue> li, String sufx) {
+  private Path creaOutFile(Path pthIn, String sufx, String ext) {
+    Path pthPadre = getFilePDF().getParent();
+    String szFi = pthIn.getFileName().toString();
+    int n = szFi.toLowerCase().lastIndexOf(".");
+    if (n > 0)
+      szFi = szFi.substring(0, n);
+    Path pthOut = null;
+    Path pthDir = Paths.get(pthPadre.toString(), CSZ_SAVE_SUBDIR);
+    try {
+      if ( !Files.exists(pthDir))
+        Files.createDirectory(pthDir);
+    } catch (IOException e) {
+      s_log.error("SaveHTML0:Non sono riuscito a creare il dir {}, err={}", pthDir.toString(), e.getMessage());
+      return pthOut;
+    }
+    String szOut = String.format("%s%s.%s", szFi, sufx, ext);
+    pthOut = Paths.get(pthDir.toString(), szOut);
+    return pthOut;
+  }
+
+  public void saveHtml(String sufx) {
+    saveHtml(liHtmlValues2, sufx);
+  }
+
+  public void saveHtml(List<HtmlValue> li, String sufx) {
     if ( !saveHTML)
       return;
-    String szFi = getFilePDF().toAbsolutePath().toString();
-    int n = szFi.toLowerCase().indexOf(".pdf");
-    if (n > 0)
-      szFi = String.format("%s_%s.htm", szFi.substring(0, n), sufx);
-    try (BufferedWriter bw = new BufferedWriter(new FileWriter(szFi))) {
+    //    String szFi = getFilePDF().toAbsolutePath().toString();
+    //    int n = szFi.toLowerCase().indexOf(".pdf");
+    //    if (n > 0)
+    //      szFi = String.format("%s_%s.htm", szFi.substring(0, n), sufx);
+    Path pthOut = creaOutFile(getFilePDF(), sufx, "html");
+    if (null == pthOut)
+      return;
+    try (BufferedWriter bw = new BufferedWriter(new FileWriter(pthOut.toFile()))) {
       String szHtml = li //
           .stream() //
           .map(s -> s.getRigaHtml()) //
           .collect(Collectors.joining(System.lineSeparator()));
       bw.write(szHtml);
-      s_log.info("Scritto HTML file {}", szFi);
+      s_log.info("Scritto HTML file {}", pthOut.toString());
     } catch (IOException e) {
       s_log.error("Errore scrittura HTML 0", e);
     }
@@ -193,14 +238,17 @@ public class FromPdf2Html implements IPdfGestore {
   private void saveCSVFile(List<HtmlValue> li, String sufx) {
     if ( !saveCSV)
       return;
-    String szFi = getFilePDF().toAbsolutePath().toString();
-    int n = szFi.toLowerCase().indexOf(".pdf");
-    if (n > 0)
-      szFi = String.format("%s_%s.csv", szFi.substring(0, n), sufx);
+    //    String szFi = getFilePDF().toAbsolutePath().toString();
+    //    int n = szFi.toLowerCase().indexOf(".pdf");
+    //    if (n > 0)
+    //      szFi = String.format("%s_%s.csv", szFi.substring(0, n), sufx);
+    Path pthOut = creaOutFile(getFilePDF(), sufx, "csv");
+    if (null == pthOut)
+      return;
     try {
-      Files.deleteIfExists(Paths.get(szFi));
+      Files.deleteIfExists(pthOut);
     } catch (IOException e) {
-      s_log.error("Error {} on delete {}", e.getMessage(), szFi);
+      s_log.error("Error {} on delete {}", e.getMessage(), pthOut.toString());
       return;
     }
     String sz1 = HtmlValue.CSV_HEADER;
@@ -208,10 +256,10 @@ public class FromPdf2Html implements IPdfGestore {
         .stream() //
         .map(t -> t.toCsv()) //
         .collect(Collectors.joining("\n"));
-    try (BufferedWriter bw = new BufferedWriter(new FileWriter(szFi))) {
+    try (BufferedWriter bw = new BufferedWriter(new FileWriter(pthOut.toFile()))) {
       bw.write(sz1);
       bw.write(sz2);
-      s_log.info("Scritto CSV file {}", szFi);
+      s_log.info("Scritto CSV file {}", pthOut.toString());
     } catch (IOException e) {
       s_log.error("Errore scrittura TAGs", e);
     }
@@ -220,33 +268,35 @@ public class FromPdf2Html implements IPdfGestore {
   public void saveTxtFile(List<HtmlValue> li, String sufx) {
     if ( !saveTXT)
       return;
-    String szFi = getFilePDF().toAbsolutePath().toString();
-    int n = szFi.toLowerCase().indexOf(".pdf");
-    if (n > 0)
-      szFi = String.format("%s_%s.txt", szFi.substring(0, n), sufx);
+    //    String szFi = getFilePDF().toAbsolutePath().toString();
+    //    int n = szFi.toLowerCase().indexOf(".pdf");
+    //    if (n > 0)
+    //      szFi = String.format("%s_%s.txt", szFi.substring(0, n), sufx);
+    Path pthOut = creaOutFile(getFilePDF(), sufx, "txt");
+    if (null == pthOut)
+      return;
     try {
-      Files.deleteIfExists(Paths.get(szFi));
+      Files.deleteIfExists(pthOut);
     } catch (IOException e) {
-      s_log.error("Error {} on delete {}", e.getMessage(), szFi);
+      s_log.error("Error {} on delete {}", e.getMessage(), pthOut.toString());
       return;
     }
     TextPrint txp = new TextPrint(false, 5);
     for (HtmlValue cm : li)
       txp.scrivi(cm);
     // System.out.println(txp.toString());
-    try (BufferedWriter bw = new BufferedWriter(new FileWriter(szFi))) {
+    try (BufferedWriter bw = new BufferedWriter(new FileWriter(pthOut.toFile()))) {
       bw.write(txp.toString());
-      s_log.info("Scritto pdf text file {}", szFi);
+      s_log.info("Scritto pdf text file {}", pthOut.toString());
     } catch (IOException e) {
       s_log.error("Errore scrittura pdf text", e);
     }
   }
 
-  private void parseHtmlValues(List<HtmlValue> liHtmlValues22) {
-    // IParseHtmlValues prs = new PParserHtmlValues();
-    parserHtml.setDebug(debug);
-    int qta = parserHtml.parse(liHtmlValues22);
-    s_log.debug("Generato {} record Analisi. Sangue\n", qta);
-  }
+  //  private void parseHtmlValues(List<HtmlValue> liHtmlValues22) {
+  //    parserHtml.setDebug(debug);
+  //    int qta = parserHtml.parse(liHtmlValues22);
+  //    s_log.debug("Generato {} records\n", qta);
+  //  }
 
 }

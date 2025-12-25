@@ -318,6 +318,8 @@ public class Utils {
   public static double parseDouble(Object vv) {
     if (null == vv)
       return 0;
+    if (vv instanceof Double dbl)
+      return dbl;
     return Utils.parseDouble(vv.toString());
   }
 

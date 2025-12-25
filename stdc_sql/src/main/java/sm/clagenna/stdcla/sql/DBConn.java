@@ -116,7 +116,7 @@ public abstract class DBConn implements Closeable {
       while (res.next()) {
         lastRowid = res.getInt(1);
       }
-    } catch (SQLException e) {
+    } catch (Exception e) {
       getLog().error("Errore Last Row ID with err={}", e.getMessage());
     }
     return lastRowid;

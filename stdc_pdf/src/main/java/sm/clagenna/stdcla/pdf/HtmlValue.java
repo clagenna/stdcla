@@ -17,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 
 import lombok.Getter;
 import lombok.Setter;
+import sm.clagenna.stdcla.utils.ParseData;
 import sm.clagenna.stdcla.utils.Utils;
 import sm.clagenna.stdcla.utils.sys.TimerMeter;
 
@@ -342,7 +343,7 @@ public class HtmlValue implements Comparable<HtmlValue>, Cloneable {
     discerni();
   }
 
-  protected void discerni() {
+  protected synchronized void discerni() {
     tipoDato = ETipiDato.HTML;
     valData = null;
     valDouble = null;
@@ -402,13 +403,22 @@ public class HtmlValue implements Comparable<HtmlValue>, Cloneable {
     }
     // ------------- DATA ------------------
     if (patData.matcher(lTxt).matches()) {
+      //      try {
+      //        valData = fmtData.parse(lTxt);
+      //        tipoDato = ETipiDato.Data;
+      //      } catch (Exception e) {
+      //        s_log.error("Parse data:" + txt, e);
+      //      }
       try {
-        valData = fmtData.parse(lTxt);
-        tipoDato = ETipiDato.Data;
+        var dt = ParseData.parseData(lTxt);
+        if (null != dt) {
+          valData = ParseData.toDate(dt);
+          tipoDato = ETipiDato.Data;
+          return;
+        }
       } catch (Exception e) {
-        s_log.error("Parse data:" + txt, e);
+        s_log.error("Parse data:" + lTxt, e);
       }
-      return;
     }
     // ------------- ORA ------------------
     if (patOra.matcher(lTxt).matches()) {
@@ -560,7 +570,7 @@ public class HtmlValue implements Comparable<HtmlValue>, Cloneable {
   /**
    * Cerco di tornare un valore double scelto tra i numerici. Questo è dovuto al
    * fatto che nelle fatture i valori numerici sono spesso <i>ballerini</i> tra
-   * tipoligie diverse. Vedi la "quantita" nei consumi.
+   * tipologie diverse. Vedi la "quantita" nei consumi.
    *
    * @return double fra i campi numerici valorizzati
    */
@@ -777,5 +787,24 @@ public class HtmlValue implements Comparable<HtmlValue>, Cloneable {
         formatDbl(width), //
         szIs, getTxt());
     return sz;
+  }
+
+  public void evidenzia() {
+    if (tipoDato == ETipiDato.HTML)
+      return;
+    final String szDiv = "<div class=\"p\"";
+    final String szEvid = "background-color: yellow; color: red;";
+    int indx = rigaHtml.indexOf(szDiv);
+    if (indx < 0)
+      return;
+    indx = rigaHtml.indexOf(szEvid);
+    if (indx >= 0)
+      return;
+    indx = rigaHtml.indexOf("\">");
+    if (indx < 0)
+      return;
+    StringBuilder sb = new StringBuilder();
+    sb.append(rigaHtml.substring(0, indx)).append(szEvid).append(rigaHtml.substring(indx));
+    rigaHtml = sb.toString();
   }
 }
