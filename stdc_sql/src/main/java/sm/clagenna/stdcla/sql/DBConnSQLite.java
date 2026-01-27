@@ -66,6 +66,11 @@ public class DBConnSQLite extends DBConn {
   }
 
   @Override
+  public void setServerId(EServerId id) {
+    // nothing
+  }
+
+  @Override
   public String getQueryLastRowID() {
     return QRY_LASTID;
   }
@@ -174,7 +179,7 @@ public class DBConnSQLite extends DBConn {
   public void setStmtImporto(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
     p_stmt.setDouble(p_index, (Double) p_dt);
   }
-  
+
   @Override
   public void setStmtDouble(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
     p_stmt.setDouble(p_index, (Double) p_dt);
@@ -193,6 +198,24 @@ public class DBConnSQLite extends DBConn {
   @Override
   public String addTopRecs(String qry, int qta) {
     return qry + " limit " + qta;
+  }
+
+  public String toString(PreparedStatement stmt) {
+    if ( !isShowStatement())
+      return "no show statement!";
+    StringBuilder sb = new StringBuilder(stmt.toString());
+    int nPos = 1;
+    int k = 0;
+    while (nPos > 0) {
+      String szPh = String.format("@P%d", k++);
+      nPos = sb.indexOf(szPh);
+      if (nPos > 0) {
+        String szVal = getStmtShowParameter(k);
+        int nPos2 = nPos + szPh.length();
+        sb.replace(nPos, nPos2, szVal);
+      }
+    }
+    return sb.toString();
   }
 
 }

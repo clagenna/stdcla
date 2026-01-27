@@ -12,7 +12,6 @@ import java.time.ZonedDateTime;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
 public class DBConnSQL extends DBConn {
   private static final Logger s_log = LogManager.getLogger(DBConnSQL.class);
 
@@ -42,6 +41,11 @@ public class DBConnSQL extends DBConn {
     return szUrl;
   }
 
+  @Override
+  public void setServerId(EServerId id) {
+    // nothing
+  }
+  
   @Override
   public EServerId getServerId() {
     return EServerId.SqlServer;
@@ -78,6 +82,7 @@ public class DBConnSQL extends DBConn {
    */
   @Override
   public void setStmtDate(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
+    assignShowParameter(p_stmt, p_index, p_dt);
     java.sql.Timestamp dt = null;
     if (p_dt instanceof java.sql.Date dt1) {
       dt = new java.sql.Timestamp(dt1.getTime());
@@ -99,6 +104,7 @@ public class DBConnSQL extends DBConn {
 
   @Override
   public void setStmtInt(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
+    assignShowParameter(p_stmt, p_index, p_dt);
     Integer iv = null;
     if (p_dt instanceof Integer ii) {
       iv = ii;
@@ -120,6 +126,7 @@ public class DBConnSQL extends DBConn {
 
   @Override
   public void setStmtDatetime(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
+    assignShowParameter(p_stmt, p_index, p_dt);
     java.sql.Timestamp dt = null;
     if (p_dt instanceof java.sql.Timestamp pdt) {
       dt = pdt;
@@ -141,6 +148,7 @@ public class DBConnSQL extends DBConn {
 
   @Override
   public void setStmtImporto(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
+    assignShowParameter(p_stmt, p_index, p_dt);
     BigDecimal bd = null;
     if (p_dt instanceof Double dbl) {
       bd = BigDecimal.valueOf(dbl);
@@ -155,6 +163,7 @@ public class DBConnSQL extends DBConn {
 
   @Override
   public void setStmtDouble(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
+    assignShowParameter(p_stmt, p_index, p_dt);
     Double bd = null;
     if (p_dt instanceof Double dbl) {
       bd = dbl;
@@ -169,6 +178,7 @@ public class DBConnSQL extends DBConn {
 
   @Override
   public void setStmtString(PreparedStatement p_stmt, int p_index, Object p_sz) throws SQLException {
+    assignShowParameter(p_stmt, p_index, p_sz);
     String sz = null;
     if (null != p_sz)
       sz = (String) p_sz;
@@ -196,5 +206,25 @@ public class DBConnSQL extends DBConn {
     sb.append(qry.substring(n));
     return sb.toString();
   }
+
+//  public String toString(PreparedStatement stmt) {
+//    if ( !isShowStatement())
+//      return "no show statement!";
+//    StringBuilder sb = new StringBuilder(stmt.toString());
+//    if ( sb.indexOf(": null") > 0 )
+//      sb = new StringBuilder(sho);
+//    int nPos = 1;
+//    int k = 0;
+//    while (nPos > 0) {
+//      String szPh = String.format("@P%d", k++);
+//      nPos = sb.indexOf(szPh);
+//      if (nPos > 0) {
+//        String szVal = getStmtShowParameter(k);
+//        int nPos2 = nPos + szPh.length();
+//        sb.replace(nPos, nPos2, szVal);
+//      }
+//    }
+//    return sb.toString();
+//  }
 
 }

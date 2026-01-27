@@ -2,6 +2,7 @@ package sm.clagenna.stdcla.sql;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -9,15 +10,18 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.sql.Statement;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.logging.log4j.Logger;
 
 import lombok.Getter;
 import lombok.Setter;
-
 import sm.clagenna.stdcla.utils.AppProperties;
+import sm.clagenna.stdcla.utils.ParseData;
 import sm.clagenna.stdcla.utils.Utils;
 
 public abstract class DBConn implements Closeable {
@@ -36,6 +40,11 @@ public abstract class DBConn implements Closeable {
   private String            passwd;
   @Getter
   private Connection        conn;
+  @Getter @Setter
+  private boolean           showStatement;
+  private int               stmtId;
+  private List<String>      liStmtParmeters;
+  private String            showSQLStmt;
   private Savepoint         m_savePoint;
   private PreparedStatement stmtLastRowId;
 
@@ -48,6 +57,8 @@ public abstract class DBConn implements Closeable {
   public abstract String getURL();
 
   public abstract EServerId getServerId();
+  
+  public abstract void setServerId(EServerId id);
 
   // public abstract int getLastIdentity() throws SQLException;
 
@@ -220,6 +231,81 @@ public abstract class DBConn implements Closeable {
       getLog().error("Errore Query: {}", e.getMessage());
     }
     return bRet;
+  }
+
+  // public abstract String toString(PreparedStatement stmt);
+  public String toString(PreparedStatement stmt) {
+    if ( !isShowStatement())
+      return "no show statement!";
+    StringBuilder sb = new StringBuilder(stmt.toString());
+    if (sb.indexOf(": null") > 0)
+      sb = new StringBuilder(showSQLStmt);
+    int nPos = 1;
+    int k = 0;
+    while (nPos > 0) {
+      String szPh = String.format("@P%d", k++);
+      nPos = sb.indexOf(szPh);
+      if (nPos > 0) {
+        String szVal = getStmtShowParameter(k);
+        int nPos2 = nPos + szPh.length();
+        sb.replace(nPos, nPos2, szVal);
+      }
+    }
+    return sb.toString();
+  }
+
+  protected String getStmtShowParameter(int k) {
+    if ( !isShowStatement() || null == liStmtParmeters)
+      return "";
+    // RICORDA!: l'indice 'k' e' 1-based !!!
+    if (k > liStmtParmeters.size())
+      return "";
+    return liStmtParmeters.get(k - 1);
+  }
+
+  protected void assignShowParameter(PreparedStatement stmt, int pIndx, Object pVal) {
+    if ( !isShowStatement())
+      return;
+    // RICORDA ! pIndx e' 1-based! 
+    if (stmtId != stmt.hashCode() || pIndx == 1)
+      liStmtParmeters = new ArrayList<String>();
+    stmtId = stmt.hashCode();
+    String szVal = "*null*";
+    while (liStmtParmeters.size() < pIndx - 1)
+      liStmtParmeters.add(szVal);
+    if (null == pVal) {
+      liStmtParmeters.add(pIndx - 1, szVal);
+      return;
+    }
+
+    szVal = switch (pVal) {
+      case String str -> str;
+      case Integer ii -> String.valueOf(ii);
+      case Long li -> String.valueOf(li);
+      case Double dbl -> Utils.formatDouble(dbl);
+      case BigDecimal bd -> Utils.formatDouble(bd.doubleValue());
+      case java.util.Date dt -> ParseData.formatDate(dt);
+      // case java.sql.Date dtq -> ParseData.formatDate(dt);
+      case LocalDateTime dtt -> ParseData.formatDate(dtt);
+      //
+      default -> szVal;
+    };
+    liStmtParmeters.add(pIndx - 1, szVal);
+  }
+
+  public void setShowSQL(String pqry, Object pstmt) {
+    stmtId = pstmt.hashCode();
+    StringBuilder sb = new StringBuilder(pqry);
+    int k = 0;
+    int interrPoint = 0;
+    do {
+      interrPoint = sb.indexOf("?");
+      if (interrPoint >= 0) {
+        String szParm = String.format("@P%d", k++);
+        sb.replace(interrPoint, interrPoint + 1, szParm);
+      }
+    } while (interrPoint > 0);
+    showSQLStmt = sb.toString();
   }
 
 }

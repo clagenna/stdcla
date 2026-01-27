@@ -33,6 +33,7 @@ public class TableViewFiller extends Task<String> implements ITableColBuilder {
   public static final String   FX_ALIGNMENT_CENTER_LEFT  = "-fx-alignment: center-left;";
   public static final String   FX_ALIGNMENT_CENTER_RIGHT = "-fx-alignment: center-right;";
   private static final String  TBCOL_MASK                = "tbcol_%s";
+  @Setter
   private static String        CSZ_NULLVAL               = "**null**";
   private static DecimalFormat fmtDbl;
 

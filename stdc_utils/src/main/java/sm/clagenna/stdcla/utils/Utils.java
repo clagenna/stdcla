@@ -249,6 +249,12 @@ public class Utils {
       return false;
     return p_v1.equals(p_v2);
   }
+  
+  public static boolean isValueEqIC(String p_v1, String p_v2) {
+    if (p_v1 == null || p_v2 == null)
+      return false;
+    return p_v1.equalsIgnoreCase(p_v2);
+  }
 
   public static boolean isValueEq(Date p_v1, Date p_v2) {
     if (p_v1 == null || p_v2 == null)

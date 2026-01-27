@@ -315,6 +315,23 @@ public class HtmlValue implements Comparable<HtmlValue>, Cloneable {
     return txt.indexOf("&nbsp;") >= 0;
   }
 
+  public boolean isTextConParentesiQuadre() {
+    if ( !isText())
+      return false;
+    if (getTxt().contains("[") || getTxt().contains("]"))
+      return true;
+    return false;
+  }
+
+  public String removeParentesiQuadre() {
+    if ( !isTextConParentesiQuadre())
+      return getTxt();
+    txt = txt.replace("[", "");
+    txt = txt.replace("]", "");
+    discerni();
+    return txt;
+  }
+
   /**
    * I set <code>final</code> because of compile error:
    * <code>[this-escape] possible 'this' escape before subclass is fully initialized</code><br/>
@@ -645,7 +662,7 @@ public class HtmlValue implements Comparable<HtmlValue>, Cloneable {
   }
 
   public boolean isConsecutivo(HtmlValue p_succ) {
-    return isConsecutivo(p_succ, true);
+    return isConsecutivo(p_succ, false);
   }
 
   /**
@@ -660,7 +677,7 @@ public class HtmlValue implements Comparable<HtmlValue>, Cloneable {
    * @param p_succ
    * @return
    */
-  public boolean isConsecutivo(HtmlValue p_succ, boolean needText) {
+  public boolean isConsecutivo_OLD(HtmlValue p_succ, boolean needText) {
     double diffY = Math.abs(top - p_succ.top);
     // double calcLenTx = fSiz * txt.length() / F_Correttivo;
     double calcLenTx = width / F_Correttivo;
@@ -670,17 +687,37 @@ public class HtmlValue implements Comparable<HtmlValue>, Cloneable {
     // int fSize = (int) fontSize;
     //    if (diffX < 10.)
     // se "needtext" prec e succ *devono* essere stringhe
-    if (needText && (isText() && p_succ.isText()))
-      return false;
+    if (needText)
+      if ( ! (isText() && p_succ.isText()))
+        return false;
     // prec e succ *devono* essere sulla stessa riga
     if (diffY >= 1)
       return false;
     // se !needText non interessa la consecutio asse X
-    if ( !needText)
-      return true;
-    if (nDiffX <= fontSize)
+    if ( !needText || nDiffX <= fontSize)
       return true;
     return false;
+  }
+
+  public boolean isSameRiga(HtmlValue p_succ) {
+    if (null == p_succ)
+      return true;
+    double diffY = Math.abs(top - p_succ.top);
+    // sono sulla stessa riga ?!?
+    if (diffY >= 1)
+      return false;
+    return true;
+  }
+
+  public boolean isConsecutivo(HtmlValue p_succ, boolean forceText) {
+    if ( (null == p_succ) || //
+        !isSameRiga(p_succ) || //
+        (forceText && ! (isText() && p_succ.isText())))
+      return false;
+    // calcolo il punto piu a destra del testo corrente
+    double rightMost = fx + width;
+    int nDiffX = (int) Math.abs(p_succ.fx - rightMost);
+    return nDiffX <= fontSize;
   }
 
   public static void setCorrettivo(double p_v) {
