@@ -365,6 +365,17 @@ public class Utils {
     szRet = fmt.format(dbl);
     return szRet;
   }
+  
+  public static String formatLong(Long ll) {
+    String szRet = null;
+    if (null == ll)
+      return szRet;
+    if (null == S_LOCALE)
+      Utils.setLocale(Locale.getDefault());
+    NumberFormat fmt = NumberFormat.getInstance(S_LOCALE);
+    szRet = fmt.format(ll);
+    return szRet;
+  }
 
   /**
    * Toglie dalle date Gregoriane es:<br/>

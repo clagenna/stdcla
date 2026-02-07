@@ -1,12 +1,17 @@
 package sm.clagenna.stdcla.geo;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import lombok.Data;
 import sm.clagenna.stdcla.utils.Utils;
@@ -24,11 +29,14 @@ import sm.clagenna.stdcla.utils.Utils;
  */
 @Data
 public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
-  private static final long serialVersionUID = -6542631194264470411L;
+  private static final long   serialVersionUID = -6542631194264470411L;
+  private static final Logger s_log            = LogManager.getLogger(GeoCoord.class);
+
   // private static final Logger      s_log     = LogManager.getLogger(GeoCoord.class);
   private static final GeoDistance s_geodist = new GeoDistance();
 
   private transient Path fotoFile;
+  private transient Long fileSize;
   private LocalDateTime  tstampNew;
   private LocalDateTime  tstamp;
   private ZoneOffset     zoneOffset;
@@ -112,7 +120,8 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
   }
 
   /**
-   * Torna la distanza <b>geografica</b> tra le due foto in metri 
+   * Torna la distanza <b>geografica</b> tra le due foto in metri
+   * 
    * @param p_b
    * @return
    */
@@ -269,6 +278,19 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     setFotoFile(other.getFotoFile());
   }
 
+  public void setFotoFile(Path foFi) {
+    fotoFile = foFi;
+    if (null == fotoFile) {
+      fileSize = null;
+      return;
+    }
+    try {
+      fileSize = Files.size(foFi);
+    } catch (IOException e) {
+      s_log.error("Error \"{}\" reading file size: {}", e.getMessage(), foFi.toString());
+    }
+  }
+
   public void assign(GeoCoord other) {
     if (null == other)
       return;
@@ -318,6 +340,7 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     nw.srcGeo = srcGeo;
     nw.guessed = guessed;
     nw.fotoFile = fotoFile;
+    nw.fileSize = fileSize;
     return nw;
   }
 }
