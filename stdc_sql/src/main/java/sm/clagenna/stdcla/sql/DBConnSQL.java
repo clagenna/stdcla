@@ -3,6 +3,7 @@ package sm.clagenna.stdcla.sql;
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -84,17 +85,22 @@ public class DBConnSQL extends DBConn {
   public void setStmtDate(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
     assignShowParameter(p_stmt, p_index, p_dt);
     java.sql.Timestamp dt = null;
-    if (p_dt instanceof java.sql.Date dt1) {
-      dt = new java.sql.Timestamp(dt1.getTime());
-    } else if (p_dt instanceof java.util.Date dt1) {
-      dt = new java.sql.Timestamp(dt1.getTime());
-    } else if (p_dt instanceof LocalDate ldt) {
-      java.util.Date udt = java.util.Date.from(ldt.atStartOfDay(ZoneId.systemDefault()).toInstant());
-      dt = new java.sql.Timestamp(udt.getTime());
-    } else if (p_dt instanceof LocalDateTime ldt) {
-      ZonedDateTime zo = ldt.atZone(ZoneId.systemDefault());
-      java.util.Date udt = java.util.Date.from(zo.toInstant());
-      dt = new java.sql.Timestamp(udt.getTime());
+    try {
+      if (p_dt instanceof java.sql.Date dt1) {
+        dt = new java.sql.Timestamp(dt1.getTime());
+      } else if (p_dt instanceof java.util.Date dt1) {
+        dt = new java.sql.Timestamp(dt1.getTime());
+      } else if (p_dt instanceof LocalDate ldt) {
+        java.util.Date udt = java.util.Date.from(ldt.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        dt = new java.sql.Timestamp(udt.getTime());
+      } else if (p_dt instanceof LocalDateTime ldt) {
+//        ZonedDateTime zo = ldt.atZone(ZoneId.systemDefault());
+//        java.util.Date udt = java.util.Date.from(zo.toInstant());
+//        dt = new java.sql.Timestamp(udt.getTime());
+        dt = Timestamp.valueOf(ldt);
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
     }
     if (dt != null)
       p_stmt.setTimestamp(p_index, dt);

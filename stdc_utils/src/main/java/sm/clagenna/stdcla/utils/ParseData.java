@@ -38,6 +38,7 @@ public class ParseData {
   private static DateTimeFormatter[] s_arrpat = { //
       s_fmtDtExif, // 00
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"), // 01
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"), // 01
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"), // 02
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"), // 02
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"), // 03
