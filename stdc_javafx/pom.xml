@@ -49,14 +49,14 @@
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-web</artifactId>
-			<version>16</version>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.openjfx/javafx-media -->
-		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>javafx-media</artifactId>
 			<version>${javafx.version}</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.openjfx/javafx-media -->
+<!--		<dependency> -->
+<!--			<groupId>org.openjfx</groupId> -->
+<!--			<artifactId>javafx-media</artifactId> -->
+<!--			<version>${javafx.version}</version> -->
+<!--		</dependency> -->
 
 
 	</dependencies>

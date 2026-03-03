@@ -19,7 +19,7 @@
 		<slf4j.version>2.0.11</slf4j.version>
 		<maven.compiler.source>21</maven.compiler.source>
 		<maven.compiler.target>21</maven.compiler.target>
-		<lombok.version>1.18.32</lombok.version>
+		<lombok.version>1.18.40</lombok.version>
 		<javafx.version>25.0.2</javafx.version>
 	</properties>
 	<dependencies>
