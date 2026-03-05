@@ -197,6 +197,7 @@ public class DtsRow implements Cloneable {
     StringBuilder sb = new StringBuilder();
     // sb.append(dataset.getColumns().getIntestazione()).append("\n");
     for (DtsCol col : dataset.getColumns().getColumns()) {
+      String szColNam =   String.format("%15s",  col.getName());
       Object vv = valori.get(col.getIndex());
       String szv = String.format(DtsCols.getColFmtL(), "*null*");
       if (vv != null) {
@@ -241,7 +242,7 @@ public class DtsRow implements Cloneable {
         }
 
       }
-      sb.append(szv);
+      sb.append(szColNam).append("=").append(szv).append("\n");
     }
     return sb.toString();
   }

@@ -105,18 +105,26 @@ public class DBConnSQLite extends DBConn {
   @Override
   public void setStmtDate(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
     java.sql.Date dt = null;
-    if (p_dt instanceof java.sql.Date) {
-      dt = (java.sql.Date) p_dt;
-    } else if (p_dt instanceof java.util.Date) {
-      java.util.Date udt = (java.util.Date) p_dt;
-      dt = new java.sql.Date(udt.getTime());
-    } else if (p_dt instanceof LocalDate ldt) {
-      java.util.Date udt = java.util.Date.from(ldt.atStartOfDay(ZoneId.systemDefault()).toInstant());
-      dt = new java.sql.Date(udt.getTime());
-    } else if (p_dt instanceof LocalDateTime ldt) {
-      ZonedDateTime zo = ldt.atZone(ZoneId.systemDefault());
-      java.util.Date udt = java.util.Date.from(zo.toInstant());
-      dt = new java.sql.Date(udt.getTime());
+    try {
+      if (p_dt instanceof java.sql.Date) {
+        dt = (java.sql.Date) p_dt;
+      } else if (p_dt instanceof java.util.Date) {
+        java.util.Date udt = (java.util.Date) p_dt;
+        dt = new java.sql.Date(udt.getTime());
+      } else if (p_dt instanceof LocalDate ldt) {
+        java.util.Date udt = java.util.Date.from(ldt.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        dt = new java.sql.Date(udt.getTime());
+      } else if (p_dt instanceof LocalDateTime ldt) {
+        if (ldt.equals(LocalDateTime.MIN) || ldt.equals(LocalDateTime.MAX)) {
+          s_log.warn("Date Time near MIN/MAX, ignored!");
+        } else {
+          ZonedDateTime zo = ldt.atZone(ZoneId.systemDefault());
+          java.util.Date udt = java.util.Date.from(zo.toInstant());
+          dt = new java.sql.Date(udt.getTime());
+        }
+      }
+    } catch (Exception e) {
+      s_log.error("SQLite.setStmtDate error:", e.getMessage());
     }
     try {
       if (dt != null) {
