@@ -269,7 +269,8 @@ public class TableViewFiller extends Task<String> implements ITableColBuilder {
       case "Float":
         if ((Float) p_o == 0)
           return "";
-        return p_o;
+        // return p_o;
+        return fmtDbl.format(((Float) p_o).doubleValue());
       case "Double":
         if ((Double) p_o == 0)
           return "";
