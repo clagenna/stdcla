@@ -231,7 +231,6 @@ public class Dataset implements Closeable {
     skipRows = 0;
     CSVParser csvParser = new CSVParserBuilder().withSeparator(csvdelim.charAt(0)).build(); // custom separator
     try (CSVReader reader = new CSVReaderBuilder(new FileReader(p_csvFil.toFile())).withCSVParser(csvParser) // custom CSV parser
-        .withSkipLines(skipRows) // skip the first line, header info
         .build()) {
       recs = reader.readAll() //
           .stream() //
@@ -241,6 +240,7 @@ public class Dataset implements Closeable {
           .collect(Collectors.toList());
     } catch (CsvException e) {
       s_log.error("Errore Read CSV file {}, err={}", p_csvFil.getFileName().toString(), e.getMessage());
+      throw new IOException(e);
     }
 
     // test se inizia il file con la specifica "sep=x"
@@ -251,7 +251,8 @@ public class Dataset implements Closeable {
         // tolgo l'eventuale UTF-8 BOM (maledetto!)
         String sz = checkBOM(li.get(0).toLowerCase());
         // forse ho una specifica "sep=c", quindi la interpreto
-        if (sz.contains("sep=")) {
+        // ??????   skipRows non deve essere a 2 se c'e' sep=x
+        if (sz.toLowerCase().contains("sep=")) {
           sz = sz.replace("sep=", "");
           if (sz.length() == 0 && li.size() == 2) {
             // qui e il caso sep='csvdelim'
@@ -265,19 +266,17 @@ public class Dataset implements Closeable {
         }
       }
     }
-    // analizzo i primi 20 records
-
+    // analizzo i primi 20 records per capire i tipi di dato
     csvParser = new CSVParserBuilder().withSeparator(csvdelim.charAt(0)).build(); // custom separator
     try (CSVReader reader = new CSVReaderBuilder(new FileReader(p_csvFil.toFile())).withCSVParser(csvParser) // custom CSV parser
-        .withSkipLines(skipRows) // skip the first line, header info
+        .withSkipLines(skipRows) // skip the first line, "sep=x" if exist
         .build()) {
       recs = reader.readAll() //
           .stream() //
           .limit(20) //
-          // .map(li -> Arrays.asList(li.split(csvdelim))) //
           .map(li -> Arrays.asList(li)) //
           .collect(Collectors.toList());
-
+      // nomi delle colonne
       List<String> liNames = recs.get(0);
       skipRows++;
       if (liNames.size() == 1 && checkBOM(liNames.get(0).toString()).contains("sep=")) {
@@ -296,7 +295,8 @@ public class Dataset implements Closeable {
             sz = sz1;
           }
         }
-        // epuro le virgolette se ci sono
+
+        // epuro le virgolette dai nomi se ci sono
         if (sz.startsWith("\""))
           liNames.set(k, sz.replace("\"", ""));
         k++;
@@ -367,7 +367,9 @@ public class Dataset implements Closeable {
   }
 
   private void readCsvFile2(Path p_csvFil) throws IOException, CsvException {
-    CSVParser csvParser = new CSVParserBuilder().withSeparator(csvdelim.charAt(0)).build(); // custom separator
+    CSVParser csvParser = new CSVParserBuilder() //
+        .withSeparator(csvdelim.charAt(0)) //
+        .build(); // custom separator
     //    try (CSVReader reader = new CSVReaderBuilder(new FileReader(p_csvFil.toFile())).withCSVParser(csvParser) // custom CSV parser
     //        .withSkipLines(skipRows) // skip the first line, header info
     //        .build()) {
@@ -382,7 +384,7 @@ public class Dataset implements Closeable {
         .build()) {
       reader.readAll() //
           .stream() //
-          .skip(skipRows) //
+          // .skip(skipRows) //
           .map(li -> Arrays.asList(li)) //
           .forEach(s -> parseRow(s));
     }
