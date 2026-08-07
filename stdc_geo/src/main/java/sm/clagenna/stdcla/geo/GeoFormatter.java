@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -12,16 +13,17 @@ import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import sm.clagenna.stdcla.utils.ParseData;
 import sm.clagenna.stdcla.utils.Utils;
 
 public class GeoFormatter {
   private static final Logger s_log = LogManager.getLogger(GeoFormatter.class);
 
   private static DecimalFormat s_fmtLonLat;
-  private static Pattern s_patNWGradiMinSec;
-  private static Pattern s_patGradiMinSecNW;
-  private static Pattern s_patDecimali;
-  private static Pattern s_patWebString;
+  private static Pattern       s_patNWGradiMinSec;
+  private static Pattern       s_patGradiMinSecNW;
+  private static Pattern       s_patDecimali;
+  private static Pattern       s_patWebString;
 
   private static final String LNK_MAPS = "https://www.google.com/maps?z=15&t=h&q=%.8f,%.8f";
   private static boolean      showLink = false;
@@ -31,6 +33,8 @@ public class GeoFormatter {
   public static final DateTimeFormatter s_fmt2Y4MD_hms;
   public static final DateTimeFormatter s_fmtmY4MD_hms;
   public static final DateTimeFormatter s_fmtmY4MD_hm;
+  public static final DateTimeFormatter s_fmt_hms;
+  public static final DateTimeFormatter s_fmt_hm;
   private static final ZoneId           s_zoneQui;
   private static final ZoneId           s_zoneUTC;
   public static final DateTimeFormatter s_dtfmt;
@@ -53,6 +57,8 @@ public class GeoFormatter {
     s_fmt2Y4MD_hms = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss");
     s_fmtmY4MD_hms = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     s_fmtmY4MD_hm = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    s_fmt_hms = DateTimeFormatter.ofPattern("HH:mm:ss");
+    s_fmt_hm = DateTimeFormatter.ofPattern("HH:mm:ss");
     s_zoneQui = ZoneId.of("Europe/Rome");
     s_zoneUTC = ZoneId.of("UTC");
     s_dtfmt = DateTimeFormatter.ISO_DATE_TIME.withZone(s_zoneUTC);
@@ -75,8 +81,8 @@ public class GeoFormatter {
       String szLnk = String.format(Locale.US, LNK_MAPS, p_geo.getLatitude(), p_geo.getLongitude());
       szRet = String.format(Locale.US, "(%s)(%s,%s) (Alt:%.0f m) il %s" //
           , szLnk //
-          , s_fmtLonLat.format( p_geo.getLatitude()) //
-          , s_fmtLonLat.format( p_geo.getLongitude()) //
+          , s_fmtLonLat.format(p_geo.getLatitude()) //
+          , s_fmtLonLat.format(p_geo.getLongitude()) //
           , p_geo.getAltitude(), szTim);
 
     } else if (p_geo.hasLonLat()) {
@@ -138,6 +144,21 @@ public class GeoFormatter {
     return ret;
   }
 
+  public Long elapsedSeconds(String p_sz) {
+    // se mi arriva HH:mm:ss converto in UNIX epoch "1970-01-01..."
+    return elapsedSeconds("1970-01-01 00:00:00", p_sz);
+  }
+
+  public Long elapsedSeconds(String p_sz1, String p_sz2) {
+    Long llRet = null;
+    if (null == p_sz1 || p_sz1.length() < 2 || null == p_sz2 || p_sz2.length() < 2)
+      return llRet;
+    LocalDateTime ts1 = LocalDateTime.parse(p_sz1, s_fmtmY4MD_hms);
+    LocalDateTime ts2 = LocalDateTime.parse(p_sz2, s_fmtmY4MD_hms);
+    llRet = ChronoUnit.SECONDS.between(ts1, ts2);
+    return llRet;
+  }
+
   public LocalDateTime parseTStamp(String p_sz) {
     LocalDateTime tstamp = null;
     if (p_sz == null)
@@ -191,6 +212,21 @@ public class GeoFormatter {
     } catch (Exception e) {
       //
     }
+    //    try {
+    //      if (tstamp == null) {
+    //        // trasformo in UNIX Epoch Timestamp
+    //        String lsz1 = "1970-01-01 00:00:00";
+    //        LocalDateTime ts1 = LocalDateTime.parse(lsz1, s_fmtmY4MD_hms);
+    //        String lsz2 = "1970-01-01 " + p_sz;
+    //        LocalDateTime ts2 = LocalDateTime.parse(lsz2, s_fmtmY4MD_hms);
+    //        tstamp = ts2;
+    //        long seconds = ChronoUnit.SECONDS.between(ts1, ts2);
+    //        System.out.printf("GeoFormatter.parseTStamp(%d)\n", seconds);
+    //      }
+    //    } catch (Exception e) {
+    //      //
+    //    }
+
     if (tstamp == null)
       throw new UnsupportedOperationException("Errore timst:" + p_sz);
     return tstamp;
@@ -245,6 +281,26 @@ public class GeoFormatter {
 
   public void setWebTime(LocalDateTime pdt) {
     m_dtWebTime = pdt;
+  }
+
+  /**
+   * Crea un nome file (lowercase) per la foto associata al GeoCoord, basato sul
+   * timestamp e sull'estensione del file foto se presente.
+   */
+  public static String createFileName(GeoCoord p_geo) {
+    String szRet = null;
+    if (p_geo == null)
+      return szRet;
+    LocalDateTime locts = p_geo.getMainTstamp();
+    String szExt = "jpg";
+    if (p_geo.hasFotoFile()) {
+      String fn = p_geo.getFotoFile().getFileName().toString();
+      int idx = fn.lastIndexOf(".");
+      if (idx > 0)
+        szExt = fn.substring(idx + 1).toLowerCase();
+    }
+    szRet = String.format("%s.%s", ParseData.s_fmtDtFile.format(locts), szExt);
+    return szRet;
   }
 
   private double convert(String p_sz, int pLatLon) {

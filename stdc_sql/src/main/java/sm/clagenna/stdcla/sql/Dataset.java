@@ -23,6 +23,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -44,11 +46,10 @@ import com.opencsv.exceptions.CsvException;
 
 import lombok.Getter;
 import lombok.Setter;
-
-import sm.clagenna.stdcla.utils.sys.ex.DatasetException;
 import sm.clagenna.stdcla.utils.ECurrencies;
 import sm.clagenna.stdcla.utils.ParseData;
 import sm.clagenna.stdcla.utils.Utils;
+import sm.clagenna.stdcla.utils.sys.ex.DatasetException;
 
 public class Dataset implements Closeable {
   private static final Logger s_log             = LogManager.getLogger(Dataset.class);
@@ -90,6 +91,14 @@ public class Dataset implements Closeable {
     setTipoServer(p_con.getServerId());
   }
 
+  /**
+   * Esegue la query SQL e popola il Dataset creando le colonne con
+   * l'intestazione della query e le righe con i dati del ResultSet
+   *
+   * @param p_qry
+   *          la query da eseguire
+   * @return true se eseguita correttamente, false altrimenti
+   */
   public boolean executeQuery(String p_qry) {
     boolean bRet = false;
     Connection conn = db.getConn();
@@ -757,14 +766,52 @@ public class Dataset implements Closeable {
     return righe.size();
   }
 
+  /**
+   * * Torna la List<> di righe ({@link DtsRow} del Dataset. <Br/>
+   * se non ci sono righe torna una List<> vuota
+   *
+   * @return
+   */
   public List<DtsRow> getRighe() {
     if (null == righe)
       return new ArrayList<DtsRow>();
     return righe;
   }
 
+  /**
+   * Torna la quantita di righe presenti nel Dataset
+   *
+   * @return
+   */
+  public int getQtaRighe() {
+    if (null == righe)
+      return 0;
+    return righe.size();
+  }
+
   public int getQtaCols() {
     return columns.size();
+  }
+
+  public Object getVal(int p_row, int p_col) throws DatasetException {
+    if (null == righe || p_row >= righe.size())
+      throw new DatasetException("Row index " + p_row + " out of bound");
+    DtsRow row = righe.get(p_row);
+    return row.get(p_col);
+  }
+
+  public double getDouble(int p_row, String p_colNam) throws DatasetException {
+    if (null == righe || p_row >= righe.size())
+      throw new DatasetException("Row index " + p_row + " out of bound");
+    DtsRow row = righe.get(p_row);
+    return row.getDouble(p_colNam);
+  }
+
+  public Object getVal(int p_row, String p_colNam) throws DatasetException {
+    if (null == righe || p_row >= righe.size())
+      throw new DatasetException("Row index " + p_row + " out of bound");
+    DtsRow row = righe.get(p_row);
+    return row.get(p_colNam);
   }
 
   public DtsCols getColumns() {
@@ -779,7 +826,7 @@ public class Dataset implements Closeable {
 
   /**
    * Torna l'indice della colonna con quel nome
-   * 
+   *
    * @param p_nam
    *          nome colonna
    * @return l'indice colonnoa, oppure -1 se non trovata
@@ -963,6 +1010,281 @@ public class Dataset implements Closeable {
           .mapToDouble(s -> Double.parseDouble(s.toString())) //
           .sum();
       newro.set(colnam, somma);
+    }
+    ret.addRow(newro);
+    return ret;
+  }
+
+  /**
+   * Torna il minimo valore della colonna specificata
+   *
+   * @param p_col
+   *          la colonna da analizzare
+   * @return il minimo valore della colonna specificata
+   * @throws DatasetException
+   */
+  public Object min(String p_col) throws DatasetException {
+    List<Object> colv = colArray(p_col);
+    SqlTypes typ = columns.getCol(p_col).getType();
+    switch (typ) {
+      case TINYINT:
+      case SMALLINT:
+      case INTEGER:
+      case NUMERIC:
+      case DECIMAL:
+      case FLOAT:
+      case DOUBLE:
+        OptionalDouble minDbl = colv //
+            .stream() //
+            .mapToDouble(s -> Double.parseDouble(s.toString())) //
+            .min();
+        return minDbl.isPresent() ? minDbl.getAsDouble() : null;
+      case CHAR:
+      case VARCHAR:
+      case NVARCHAR:
+        Optional<String> minStr = colv //
+            .stream() //
+            .map(s -> s.toString()) //
+            .min(String.CASE_INSENSITIVE_ORDER);
+        return minStr.isPresent() ? minStr.get() : null;
+      case TIME:
+      case TIMESTAMP:
+      case DATE:
+        Optional<LocalDateTime> minDt = colv //
+            .stream() //
+            .filter(s -> null != s) //
+            .map(s -> ParseData.parseData(s.toString())) //
+            .min(LocalDateTime::compareTo);
+        return minDt.isPresent() ? minDt.get() : null;
+
+      default:
+        throw new DatasetException("Min not supported:" + p_col);
+    }
+
+  }
+
+  public Dataset min(String... p_colList) throws DatasetException {
+    return min(Arrays.asList(p_colList), false);
+  }
+
+  /**
+   * @see {@link min(List<String>, boolean)}
+   * @param p_colList
+   * @return
+   * @throws DatasetException
+   */
+  public Dataset min(List<String> p_colList) throws DatasetException {
+    return min(p_colList, false);
+  }
+
+  /**
+   * Torna un nuovo dataset contenente le sole colonne specificate in
+   * <code>p_colList</code> e un solo row con il <b>mminimo</b> di tutti i
+   * valori delle colonne specificate
+   *
+   * @param p_colList
+   *          le colonne da sommare
+   * @param bCaseSensitive
+   *          se true il confronto tra stringhe e' case sensitive, altrimenti no
+   * @return
+   * @throws DatasetException
+   */
+  public Dataset min(List<String> p_colList, boolean bCaseSensitive) throws DatasetException {
+    Dataset ret = new Dataset();
+    DtsCols cols = new DtsCols(ret);
+    try {
+      for (DtsCol col : getColumns().getColumns()) {
+        if (p_colList.stream().anyMatch(col.getName()::equalsIgnoreCase))
+          cols.addCol((DtsCol) col.clone());
+      }
+    } catch (CloneNotSupportedException e) {
+      e.printStackTrace();
+    }
+    if (cols.size() == 0)
+      throw new DatasetException("No cols for " + p_colList.toString());
+    ret.creaCols(cols);
+    DtsRow newro = new DtsRow(ret);
+
+    for (String colnam : p_colList) {
+      List<Object> colv = colArray(colnam);
+      SqlTypes typ = columns.getCol(colnam).getType();
+      switch (typ) {
+        case TINYINT:
+        case SMALLINT:
+        case INTEGER:
+        case NUMERIC:
+        case DECIMAL:
+        case FLOAT:
+        case DOUBLE:
+          OptionalDouble min = colv //
+              .stream() //
+              .mapToDouble(s -> Double.parseDouble(s.toString())) //
+              .min();
+          newro.set(colnam, min.isPresent() ? min.getAsDouble() : null);
+          break;
+        case CHAR:
+        case VARCHAR:
+        case NVARCHAR:
+          Optional<String> minS = null;
+          if (bCaseSensitive)
+            minS = colv //
+                .stream() //
+                .map(s -> s.toString()) //
+                .min(String::compareTo);
+          else
+            minS = colv //
+                .stream() //
+                .map(s -> s.toString()) //
+                .min(String.CASE_INSENSITIVE_ORDER);
+          newro.set(colnam, minS.isPresent() ? minS.get() : null);
+          break;
+        case TIME:
+        case TIMESTAMP:
+        case DATE:
+          Optional<LocalDateTime> minD = colv //
+              .stream() //
+              .filter(s -> null != s) //
+              .map(s -> ParseData.parseData(s.toString())) //
+              .min(LocalDateTime::compareTo);
+          newro.set(colnam, minD.isPresent() ? minD.get() : null);
+
+          break;
+        default:
+          throw new DatasetException("Min not supported:" + colnam);
+      }
+    }
+    ret.addRow(newro);
+    return ret;
+  }
+
+  /**
+   * Torna il massimo valore della colonna specificata
+   *
+   * @param p_col
+   *          la colonna da analizzare
+   * @return il massimo valore della colonna specificata
+   * @throws DatasetException
+   */
+  public Object max(String p_col) throws DatasetException {
+    List<Object> colv = colArray(p_col);
+    SqlTypes typ = columns.getCol(p_col).getType();
+    switch (typ) {
+      case TINYINT:
+      case SMALLINT:
+      case INTEGER:
+      case NUMERIC:
+      case DECIMAL:
+      case FLOAT:
+      case DOUBLE:
+        OptionalDouble maxDbl = colv //
+            .stream() //
+            .mapToDouble(s -> Double.parseDouble(s.toString())) //
+            .max();
+        return maxDbl.isPresent() ? maxDbl.getAsDouble() : null;
+      case CHAR:
+      case VARCHAR:
+      case NVARCHAR:
+        Optional<String> maxStr = colv //
+            .stream() //
+            .map(s -> s.toString()) //
+            .max(String.CASE_INSENSITIVE_ORDER);
+        return maxStr.isPresent() ? maxStr.get() : null;
+      case TIME:
+      case TIMESTAMP:
+      case DATE:
+        Optional<LocalDateTime> maxDt = colv //
+            .stream() //
+            .filter(s -> null != s) //
+            .map(s -> ParseData.parseData(s.toString())) //
+            .max(LocalDateTime::compareTo);
+        return maxDt.isPresent() ? maxDt.get() : null;
+
+      default:
+        throw new DatasetException("Max not supported:" + p_col);
+    }
+  }
+
+  public Dataset max(String... p_colList) throws DatasetException {
+    return max(Arrays.asList(p_colList), false);
+  }
+
+  public Dataset max(List<String> p_colList) throws DatasetException {
+    return max(p_colList, false);
+  }
+
+  /**
+   * Torna un nuovo dataset contenente le sole colonne specificate in
+   * <code>p_colList</code> e un solo row con il <b>massimo</b> delle colonne
+   * specificate
+   *
+   * @param p_colList
+   *          le colonne da sommare
+   * @return
+   * @throws DatasetException
+   */
+  public Dataset max(List<String> p_colList, boolean bCaseSensitive) throws DatasetException {
+    Dataset ret = new Dataset();
+    DtsCols cols = new DtsCols(ret);
+    try {
+      for (DtsCol col : getColumns().getColumns()) {
+        if (p_colList.stream().anyMatch(col.getName()::equalsIgnoreCase))
+          cols.addCol((DtsCol) col.clone());
+      }
+    } catch (CloneNotSupportedException e) {
+      e.printStackTrace();
+    }
+    if (cols.size() == 0)
+      throw new DatasetException("No cols for " + p_colList.toString());
+    ret.creaCols(cols);
+    DtsRow newro = new DtsRow(ret);
+
+    for (String colnam : p_colList) {
+      List<Object> colv = colArray(colnam);
+      SqlTypes typ = columns.getCol(colnam).getType();
+      switch (typ) {
+        case TINYINT:
+        case SMALLINT:
+        case INTEGER:
+        case NUMERIC:
+        case DECIMAL:
+        case FLOAT:
+        case DOUBLE:
+          OptionalDouble max = colv //
+              .stream() //
+              .mapToDouble(s -> Double.parseDouble(s.toString())) //
+              .max();
+          newro.set(colnam, max.isPresent() ? max.getAsDouble() : null);
+          break;
+        case CHAR:
+        case VARCHAR:
+        case NVARCHAR:
+          Optional<String> minS = null;
+          if (bCaseSensitive)
+            minS = colv //
+                .stream() //
+                .map(s -> s.toString()) //
+                .max(String::compareTo);
+          else
+            minS = colv //
+                .stream() //
+                .map(s -> s.toString()) //
+                .max(String.CASE_INSENSITIVE_ORDER);
+          newro.set(colnam, minS.isPresent() ? minS.get() : null);
+          break;
+        case TIME:
+        case TIMESTAMP:
+        case DATE:
+          Optional<LocalDateTime> minD = colv //
+              .stream() //
+              .filter(s -> null != s) //
+              .map(s -> ParseData.parseData(s.toString())) //
+              .max(LocalDateTime::compareTo);
+          newro.set(colnam, minD.isPresent() ? minD.get() : null);
+          break;
+
+        default:
+          throw new DatasetException("Max not supported:" + colnam);
+      }
     }
     ret.addRow(newro);
     return ret;

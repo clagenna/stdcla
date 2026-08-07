@@ -11,6 +11,19 @@ import sm.clagenna.stdcla.utils.ECurrencies;
 import sm.clagenna.stdcla.utils.ParseData;
 import sm.clagenna.stdcla.utils.Utils;
 
+/**
+ * DtsCol è la classe che contiene le informazioni della singola colonna del dataset.
+ * <ul>
+ * <li><b>name</b>: il nome della colonna</li>
+ * <li><b>index</b>: la posizione 0-based della colonna nel dataset</li>
+ * <li><b>type</b>: il tipo della colonna ({@link SqlTypes})</li>
+ * <li><b>format</b>: il formato della colonna (per i numeri decimali)</li>
+ * <li><b>inferredDate</b>: true se la colonna è stata inferita come data</li>
+ * </ul>
+ * 
+ * @author clagenna
+ *
+ */
 public class DtsCol implements Cloneable {
   private static final Logger s_log = LogManager.getLogger(DtsCol.class);
   // campi per la decoType()

@@ -422,16 +422,13 @@ public class GeoScanJpg {
   }
 
   public boolean cambiaTStamp(GeoCoord p_updGeo) {
-    if (null == p_updGeo.getTstampNew())
-      return false;
-    if ( !Utils.isChanged(p_updGeo.getTstamp(), p_updGeo.getTstampNew())) {
-      p_updGeo.setTstampNew(null);
+    if ( !Utils.isChanged(p_updGeo.getTstamp(), p_updGeo.getTstampOld())) {
+      p_updGeo.setTstampOld(p_updGeo.getTstamp());
       return false;
     }
     s_log.info("Cambio dtAcquis da {}  con {}", //
-        GeoFormatter.s_fmtTimeZ.format(p_updGeo.getTstamp()), //
-        GeoFormatter.s_fmtTimeZ.format(p_updGeo.getTstampNew()));
-    p_updGeo.assumeTStampNew();
+        GeoFormatter.s_fmtTimeZ.format(p_updGeo.getTstampOld()), //
+        GeoFormatter.s_fmtTimeZ.format(p_updGeo.getTstamp()));
     cambiaExifDtAcqInfos(p_updGeo);
     return true;
   }

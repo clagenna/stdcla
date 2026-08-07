@@ -25,6 +25,7 @@ public class ParseData {
   public static DateTimeFormatter      s_fmtY4MD   = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.systemDefault());
   public static DateTimeFormatter      s_fmtPY4M   = DateTimeFormatter.ofPattern("yyyy.MM").withZone(ZoneId.systemDefault());
 
+  public static int[]                s_qtaDays = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 };
   private static final LocalDateTime s_dtMin;
   private static final LocalDateTime s_dtMax;
 
@@ -33,6 +34,7 @@ public class ParseData {
     // 16/08/2025 : dtMax assumo non possa essere superiore ad oggi !!!
     //  s_dtMax = LocalDateTime.parse("2050:12:31 23:59:59", s_fmtDtExif);
     s_dtMax = LocalDateTime.now();
+
   }
 
   private static DateTimeFormatter[] s_arrpat = { //
@@ -161,8 +163,98 @@ public class ParseData {
     return odt;
   }
 
+  public Long elapsedSeconds(String p_sz1, String p_sz2) {
+    //    Long llRet = null;
+    //    if (null == p_sz1 || p_sz1.length() < 2)
+    //      return llRet;
+    //    if (null == p_sz2 || p_sz2.length() < 2)
+    //      return llRet;
+    //    LocalDateTime ts1 = LocalDateTime.parse(p_sz1, s_fmtmY4MD_hms);
+    //    LocalDateTime ts2 = LocalDateTime.parse(p_sz2, s_fmtmY4MD_hms);
+    //    llRet = ChronoUnit.SECONDS.between(ts1, ts2);
+    //    return llRet;
+    return null;
+  }
+
+  /**
+   * Ritorna un RecDeltaTime cercando di parse-are la stringa fornita che
+   * rappresenta un delta di tempo nella forma:<br/>
+   *
+   * <pre>
+   * [yyyy-mm-dd] [HH:mm[:ss]]
+   * </pre>
+   *
+   * @param psz
+   * @return
+   */
+  public static RecDeltaTime parseDeltaTime(String psz) {
+    RecDeltaTime ret = new RecDeltaTime(psz);
+    //    if (null == psz || psz.trim().length() < 2)
+    //      return null;
+    //    if (! ( psz.contains(":") || psz.contains("-") ) ) {
+    //      // non mi pare sia formato DateTime, allora provo a interpretarlo come numero di secondi
+    //      Long ll = null;
+    //      try {
+    //        ll = Utils.parseLong(psz);
+    //      } catch (Exception e) {
+    //        //
+    //      }
+    //      if (null != ll) {
+    //        return new RecDeltaTime(psz, LocalDateTime.of(1970, 1, 1, 0, 0, 0).plusSeconds(ll), ll);
+    //      }
+    //    }
+    //
+    //
+    //    int year = 1970; // Integer.parseInt(m.group(1));
+    //    int month = 1; //  Integer.parseInt(m.group(2));
+    //    int day = 1; //  Integer.parseInt(m.group(3));
+    //    int hour = 0; //  Integer.parseInt(m.group(4));
+    //    int minute = 0; //  Integer.parseInt(m.group(5));
+    //    int second = 0; //  m.group(6) != null ? Integer.parseInt(m.group(6)) : 0;
+    //    long unixEpoch = 0;
+    //    // System.out.println("Provo " + psz);
+    //    Matcher m = s_pattYY.matcher(psz.trim());
+    //    boolean bMatch = m.matches();
+    //    if (bMatch && m.groupCount() > 0) {
+    //      year = Integer.parseInt(m.group(1));
+    //      month = Integer.parseInt(m.group(2));
+    //      day = Integer.parseInt(m.group(3));
+    //      if (psz.length() > 10)
+    //        psz = psz.substring(10).trim();
+    //      else
+    //        psz = "";
+    //    }
+    //    if (psz.length() > 0) {
+    //      m = s_pattHMS.matcher(psz.trim());
+    //      bMatch = m.matches();
+    //      if (bMatch && m.groupCount() > 0) {
+    //        hour = Integer.parseInt(m.group(1));
+    //        minute = Integer.parseInt(m.group(2));
+    //        second = Integer.parseInt(m.group(3));
+    //        psz = "";
+    //      }
+    //    }
+    //    if (psz.length() > 0) {
+    //      m = s_pattHM.matcher(psz.trim());
+    //      bMatch = m.matches();
+    //      if (bMatch && m.groupCount() > 0) {
+    //        hour = Integer.parseInt(m.group(1));
+    //        minute = Integer.parseInt(m.group(2));
+    //        psz = "";
+    //      }
+    //    }
+    //    // LocalDate e LocalTime validano automaticamente i range
+    //    LocalDate date = LocalDate.of(year, month, day);
+    //    LocalTime time = LocalTime.of(hour, minute, second);
+    //
+    //    LocalDateTime ldt = LocalDateTime.of(date, time);
+    //    unixEpoch = ldt.atZone(ZoneId.systemDefault()).toEpochSecond();
+    //    ret = new RecDeltaTime(psz, ldt, unixEpoch);
+    return ret;
+  }
+
   public static String formatDate(java.util.Date p_ldt) {
-    return formatDate(toLocalDateTime(p_ldt));
+    return ParseData.formatDate(ParseData.toLocalDateTime(p_ldt));
   }
 
   public static String formatDate(LocalDateTime p_ldt) {
@@ -179,7 +271,7 @@ public class ParseData {
   }
 
   public static String formatOra(java.util.Date p_ldt) {
-    return formatOra(toLocalDateTime(p_ldt));
+    return ParseData.formatOra(ParseData.toLocalDateTime(p_ldt));
   }
 
   public static String formatOra(LocalDateTime p_ldt) {

@@ -37,7 +37,7 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
 
   private transient Path fotoFile;
   private transient Long fileSize;
-  private LocalDateTime  tstampNew;
+  private LocalDateTime  tstampOld;
   private LocalDateTime  tstamp;
   private ZoneOffset     zoneOffset;
   private double         longitude;
@@ -50,8 +50,8 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     setLatitude(0);
     setLongitude(0);
     altitude = 0;
-    tstampNew = null;
     setTstamp(LocalDateTime.now());
+    setTstampOld(getTstamp());
     setZoneOffset(GeoCoordFoto.s_zoneOffSet);
     setSrcGeo(EGeoSrcCoord.track);
     setFotoFile(null);
@@ -61,16 +61,16 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     setLatitude(p_lat);
     setLongitude(p_lon);
     setAltitude(0);
-    tstampNew = null;
     setTstamp(LocalDateTime.now());
+    tstampOld = tstamp;
     setZoneOffset(GeoCoordFoto.s_zoneOffSet);
     setSrcGeo(EGeoSrcCoord.track);
     setFotoFile(null);
   }
 
   public GeoCoord(LocalDateTime pdt, double p_lat, double p_lon) {
-    tstampNew = null;
     setTstamp(pdt);
+    tstampOld = tstamp;
     setZoneOffset(GeoCoordFoto.s_zoneOffSet);
     setLatitude(p_lat);
     setLongitude(p_lon);
@@ -80,8 +80,8 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
   }
 
   public GeoCoord(LocalDateTime pdt, double p_lat, double p_lon, double p_alt) {
-    tstampNew = null;
     setTstamp(pdt);
+    tstampOld = tstamp;
     setZoneOffset(GeoCoordFoto.s_zoneOffSet);
     setLatitude(p_lat);
     setLongitude(p_lon);
@@ -110,6 +110,19 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     setZoneOffset(ZoneOffset.of(p_sz));
   }
 
+  /**
+   * Parso i dati e li assegno a questa istanza. Se la data non è valida, allora
+   * tstamp sarà null. Se latitudine o longitudine non sono valide, allora
+   * saranno 0.
+   * 
+   * @param p_szDt
+   *          la stringa della data da parsare
+   * @param p_szLat
+   *          la stringa della latitudine da parsare
+   * @param p_szLon
+   *          la stringa della longitudine da parsare
+   * @return questa istanza di GeoCoord con i dati parsati
+   */
   public GeoCoord parse(String p_szDt, String p_szLat, String p_szLon) {
     GeoFormatter fmt = new GeoFormatter();
     fmt.parseTStamp(this, p_szDt);
@@ -135,17 +148,31 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     return ChronoUnit.SECONDS.between(getTstamp(), p_o.getTstamp());
   }
 
-  public void assumeTStampNew() {
-    if (null != tstampNew) {
-      tstamp = tstampNew;
-    }
-    tstampNew = null;
+  public LocalDateTime addDelta(Long dlt) {
+    if (null == dlt)
+      return tstamp;
+    if (null == tstampOld)
+      tstampOld = tstamp;
+    tstamp = tstampOld.plusSeconds(dlt);
+    return tstamp;
   }
 
+  public LocalDateTime getTstampOld() {
+    if (null == tstampOld)
+      return tstamp;
+    return tstampOld;
+  }
+
+  public void assumeTStampOld() {
+    if (null != tstampOld) {
+      tstamp = tstampOld;
+    }
+  }
+
+  //  non e' tstamp che andava modificata ! 
+  //  ma dtAquisizione, che è quella che viene usata per il nome del file e per confrontare le coordinate con quelle di altre foto.
   public LocalDateTime getMainTstamp() {
     LocalDateTime lts = tstamp;
-    if (null != tstampNew)
-      lts = tstampNew;
     return lts;
   }
 
@@ -160,6 +187,15 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     return GeoCoord.getEpoch(tstamp);
   }
 
+  /**
+   * Verifica se l'istanza è completa, ovvero se ha un timestamp valido. Per
+   * essere considerata completa, l'istanza deve avere un timestamp non null e
+   * successivo a LocalDateTime.MIN. Non è necessario che abbia coordinate
+   * geografiche valide, in quanto potrebbe essere utilizzata solo per
+   * aggiornare il timestamp di un'altra istanza.
+   *
+   * @return
+   */
   public boolean isComplete() {
     boolean bRet = true;
     bRet &= tstamp != null;
@@ -171,33 +207,75 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     return bRet;
   }
 
-  public boolean isChanged(GeoCoord p_updGeoFmt) {
+  /**
+   * Verifica se le coordinate sono cambiate rispetto ad un'altra istanza. Se
+   * l'altra istanza è null o non è completa, allora si considera che le
+   * coordinate sono cambiate.
+   * 
+   * @param p_altro
+   *          l'altra istanza di GeoCoord da confrontare
+   * @return true se le coordinate sono cambiate, false altrimenti
+   */
+  public boolean isChanged(GeoCoord p_altro) {
     boolean bRet = false;
-    if (null == p_updGeoFmt)
+    if (null == p_altro)
       return bRet;
     bRet = !isComplete();
     if ( !bRet)
       return bRet;
-    bRet |= tstamp != null ? Utils.isChanged(tstamp, p_updGeoFmt.getTstamp()) : false;
+    bRet |= tstamp != null ? Utils.isChanged(tstamp, p_altro.getTstamp()) : false;
     if ( !bRet)
-      bRet |= Utils.isChanged(longitude, p_updGeoFmt.getLongitude());
+      bRet |= Utils.isChanged(longitude, p_altro.getLongitude());
     if ( !bRet)
-      bRet |= Utils.isChanged(latitude, p_updGeoFmt.getLatitude());
+      bRet |= Utils.isChanged(latitude, p_altro.getLatitude());
     if ( !bRet)
-      bRet |= Utils.isChanged(altitude, p_updGeoFmt.getAltitude());
+      bRet |= Utils.isChanged(altitude, p_altro.getAltitude());
     if ( !bRet)
-      bRet |= Utils.isChanged(longitude, p_updGeoFmt.getLongitude());
+      bRet |= Utils.isChanged(longitude, p_altro.getLongitude());
     if ( !bRet)
-      bRet |= srcGeo != p_updGeoFmt.getSrcGeo();
+      bRet |= srcGeo != p_altro.getSrcGeo();
     if ( !bRet) {
       boolean ba = null == fotoFile;
-      boolean bb = null == p_updGeoFmt.getFotoFile();
+      boolean bb = null == p_altro.getFotoFile();
       bRet |= ba ^ bb;
       if (bRet)
         return bRet;
-      bRet |= !fotoFile.equals(p_updGeoFmt.getFotoFile());
+      bRet |= !fotoFile.equals(p_altro.getFotoFile());
     }
     return bRet;
+  }
+
+  public boolean isTstampChanged() {
+    boolean bRet = !isComplete();
+    if ( !bRet)
+      return bRet;
+    return Utils.isChanged(tstamp, tstampOld);
+  }
+
+  public boolean isNeedRename() {
+    if (null == fotoFile)
+      return false;
+    LocalDateTime locts = getMainTstamp();
+    if (null == locts)
+      return false;
+    String szFile = fotoFile.getFileName().toString().toLowerCase();
+    String szExt = null;
+    int ndx = szFile.lastIndexOf(".");
+    if (ndx > 0) {
+      szExt = szFile.substring(ndx + 1);
+      szFile = szFile.substring(0, ndx);
+    }
+    // Rimuovo eventuale suffisso di tipo "_1", "_2", etc. che viene aggiunto in caso di file con lo stesso nome
+    ndx = szFile.lastIndexOf("_");
+    // solo se ha un suffisso di questo tipo e se è più lungo di 14 caratteri, 
+    // che è la lunghezza del nome del file senza estensione (es. "2024060112_121314_1")
+    if (ndx > 14)
+      szFile = szFile.substring(0, ndx);
+    // ricompongo il nome del file con estensione, che è quello che devo confrontare con il nome che dovrebbe avere in base alla data di acquisizione
+    szFile = String.format("%s.%s", szFile, (szExt != null ? szExt : ""));
+    // passo a come dovrebbe essere il nome del file in base alla data di acquisizione
+    String szNewName = GeoFormatter.createFileName(this);
+    return !szFile.equals(szNewName);
   }
 
   public boolean isEmpty() {
@@ -208,6 +286,10 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
     if ( !bRet)
       bRet |= longitude * latitude == 0;
     return bRet;
+  }
+
+  public boolean isModifiedTStamp() {
+    return tstampOld != null && !tstampOld.equals(tstamp);
   }
 
   @Override
@@ -296,8 +378,8 @@ public class GeoCoord implements Comparable<GeoCoord>, Serializable, Cloneable {
       return;
     update(other);
     tstamp = other.tstamp;
-    if (null != other.tstampNew)
-      tstamp = other.tstampNew;
+    if (null != other.tstampOld)
+      tstamp = other.tstampOld;
     srcGeo = other.srcGeo;
   }
 

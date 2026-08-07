@@ -32,7 +32,7 @@ public class FromPdf2Html implements IPdfGestore {
   /** list of HtmlValue UN-ordered */
   private List<HtmlValue> liHtmlValues;
   /** list of HtmlValue Ordered */
-  private List<HtmlValue> liHtmlValues2;
+  private List<HtmlValue> liHtmlValuesSort;
 
   @Getter @Setter
   private boolean debug;
@@ -56,6 +56,14 @@ public class FromPdf2Html implements IPdfGestore {
     saveTXT = false;
   }
 
+  /**
+   * Funzione primaria di parsing della fattura PDF. infatti Lancia la
+   * {@link #convToHtml(Path)}
+   *
+   * @param p_fiPdf
+   *          il path del PDF da parse-are
+   * @return true se tutto &egrave; andato per il meglio
+   */
   public boolean parsePDF(Path p_fiPdf) {
     setFilePDF(p_fiPdf);
     if ( !convToHtml(p_fiPdf))
@@ -70,15 +78,14 @@ public class FromPdf2Html implements IPdfGestore {
     scanRigheHTML();
     saveHtml(liHtmlValues, "_1");
     saveCSVFile(liHtmlValues, "_1");
-    liHtmlValues2 = liHtmlValues.stream().sorted().toList();
-    saveHtml(liHtmlValues2, "_2");
-    saveCSVFile(liHtmlValues2, "_2");
-    saveTxtFile(liHtmlValues2, "_2");
+    saveHtml(liHtmlValuesSort, "_2");
+    saveCSVFile(liHtmlValuesSort, "_2");
+    saveTxtFile(liHtmlValuesSort, "_2");
     return true;
   }
 
   public List<HtmlValue> getLiHtml() {
-    return liHtmlValues2;
+    return liHtmlValuesSort;
   }
 
   private boolean scanRigheHTML() {
@@ -89,14 +96,16 @@ public class FromPdf2Html implements IPdfGestore {
     for (String szRigaHtml : m_outHtml) {
       HtmlValue rec = new HtmlValue();
       if (rec.parseHtmlText(szRigaHtml, this) > 0) {
-        if ( !seSpezzabile(rec))
+        if ( !seSpezzabile(rec)) {
           liHtmlValues.add(rec);
+        }
       }
     }
     if (liHtmlValues.size() < 5) {
       s_log.error("Non sembra essere una file PDF");
       return false;
     }
+    liHtmlValuesSort = liHtmlValues.stream().sorted().toList();
     return true;
   }
 
@@ -143,6 +152,13 @@ public class FromPdf2Html implements IPdfGestore {
     return true;
   }
 
+  /**
+   * Converte il dile PDF della Fattura con {@link PDDocument} e lo salva come
+   * lista di righe in {@link #m_outHtml}
+   *
+   * @param p_fiPdf
+   * @return
+   */
   private boolean convToHtml(Path p_fiPdf) {
     String threadName = Thread.currentThread().getName();
     TimerMeter tt = new TimerMeter("convToHtml:" + p_fiPdf.toString());
@@ -210,7 +226,7 @@ public class FromPdf2Html implements IPdfGestore {
   }
 
   public void saveHtml(String sufx) {
-    saveHtml(liHtmlValues2, sufx);
+    saveHtml(liHtmlValuesSort, sufx);
   }
 
   public void saveHtml(List<HtmlValue> li, String sufx) {

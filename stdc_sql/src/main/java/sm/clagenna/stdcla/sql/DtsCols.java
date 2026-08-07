@@ -15,6 +15,14 @@ import org.apache.logging.log4j.Logger;
 import lombok.Getter;
 import sm.clagenna.stdcla.utils.sys.ex.DatasetException;
 
+/**
+ * DtsCols è la classe che contiene le informazioni di tutte le colonne sotto
+ * forma di {@link DtsCol} e permette di accedere alle informazioni di ogni
+ * colonna ({@link #getCol(int)} tramite il nome o l'indice.
+ * 
+ * @author clagenna
+ *
+ */
 public class DtsCols implements Cloneable {
   private static final Logger s_log    = LogManager.getLogger(DtsCols.class);
   @Getter
@@ -53,6 +61,11 @@ public class DtsCols implements Cloneable {
     nomecol = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
   }
 
+  /**
+   * Imposta la larghezza delle colonne in caratteri per la stampa a video.
+   * 
+   * @param p_coWth
+   */
   public static void setWidthCh(int p_coWth) {
     colWidth = p_coWth;
     colFmtL = String.format("%%-%ds ", p_coWth);

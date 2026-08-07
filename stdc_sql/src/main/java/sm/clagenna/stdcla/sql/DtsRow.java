@@ -17,6 +17,7 @@ import lombok.Getter;
 import lombok.Setter;
 import sm.clagenna.stdcla.utils.sys.ex.DatasetException;
 import sm.clagenna.stdcla.utils.ParseData;
+import sm.clagenna.stdcla.utils.Utils;
 
 public class DtsRow implements Cloneable {
   private static final Logger s_log = LogManager.getLogger(DtsRow.class);
@@ -139,10 +140,26 @@ public class DtsRow implements Cloneable {
 
   }
 
+  /**
+   * Dato il numero della colonna restituisce il valore della cella sotto forma
+   * di Object. Se la colonna non esiste restituisce null.
+   *
+   * @param nCol
+   *          numero della colonna (0..n)
+   * @return valore della cella sotto forma di Object
+   */
   public Object get(int nCol) {
     return valori.get(nCol);
   }
 
+  /**
+   * Dato il nome della colonna restituisce il valore della cella sotto forma di
+   * Object. Se la colonna non esiste restituisce null.
+   *
+   * @param col
+   *          nome della colonna
+   * @return valore della cella sotto forma di Object
+   */
   public Object get(String col) {
     Object ret = null;
     int ii = dataset.getColumNo(col);
@@ -150,6 +167,23 @@ public class DtsRow implements Cloneable {
       return ret;
     ret = valori.get(ii);
     return ret;
+  }
+
+  public double getDouble(String col) {
+    Object ret = get(col);
+    if (null == ret)
+      return 0;
+    if (ret instanceof Double dbl)
+      return dbl;
+    if (ret instanceof Float fl)
+      return (double) fl;
+    if (ret instanceof Integer ii)
+      return (double) ii;
+    if (ret instanceof Long ll)
+      return (double) ll;
+    if (ret instanceof String str)
+      return Utils.parseDouble(str);
+    return 0;
   }
 
   public void set(String col, Object val) {
@@ -197,7 +231,7 @@ public class DtsRow implements Cloneable {
     StringBuilder sb = new StringBuilder();
     // sb.append(dataset.getColumns().getIntestazione()).append("\n");
     for (DtsCol col : dataset.getColumns().getColumns()) {
-      String szColNam =   String.format("%15s",  col.getName());
+      String szColNam = String.format("%15s", col.getName());
       Object vv = valori.get(col.getIndex());
       String szv = String.format(DtsCols.getColFmtL(), "*null*");
       if (vv != null) {
