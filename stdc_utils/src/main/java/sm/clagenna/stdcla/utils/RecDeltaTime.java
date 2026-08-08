@@ -247,13 +247,27 @@ public class RecDeltaTime {
       szRetYY += " ";
     return szSign + szRetYY + szRetHH;
   }
-  
+
+  @Override
+  public int hashCode() {
+    if (null == deltaSeconds)
+      return 0;
+    return deltaSeconds.hashCode();
+  }
+
   public boolean equals(RecDeltaTime other) {
     if (other == null)
       return false;
     if (this == other)
       return true;
     return this.deltaSeconds.equals(other.deltaSeconds);
+  }
+  
+  public String toStringShort() {
+    String szSign = bNegative ? "-" : "+";
+    String szRet = String.format("%s%04d-%02d-%02d %02d:%02d:%02d", szSign, year, month, day, hour, minute, second);
+    szRet = szRet.replaceAll(" 00:00:00$", "").replace("0000-00-00 ", "");;
+    return szRet;
   }
 
   @Override

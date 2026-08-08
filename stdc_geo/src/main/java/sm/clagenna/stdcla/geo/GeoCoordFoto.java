@@ -252,36 +252,36 @@ public class GeoCoordFoto extends GeoCoord implements Serializable {
    * 
    * @return
    */
-//  public BufferedImage getImage() { // !!
-//    try {
-//      if (null == image) {
-//        image = ImageIO.read(getFotoFile().toFile());
-//        imgGrayed = null;
-//      }
-//    } catch (IOException e) {
-//      s_log.error("Image not found ! file = {}", getFotoFile().toString(), e);
-//      e.printStackTrace();
-//    }
-//    return image;
-//  }
-//
-//  public BufferedImage getImage(int newWidth, boolean bGrayed) {
-//    BufferedImage lImg = getImage();
-//    if (newWidth < MIN_WIDTH_FOTO && !bGrayed)
-//      return lImg;
-//    if (newWidth >= MIN_WIDTH_FOTO) {
-//      if (newWidth != widthCurr || bGrayed != grayedFoto) {
-//        lImg = redimFoto(lImg, newWidth, bGrayed);
-//        imageRedim = lImg;
-//        widthCurr = newWidth;
-//        grayedFoto = bGrayed;
-//        if (grayedFoto)
-//          imgGrayed = imageRedim;
-//      } else
-//        lImg = imageRedim;
-//    }
-//    return lImg;
-//  }
+  //  public BufferedImage getImage() { // !!
+  //    try {
+  //      if (null == image) {
+  //        image = ImageIO.read(getFotoFile().toFile());
+  //        imgGrayed = null;
+  //      }
+  //    } catch (IOException e) {
+  //      s_log.error("Image not found ! file = {}", getFotoFile().toString(), e);
+  //      e.printStackTrace();
+  //    }
+  //    return image;
+  //  }
+  //
+  //  public BufferedImage getImage(int newWidth, boolean bGrayed) {
+  //    BufferedImage lImg = getImage();
+  //    if (newWidth < MIN_WIDTH_FOTO && !bGrayed)
+  //      return lImg;
+  //    if (newWidth >= MIN_WIDTH_FOTO) {
+  //      if (newWidth != widthCurr || bGrayed != grayedFoto) {
+  //        lImg = redimFoto(lImg, newWidth, bGrayed);
+  //        imageRedim = lImg;
+  //        widthCurr = newWidth;
+  //        grayedFoto = bGrayed;
+  //        if (grayedFoto)
+  //          imgGrayed = imageRedim;
+  //      } else
+  //        lImg = imageRedim;
+  //    }
+  //    return lImg;
+  //  }
 
   /**
    * Ridimensiona l'immagine utilizzando il nuovo newWidth per calcolare
@@ -293,80 +293,94 @@ public class GeoCoordFoto extends GeoCoord implements Serializable {
    *          la nuova larghezza della foto
    * @return l'immagine ridimensionata
    */
-//  private BufferedImage redimFoto(BufferedImage lImg, int newWidth, boolean bGrayed) {
-//    double rapporto = (double) newWidth / (double) lImg.getWidth();
-//    int lwi = newWidth;
-//    int lhe = (int) ((double) lImg.getHeight() / rapporto);
-//    int tip = bGrayed ? BufferedImage.TYPE_BYTE_GRAY : BufferedImage.TYPE_BYTE_GRAY;
-//    BufferedImage lRedim = new BufferedImage(lwi, lhe, tip);
-//    Graphics2D grph = null;
-//    try {
-//      grph = lRedim.createGraphics();
-//      grph.drawImage(lImg, 0, 0, lwi, lhe, null);
-//    } catch (Exception e) {
-//      s_log.error("Error redimFoto: {}", e.getMessage());
-//      lRedim = null;
-//    } finally {
-//      if (null != grph)
-//        grph.dispose();
-//      grph = null;
-//    }
-//    return lRedim;
-//  }
+  //  private BufferedImage redimFoto(BufferedImage lImg, int newWidth, boolean bGrayed) {
+  //    double rapporto = (double) newWidth / (double) lImg.getWidth();
+  //    int lwi = newWidth;
+  //    int lhe = (int) ((double) lImg.getHeight() / rapporto);
+  //    int tip = bGrayed ? BufferedImage.TYPE_BYTE_GRAY : BufferedImage.TYPE_BYTE_GRAY;
+  //    BufferedImage lRedim = new BufferedImage(lwi, lhe, tip);
+  //    Graphics2D grph = null;
+  //    try {
+  //      grph = lRedim.createGraphics();
+  //      grph.drawImage(lImg, 0, 0, lwi, lhe, null);
+  //    } catch (Exception e) {
+  //      s_log.error("Error redimFoto: {}", e.getMessage());
+  //      lRedim = null;
+  //    } finally {
+  //      if (null != grph)
+  //        grph.dispose();
+  //      grph = null;
+  //    }
+  //    return lRedim;
+  //  }
 
-//  public BufferedImage getGrayed() {
-//    try {
-//      if (null == image)
-//        image = ImageIO.read(getFotoFile().toFile());
-//      if (null == imgGrayed)
-//        imgGrayed = convertToGrayscale(image);
-//    } catch (IOException e) {
-//      s_log.error("Image not found ! file = {}", getFotoFile().toString(), e);
-//      e.printStackTrace();
-//    }
-//    return imgGrayed;
-//  }
+  //  public BufferedImage getGrayed() {
+  //    try {
+  //      if (null == image)
+  //        image = ImageIO.read(getFotoFile().toFile());
+  //      if (null == imgGrayed)
+  //        imgGrayed = convertToGrayscale(image);
+  //    } catch (IOException e) {
+  //      s_log.error("Image not found ! file = {}", getFotoFile().toString(), e);
+  //      e.printStackTrace();
+  //    }
+  //    return imgGrayed;
+  //  }
 
-//  public BufferedImage getGrayed(double pNewWidth) {
-//    try {
-//      if (null == image) {
-//        image = ImageIO.read(getFotoFile().toFile());
-//      }
-//      if (null == imgGrayed || pNewWidth != widthCurr)
-//        convertToGrayscale(image, pNewWidth);
-//    } catch (IOException e) {
-//      s_log.error("Image not found ! file = {}", getFotoFile().toString(), e);
-//      e.printStackTrace();
-//    }
-//    return image;
-//  }
+  //  public BufferedImage getGrayed(double pNewWidth) {
+  //    try {
+  //      if (null == image) {
+  //        image = ImageIO.read(getFotoFile().toFile());
+  //      }
+  //      if (null == imgGrayed || pNewWidth != widthCurr)
+  //        convertToGrayscale(image, pNewWidth);
+  //    } catch (IOException e) {
+  //      s_log.error("Image not found ! file = {}", getFotoFile().toString(), e);
+  //      e.printStackTrace();
+  //    }
+  //    return image;
+  //  }
 
-//  private BufferedImage convertToGrayscale(BufferedImage img) {
-//    widthCurr = img.getWidth();
-//    imgGrayed = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
-//    imgGrayed.getGraphics().drawImage(img, 0, 0, null);
-//    return imgGrayed;
-//  }
+  //  private BufferedImage convertToGrayscale(BufferedImage img) {
+  //    widthCurr = img.getWidth();
+  //    imgGrayed = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+  //    imgGrayed.getGraphics().drawImage(img, 0, 0, null);
+  //    return imgGrayed;
+  //  }
 
-//  private BufferedImage convertToGrayscale(BufferedImage img, double newWidth) {
-//    widthCurr = (int) newWidth;
-//    double width = img.getWidth();
-//    double height = img.getHeight();
-//    double propz = width / height;
-//    int nwi = (int) newWidth;
-//    int nhe = (int) (newWidth / propz);
-//
-//    imgGrayed = new BufferedImage(nwi, nhe, BufferedImage.TYPE_BYTE_GRAY);
-//    Graphics2D grph2d = null;
-//    try {
-//      grph2d = imgGrayed.createGraphics();
-//      grph2d.drawImage(imgGrayed, 0, 0, nwi, nhe, null);
-//      imgGrayed.getGraphics().drawImage(img, 0, 0, null);
-//    } finally {
-//      grph2d.dispose();
-//    }
-//    return imgGrayed;
-//  }
+  //  private BufferedImage convertToGrayscale(BufferedImage img, double newWidth) {
+  //    widthCurr = (int) newWidth;
+  //    double width = img.getWidth();
+  //    double height = img.getHeight();
+  //    double propz = width / height;
+  //    int nwi = (int) newWidth;
+  //    int nhe = (int) (newWidth / propz);
+  //
+  //    imgGrayed = new BufferedImage(nwi, nhe, BufferedImage.TYPE_BYTE_GRAY);
+  //    Graphics2D grph2d = null;
+  //    try {
+  //      grph2d = imgGrayed.createGraphics();
+  //      grph2d.drawImage(imgGrayed, 0, 0, nwi, nhe, null);
+  //      imgGrayed.getGraphics().drawImage(img, 0, 0, null);
+  //    } finally {
+  //      grph2d.dispose();
+  //    }
+  //    return imgGrayed;
+  //  }
+
+  @Override
+  public LocalDateTime addDelta(Long dlt) {
+    LocalDateTime ldt = super.addDelta(dlt);
+    if (null != dtAssunta)
+      dtAssunta = dtAssunta.plusSeconds(dlt);
+    if (null != dtCreazione)
+      dtCreazione = dtCreazione.plusSeconds(dlt);
+    if (null != dtUltModif)
+      dtUltModif = dtUltModif.plusSeconds(dlt);
+    if (null != dtAcquisizione)
+      dtAcquisizione = dtAcquisizione.plusSeconds(dlt);
+    return ldt;
+  }
 
   /**
    * Visto un bug nella classe {@link TiffImageMetadata.GpsInfo} nella funzione

@@ -426,7 +426,9 @@ public class GeoScanJpg {
       p_updGeo.setTstampOld(p_updGeo.getTstamp());
       return false;
     }
-    s_log.info("Cambio dtAcquis da {}  con {}", //
+    String szFile = p_updGeo.getFotoFile() != null ? p_updGeo.getFotoFile().toString() : "null";
+    s_log.info("Cambio dtAcquis a \"{}\" da {}  con {}", //
+        szFile, //
         GeoFormatter.s_fmtTimeZ.format(p_updGeo.getTstampOld()), //
         GeoFormatter.s_fmtTimeZ.format(p_updGeo.getTstamp()));
     cambiaExifDtAcqInfos(p_updGeo);
