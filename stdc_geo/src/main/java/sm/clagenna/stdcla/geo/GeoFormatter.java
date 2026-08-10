@@ -41,7 +41,7 @@ public class GeoFormatter {
 
   public static final int LATITUDE    = 0;
   public static final int LONGITUDINE = 1;
-  private LocalDateTime   m_dtWebTime;
+  // private LocalDateTime   m_dtWebTime;
 
   static {
     // s_patGradiMinSec = Pattern.compile("([+\\-]?[0-9]+). ([0-9]+). ([0-9,\\.]+).*");
@@ -248,14 +248,25 @@ public class GeoFormatter {
     return p_geo;
   }
 
+  /**
+   * Interpreta una stringa WEB (magari copiata da Google Maps) con coordinate
+   * lat/lon e le assegna al GeoCoord passato come parametro. Se il GeoCoord è
+   * null ne crea uno nuovo.
+   * 
+   * @param coo
+   *          GeoCoord da aggiornare o null per crearne uno nuovo
+   * @param sz
+   *          Stringa contenente le coordinate in formato web
+   * @return Il GeoCoord aggiornato o creato
+   */
   public GeoCoord parseWeb(GeoCoord coo, String sz) {
-    GeoCoord ret = coo;
+    GeoCoord coord = coo;
     if (sz == null || sz.length() < 2)
-      return ret;
-    if (ret == null)
-      ret = new GeoCoord();
-    if (null == m_dtWebTime)
-      m_dtWebTime = LocalDateTime.now();
+      return coord;
+    if (coord == null)
+      coord = new GeoCoord();
+    //    if (null == m_dtWebTime)
+    //      m_dtWebTime = LocalDateTime.now();
     String szLon = null;
     String szLat = null;
     Matcher mtch = s_patWebString.matcher(sz);
@@ -264,24 +275,24 @@ public class GeoFormatter {
       szLon = mtch.group(2);
       double oldLat = coo.getLatitude();
       double oldLon = coo.getLongitude();
-      parseLatitude(ret, szLat);
-      parseLongitude(ret, szLon);
+      parseLatitude(coord, szLat);
+      parseLongitude(coord, szLon);
 
-      if (Utils.isChanged(oldLat, ret.getLatitude()) || //
-          Utils.isChanged(oldLon, ret.getLongitude()))
-        ret.setGuessed(true);
-
-      ret.setTstamp(m_dtWebTime);
-      m_dtWebTime = m_dtWebTime.plusSeconds(5);
+      if (Utils.isChanged(oldLat, coord.getLatitude()) || //
+          Utils.isChanged(oldLon, coord.getLongitude()))
+        coord.setGuessed(true);
+      // non fa parte dei compiti dichiarati dalla funzione!!!
+      //      coord.setTstamp(m_dtWebTime);
+      //      m_dtWebTime = m_dtWebTime.plusSeconds(5);
     } else {
       s_log.warn("Non interpreto : {}", sz);
     }
-    return ret;
+    return coord;
   }
 
-  public void setWebTime(LocalDateTime pdt) {
-    m_dtWebTime = pdt;
-  }
+  //  public void setWebTime(LocalDateTime pdt) {
+  //    m_dtWebTime = pdt;
+  //  }
 
   /**
    * Crea un nome file (lowercase) per la foto associata al GeoCoord, basato sul
