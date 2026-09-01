@@ -22,6 +22,25 @@ public class CalcolaTaccheXY {
 //  public record PosTacca(double value, double pixel) {
 //  }
 
+//  public static List<PosTacca> calcolaTacche(int qtaRows, double vMin, double vMax, double pixMin, double pixMax) {
+//    List<PosTacca> liTaccheX = new ArrayList<>();
+//    for (int i = 0; i < qtaRows; i++) {
+//      currTk = new PosTacca(i, conv.toPixelX(i));
+//      if (null != precTk)
+//        diffPix = Math.abs(currTk.getPixel() - precTk.getPixel());
+//      else {
+//        diffPix = 9999;
+//        precTk = currTk;
+//      }
+//      if (diffPix < 16)
+//        continue;
+//      precTk = currTk;
+//      // double px = conv.toPixelX(i);
+//      liTaccheX.add(currTk);
+//    }
+//    return liTaccheX;
+//  }
+  
   /**
    * Calcola la lista delle tacche da disegnare.
    *

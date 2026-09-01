@@ -373,4 +373,10 @@ public class DtsRow implements Cloneable {
     return loc;
   }
 
+  public DtsCol getCol(String colAscisse) {
+    if (null == dataset)
+      return null;
+    return dataset.getColumns().getCol(colAscisse);
+  }
+
 }

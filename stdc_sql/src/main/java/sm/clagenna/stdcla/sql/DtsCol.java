@@ -1,5 +1,7 @@
 package sm.clagenna.stdcla.sql;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.sql.Types;
 
 import org.apache.logging.log4j.LogManager;
@@ -12,13 +14,15 @@ import sm.clagenna.stdcla.utils.ParseData;
 import sm.clagenna.stdcla.utils.Utils;
 
 /**
- * DtsCol è la classe che contiene le informazioni della singola colonna del dataset.
+ * DtsCol è la classe che contiene le informazioni della singola colonna del
+ * dataset.
  * <ul>
  * <li><b>name</b>: il nome della colonna</li>
  * <li><b>index</b>: la posizione 0-based della colonna nel dataset</li>
  * <li><b>type</b>: il tipo della colonna ({@link SqlTypes})</li>
  * <li><b>format</b>: il formato della colonna (per i numeri decimali)</li>
  * <li><b>inferredDate</b>: true se la colonna è stata inferita come data</li>
+ * <li><b>numeric</b>: true se la colonna è numerica</li>
  * </ul>
  * 
  * @author clagenna
@@ -28,11 +32,11 @@ public class DtsCol implements Cloneable {
   private static final Logger s_log = LogManager.getLogger(DtsCol.class);
   // campi per la decoType()
   @Getter @Setter
-  private static String       szFmt;
+  private static String szFmt;
   @Getter @Setter
-  private static String       szTyp;
+  private static String szTyp;
   @Getter @Setter
-  private static int          decPlace;
+  private static int    decPlace;
 
   /** Il nome <b>univoco</b> e <b>case insensitive</b> della colonna */
   @Getter @Setter
@@ -42,6 +46,8 @@ public class DtsCol implements Cloneable {
   private int      index;
   @Getter
   private SqlTypes type;
+  @Getter
+  private boolean  isNumeric;
   @Getter @Setter
   private String   format;
   @Getter
@@ -49,10 +55,12 @@ public class DtsCol implements Cloneable {
 
   public DtsCol() {
     index = -1;
+    isNumeric = false;
   }
 
   public DtsCol(String pName, SqlTypes pType) {
     index = -1;
+    isNumeric = false;
     setName(pName);
     setType(pType);
   }
@@ -65,6 +73,7 @@ public class DtsCol implements Cloneable {
     ret.type = type;
     ret.format = format;
     ret.inferredDate = inferredDate;
+    ret.isNumeric = isNumeric;
     return ret;
   }
 
@@ -75,6 +84,20 @@ public class DtsCol implements Cloneable {
 
   public void setType(SqlTypes p_ty) {
     type = p_ty;
+    switch (type) {
+      case SMALLINT:
+      case INTEGER:
+      case NUMERIC:
+      case DECIMAL:
+      case FLOAT:
+      case DOUBLE:
+      case REAL:
+        isNumeric = true;
+        break;
+      default:
+        isNumeric = false;
+        break;
+    }
   }
 
   public Object parse(String p_szv) {
@@ -100,6 +123,16 @@ public class DtsCol implements Cloneable {
           obj = Double.valueOf(0);
           if (null != p_szv) {
             sz2 = p_szv.trim();
+            
+//            String sz16le = new String(sz2.getBytes(), StandardCharsets.UTF_16LE);
+//            String szUtf8 = new String(sz2.getBytes(), StandardCharsets.UTF_8);
+//            String sz1252 = new String(sz2.getBytes(), Charset.forName("windows-1252"));
+//            String clean = sz2.replaceAll("\\p{C}", ""); // rimuove control/non-character
+            char cc = sz2.charAt(sz2.length() - 1);
+            if ((int)cc > 65000) {
+              sz2 = sz2.substring(0, sz2.length() - 1);
+            }
+
             if (sz2.contains(ECurrencies.Euro.getSymbol()))
               sz2 = sz2.replaceAll(ECurrencies.Euro.getSymbol(), "");
             if (sz2.contains(ECurrencies.Dollar.getSymbol()))
@@ -139,16 +172,7 @@ public class DtsCol implements Cloneable {
     szTyp = null;
     decPlace = 6;
     int colWidth = DtsCols.getColWidth();
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
     switch (nTyp) {
       case Types.SMALLINT:
         szFmt = String.format("%%%dd ", colWidth);
@@ -195,14 +219,14 @@ public class DtsCol implements Cloneable {
         s_log.error("Non interpreto tipo {}", nTyp);
         break;
     }
-//    if (null != szTyp)
-//      sqlt = SqlTypes.parse(szTyp);
+    //    if (null != szTyp)
+    //      sqlt = SqlTypes.parse(szTyp);
     return sqlt;
   }
-  
+
   public static int decoType(SqlTypes pSql) {
     int ret = 0;
-    switch( pSql) {
+    switch (pSql) {
       case SMALLINT:
         ret = Types.SMALLINT;
         break;

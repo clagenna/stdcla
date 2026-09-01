@@ -249,7 +249,7 @@ public class Utils {
       return false;
     return p_v1.equals(p_v2);
   }
-  
+
   public static boolean isValueEqIC(String p_v1, String p_v2) {
     if (p_v1 == null || p_v2 == null)
       return false;
@@ -329,7 +329,7 @@ public class Utils {
     return Utils.parseDouble(vv.toString());
   }
 
-  public static Double parseDouble(String psz) {
+  public static Double parseDoubleOLD(String psz) {
     if (null == S_LOCALE)
       Utils.setLocale(Locale.getDefault());
     Double ii = null;
@@ -348,7 +348,78 @@ public class Utils {
       // cambiare i "." e "," a priori è un arbitrio, va chiamata la Utils.setLocale()
       // String sz = psz.trim().replace(S_Group_Sep, "").replace(S_Decimal_Sep, ".");
       String sz = psz.trim();
-      ii = fmt.parse(sz).doubleValue();
+      double mult = 1.0;
+      if (sz.length() > 1) {
+        // verifico se il primo carattere è un segno, in tal caso lo tolgo e lo salvo per moltiplicare il risultato
+        String strt = sz.substring(0, 1);
+        if (strt.equals("-") || strt.equals("+")) {
+          mult = strt.equals("-") ? -1.0 : 1.0;
+          sz = sz.substring(1);
+        }
+        // verifico se il primo carattere è una virgola, in tal caso lo tolgo aggiungo zero all'inizio
+        strt = sz.substring(0, 1);
+        if (strt.equals(","))
+          sz = "0" + sz;
+        ii = fmt.parse(sz).doubleValue() * mult;
+      }
+    } catch (NumberFormatException | ParseException ex) {
+      //
+    }
+    return ii;
+  }
+
+  /**
+   * Parse una stringa a Double, considerando il locale di default.<br/>
+   * Se la stringa contiene 1 carattere non numerico alla fine lo elimina e
+   * riprova a parsare.<br/>
+   * Se la stringa contiene 2 decimali dopo "," o "." allora forza il locale a ITA o USA.<br/>
+   * se la stringa contiene >1 carattere non numerico torna null.<br/>
+   *
+   * @param p_sz
+   *          la stringa da parsare
+   * @return il valore Double oppure null se non è parsabile
+   */
+  public static Double parseDouble(String p_sz) {
+    Double ii = null;
+    Locale locale = Locale.getDefault();
+    if (null == p_sz)
+      return ii;
+    // String cleaned = p_sz.replaceAll("\\p{C}", "").trim(); !! non funziona (UNICODE!)
+    String cleaned = p_sz.replaceAll("[^\\x00-\\x7F]", "").trim(); // tolgo i caratteri non ASCII !
+    String clean2 = cleaned.replaceAll("[^0-9.,+-]", ""); // tolgo i caratteri non numerici
+    if (clean2.length() != cleaned.length()) {
+      return ii;
+    }
+    // ---------------------------------------------------
+    // questo perche' dagli USA mi arrivano double della forma "-9,99" ?!?
+    // devo sovrascrivere il tipo di formatter
+    int nv = cleaned.length() - cleaned.lastIndexOf(",");
+    if (nv == 3)
+      locale = Locale.ITALY;
+    // ---------------------------------------------------
+    // Se ho 2 decimali dopo il punto, allora sono in formato USA
+    nv = cleaned.length() - cleaned.lastIndexOf(".");
+    if (nv == 3)
+      locale = Locale.US;
+    // ---------------------------------------------------
+    NumberFormat fmt = NumberFormat.getInstance(locale);
+    try {
+      // cambiare i "." e "," a priori è un arbitrio, va chiamata la Utils.setLocale()
+      // String sz = psz.trim().replace(S_Group_Sep, "").replace(S_Decimal_Sep, ".");
+      double mult = 1.0;
+      if (cleaned.length() > 1) {
+        // verifico se il primo carattere è un segno, in tal caso lo tolgo e lo salvo per moltiplicare il risultato
+        String strt = cleaned.substring(0, 1);
+        if (strt.equals("-") || strt.equals("+")) {
+          mult = strt.equals("-") ? -1.0 : 1.0;
+          cleaned = cleaned.substring(1);
+        }
+        // verifico se il primo carattere è una virgola, in tal caso lo tolgo aggiungo zero all'inizio
+        strt = cleaned.substring(0, 1);
+        if (strt.equals(","))
+          cleaned = "0" + cleaned;
+        ii = fmt.parse(cleaned).doubleValue() * mult;
+      }
     } catch (NumberFormatException | ParseException ex) {
       //
     }
@@ -365,7 +436,7 @@ public class Utils {
     szRet = fmt.format(dbl);
     return szRet;
   }
-  
+
   public static String formatLong(Long ll) {
     String szRet = null;
     if (null == ll)

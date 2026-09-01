@@ -2,6 +2,10 @@ package sm.clagenna.stdcla.utils;
 
 import lombok.Data;
 
+/**
+ * Valore intrinseco (di solito l'ascisse e/o ordinata) con la sua conversione in
+ * posizione sull'asse di una "tacca" in un grafico.
+ */
 @Data
 public class PosTacca {
 
@@ -20,7 +24,7 @@ public class PosTacca {
     this.pixel = pixel;
     this.rifObj = rifObj;
   }
-  
+
   public String toString() {
     return String.format("PosTacca [value=%.2f, pixel=%.2f, rifObj=%s]", value, pixel, rifObj);
   }
