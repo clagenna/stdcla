@@ -9,6 +9,8 @@ import java.nio.file.Path;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -322,4 +324,52 @@ public class AppProperties {
     else
       properties.remove(CSZ_PROP_LASTDIR);
   }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("AppProperties [") //
+        .append(propertyFile) //
+        .append(", Singleton=").append(s_singleton) //
+        .append("]\n");
+    if (null == properties) {
+      sb.append("\tproperties=*NULL*");
+      return sb.toString();
+    }
+    sb.append("\tproperties.size=").append(properties.size()).append("\n");
+    // sb.append("\n\tproperties=").append(properties.toString());
+    //    properties.entrySet() //
+    //        .stream() //
+    //        .sorted(Map.Entry.comparingByKey()) // Sort alphabetically by property name
+    //        .forEach(en -> sb.append(String.format("\t%20s=%s\n", en.getKey(), en.getValue())));
+
+    //    TreeMap<String, String> sortedTreeMap = properties.entrySet() //
+    //        .stream()
+    //        .filter(entry -> entry.getKey() instanceof String )
+    //        .map(entry -> new AbstractMap.SimpleEntry<>(
+    //            entry.getKey().toString(), 
+    //            null != entry.getValue() ? entry.getValue().toString() : "**null**"
+    //        ))
+    //        .collect(Collectors.toMap(
+    //            Map.Entry::getKey,
+    //            Map.Entry::getValue,
+    //            (oldVal, newVal) -> newVal,
+    //            TreeMap::new // Natural order sorting
+    //        ));
+
+    TreeMap<String, String> treeMap = properties //
+        .stringPropertyNames() //
+        .stream() //
+        .collect(Collectors.toMap( //
+            key -> key, //
+            properties::getProperty, //
+            (v1, v2) -> v1, // In caso di collisioni (non accadrà qui)
+            TreeMap::new // Specifica il tipo di Map da restituire
+        ));
+    treeMap.forEach((k, v) -> sb.append(String.format("%30s = %s\n", k, v)));
+    ;
+
+    return sb.toString();
+  }
+
 }

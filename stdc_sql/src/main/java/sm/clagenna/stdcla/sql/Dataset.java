@@ -675,7 +675,7 @@ public class Dataset implements Closeable {
 
   private SqlTypes guessSqlType(String p_sz) {
     // ******   date *********
-    String lsz = p_sz.replace("\"", "");
+    String lsz = p_sz.replace("\"", "").trim();
     if (lsz.contains(ECurrencies.Euro.getSymbol()))
       lsz = lsz.replaceAll(ECurrencies.Euro.getSymbol(), "");
     if (lsz.contains(ECurrencies.Dollar.getSymbol()))

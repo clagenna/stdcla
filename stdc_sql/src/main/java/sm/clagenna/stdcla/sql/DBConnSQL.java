@@ -2,6 +2,7 @@ package sm.clagenna.stdcla.sql;
 
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
@@ -46,7 +47,7 @@ public class DBConnSQL extends DBConn {
   public void setServerId(EServerId id) {
     // nothing
   }
-  
+
   @Override
   public EServerId getServerId() {
     return EServerId.SqlServer;
@@ -67,51 +68,11 @@ public class DBConnSQL extends DBConn {
     // per compensare al SQLite pragma date 'yyyy-MM-dd'
   }
 
-  /**
-   * SQL Server gestisce le date come java.sql.Date
-   *
-   * @param p_stmt
-   *          lo statement SQl su cui applicare il valore
-   * @param p_index
-   *          index della colonna nello statement
-   * @param p_dt
-   *          il valore da settare
-   *
-   * @see <a href="https://en.wikipedia.org/wiki/ISO_8601}">ISO 8601 Date
-   *      Format</a>
-   * @see <a href="https://sqlite.org/datatype3.html">SQLite data Types</a>
-   */
-  @Override
-  public void setStmtDate(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
-    assignShowParameter(p_stmt, p_index, p_dt);
-    java.sql.Timestamp dt = null;
-    try {
-      if (p_dt instanceof java.sql.Date dt1) {
-        dt = new java.sql.Timestamp(dt1.getTime());
-      } else if (p_dt instanceof java.util.Date dt1) {
-        dt = new java.sql.Timestamp(dt1.getTime());
-      } else if (p_dt instanceof LocalDate ldt) {
-        java.util.Date udt = java.util.Date.from(ldt.atStartOfDay(ZoneId.systemDefault()).toInstant());
-        dt = new java.sql.Timestamp(udt.getTime());
-      } else if (p_dt instanceof LocalDateTime ldt) {
-//        ZonedDateTime zo = ldt.atZone(ZoneId.systemDefault());
-//        java.util.Date udt = java.util.Date.from(zo.toInstant());
-//        dt = new java.sql.Timestamp(udt.getTime());
-        dt = Timestamp.valueOf(ldt);
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    if (dt != null)
-      p_stmt.setTimestamp(p_index, dt);
-    else
-      p_stmt.setNull(p_index, Types.DATE);
-  }
-
   @Override
   public void setStmtInt(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
-    assignShowParameter(p_stmt, p_index, p_dt);
     Integer iv = null;
+    if ( isShowStatement())
+      setStmtParam(p_stmt, p_index, p_dt);
     if (p_dt instanceof Integer ii) {
       iv = ii;
     } else if (p_dt instanceof Short ii) {
@@ -130,10 +91,54 @@ public class DBConnSQL extends DBConn {
     }
   }
 
+  /**
+   * SQL Server gestisce le date come java.sql.Date
+   *
+   * @param p_stmt
+   *          lo statement SQl su cui applicare il valore
+   * @param p_index
+   *          index della colonna nello statement
+   * @param p_dt
+   *          il valore da settare
+   *
+   * @see <a href="https://en.wikipedia.org/wiki/ISO_8601}">ISO 8601 Date
+   *      Format</a>
+   * @see <a href="https://sqlite.org/datatype3.html">SQLite data Types</a>
+   */
+  @Override
+  public void setStmtDate(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
+    java.sql.Timestamp dt = null;
+    if ( isShowStatement())
+      setStmtParam(p_stmt, p_index, p_dt);
+    try {
+      if (p_dt instanceof java.sql.Date dt1) {
+        dt = new java.sql.Timestamp(dt1.getTime());
+      } else if (p_dt instanceof java.util.Date dt1) {
+        dt = new java.sql.Timestamp(dt1.getTime());
+      } else if (p_dt instanceof LocalDate ldt) {
+        java.util.Date udt = java.util.Date.from(ldt.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        dt = new java.sql.Timestamp(udt.getTime());
+      } else if (p_dt instanceof LocalDateTime ldt) {
+        //        ZonedDateTime zo = ldt.atZone(ZoneId.systemDefault());
+        //        java.util.Date udt = java.util.Date.from(zo.toInstant());
+        //        dt = new java.sql.Timestamp(udt.getTime());
+        dt = Timestamp.valueOf(ldt);
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    if (dt != null)
+      p_stmt.setTimestamp(p_index, dt);
+    else
+      p_stmt.setNull(p_index, Types.DATE);
+  }
+
   @Override
   public void setStmtDatetime(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
-    assignShowParameter(p_stmt, p_index, p_dt);
     java.sql.Timestamp dt = null;
+    if ( isShowStatement())
+      setStmtParam(p_stmt, p_index, p_dt);
+
     if (p_dt instanceof java.sql.Timestamp pdt) {
       dt = pdt;
     } else if (p_dt instanceof java.util.Date udt) {
@@ -153,9 +158,27 @@ public class DBConnSQL extends DBConn {
   }
 
   @Override
+  public LocalDateTime getStmtDatetime(ResultSet p_res, int p_index) throws SQLException {
+    Timestamp ts = p_res.getTimestamp(p_index);
+    if (ts != null)
+      return ts.toLocalDateTime();
+    return null;
+  }
+
+  @Override
+  public LocalDateTime getStmtDatetime(ResultSet p_res, String szColNam) throws SQLException {
+    Timestamp ts = p_res.getTimestamp(szColNam);
+    if (ts != null)
+      return ts.toLocalDateTime();
+    return null;
+  }
+
+  @Override
   public void setStmtImporto(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
-    assignShowParameter(p_stmt, p_index, p_dt);
     BigDecimal bd = null;
+    if ( isShowStatement())
+      setStmtParam(p_stmt, p_index, p_dt);
+
     if (p_dt instanceof Double dbl) {
       bd = BigDecimal.valueOf(dbl);
     } else if (p_dt instanceof Integer ii) {
@@ -168,9 +191,35 @@ public class DBConnSQL extends DBConn {
   }
 
   @Override
+  public BigDecimal getStmtImporto(ResultSet p_res, int p_index) throws SQLException {
+    BigDecimal bd = p_res.getBigDecimal(p_index);
+    return bd;
+  }
+
+  @Override
+  public BigDecimal getStmtImporto(ResultSet p_res, String p_colNam) throws SQLException {
+    BigDecimal bd = p_res.getBigDecimal(p_colNam);
+    return bd;
+  }
+
+  @Override
+  public Double getStmtDouble(ResultSet p_res, int p_index) throws SQLException {
+    Double bd = p_res.getDouble(p_index);
+    return bd;
+  }
+
+  @Override
+  public Double getStmtDouble(ResultSet p_res, String pColNam) throws SQLException {
+    Double bd = p_res.getDouble(pColNam);
+    return bd;
+  }
+
+  @Override
   public void setStmtDouble(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
-    assignShowParameter(p_stmt, p_index, p_dt);
     Double bd = null;
+    if ( isShowStatement())
+      setStmtParam(p_stmt, p_index, p_dt);
+
     if (p_dt instanceof Double dbl) {
       bd = dbl;
     } else if (p_dt instanceof Integer ii) {
@@ -184,8 +233,9 @@ public class DBConnSQL extends DBConn {
 
   @Override
   public void setStmtString(PreparedStatement p_stmt, int p_index, Object p_sz) throws SQLException {
-    assignShowParameter(p_stmt, p_index, p_sz);
     String sz = null;
+    if ( isShowStatement())
+      setStmtParam(p_stmt, p_index, p_sz);
     if (null != p_sz)
       sz = (String) p_sz;
     if (null != sz)
@@ -213,24 +263,24 @@ public class DBConnSQL extends DBConn {
     return sb.toString();
   }
 
-//  public String toString(PreparedStatement stmt) {
-//    if ( !isShowStatement())
-//      return "no show statement!";
-//    StringBuilder sb = new StringBuilder(stmt.toString());
-//    if ( sb.indexOf(": null") > 0 )
-//      sb = new StringBuilder(sho);
-//    int nPos = 1;
-//    int k = 0;
-//    while (nPos > 0) {
-//      String szPh = String.format("@P%d", k++);
-//      nPos = sb.indexOf(szPh);
-//      if (nPos > 0) {
-//        String szVal = getStmtShowParameter(k);
-//        int nPos2 = nPos + szPh.length();
-//        sb.replace(nPos, nPos2, szVal);
-//      }
-//    }
-//    return sb.toString();
-//  }
+  //  public String toString(PreparedStatement stmt) {
+  //    if ( !isShowStatement())
+  //      return "no show statement!";
+  //    StringBuilder sb = new StringBuilder(stmt.toString());
+  //    if ( sb.indexOf(": null") > 0 )
+  //      sb = new StringBuilder(sho);
+  //    int nPos = 1;
+  //    int k = 0;
+  //    while (nPos > 0) {
+  //      String szPh = String.format("@P%d", k++);
+  //      nPos = sb.indexOf(szPh);
+  //      if (nPos > 0) {
+  //        String szVal = getStmtShowParameter(k);
+  //        int nPos2 = nPos + szPh.length();
+  //        sb.replace(nPos, nPos2, szVal);
+  //      }
+  //    }
+  //    return sb.toString();
+  //  }
 
 }

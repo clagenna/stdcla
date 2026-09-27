@@ -99,18 +99,19 @@ public class ParseData {
 
   public static LocalDateTime parseData(String p_sz) {
     LocalDateTime dtRet = null;
-    if (p_sz == null)
+    if ( !Utils.isValue(p_sz))
       return null;
     @SuppressWarnings("unused") int k = 0;
+    String szVal = p_sz.trim();
     for (DateTimeFormatter pat : s_arrpat) {
       try {
-        dtRet = LocalDateTime.parse(p_sz, pat);
+        dtRet = LocalDateTime.parse(szVal, pat);
       } catch (DateTimeParseException e) {
         //
       }
       try {
         if (dtRet == null) {
-          LocalDate ldt = LocalDate.parse(p_sz, pat);
+          LocalDate ldt = LocalDate.parse(szVal, pat);
           if (ldt != null)
             dtRet = ldt.atStartOfDay();
         }

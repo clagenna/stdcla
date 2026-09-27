@@ -372,7 +372,8 @@ public class Utils {
    * Parse una stringa a Double, considerando il locale di default.<br/>
    * Se la stringa contiene 1 carattere non numerico alla fine lo elimina e
    * riprova a parsare.<br/>
-   * Se la stringa contiene 2 decimali dopo "," o "." allora forza il locale a ITA o USA.<br/>
+   * Se la stringa contiene 2 decimali dopo "," o "." allora forza il locale a
+   * ITA o USA.<br/>
    * se la stringa contiene >1 carattere non numerico torna null.<br/>
    *
    * @param p_sz
@@ -381,7 +382,7 @@ public class Utils {
    */
   public static Double parseDouble(String p_sz) {
     Double ii = null;
-    Locale locale = Locale.getDefault();
+    Locale locale = getLocale();
     if (null == p_sz)
       return ii;
     // String cleaned = p_sz.replaceAll("\\p{C}", "").trim(); !! non funziona (UNICODE!)
@@ -390,24 +391,29 @@ public class Utils {
     if (clean2.length() != cleaned.length()) {
       return ii;
     }
-    // ---------------------------------------------------
-    // questo perche' dagli USA mi arrivano double della forma "-9,99" ?!?
-    // devo sovrascrivere il tipo di formatter
-    int nv = cleaned.length() - cleaned.lastIndexOf(",");
-    if (nv == 3)
-      locale = Locale.ITALY;
-    // ---------------------------------------------------
-    // Se ho 2 decimali dopo il punto, allora sono in formato USA
-    nv = cleaned.length() - cleaned.lastIndexOf(".");
-    if (nv == 3)
-      locale = Locale.US;
-    // ---------------------------------------------------
+    // se nessuno ha impostato il locale, allora provo ad indovinare se sono in formato ITA o USA
+    if (null == locale) {
+      // ---------------------------------------------------
+      // calcolo la quantita' di decimali dopo la virgola, se sono 2 allora sono in formato ITA
+      // questo perche' dagli USA mi arrivano double della forma "-9,99" ?!?
+      // devo sovrascrivere il tipo di formatter
+      int nv = cleaned.length() - cleaned.lastIndexOf(",");
+      if (nv == 3)
+        locale = Locale.ITALY;
+      // ---------------------------------------------------
+      // Se ho 2 decimali dopo il punto, allora sono in formato USA
+      // attenzione: mi può arrivare un valore USA 500.0 (WISE) mi rimane ITA 
+      nv = cleaned.length() - cleaned.lastIndexOf(".");
+      if (nv == 3)
+        locale = Locale.US;
+      // ---------------------------------------------------
+    }
     NumberFormat fmt = NumberFormat.getInstance(locale);
     try {
       // cambiare i "." e "," a priori è un arbitrio, va chiamata la Utils.setLocale()
       // String sz = psz.trim().replace(S_Group_Sep, "").replace(S_Decimal_Sep, ".");
       double mult = 1.0;
-      if (cleaned.length() > 1) {
+      if (cleaned.length() > 0) {
         // verifico se il primo carattere è un segno, in tal caso lo tolgo e lo salvo per moltiplicare il risultato
         String strt = cleaned.substring(0, 1);
         if (strt.equals("-") || strt.equals("+")) {
@@ -542,6 +548,14 @@ public class Utils {
     LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
     loggerConfig.setLevel(Level.DEBUG);
     ctx.updateLoggers(); // This causes all Loggers to refetch information from their LoggerConfig.
+  }
+
+  public static boolean dateTimeBetween(LocalDateTime dttest, LocalDateTime dtmin, LocalDateTime dtmax) {
+    if ( null == dttest || null == dtmin || null == dtmax)
+      throw new IllegalArgumentException("Una delle date e' *NULL*, non posso fare il test");
+    if ( dtmin.isAfter(dtmax) )
+      throw new IllegalArgumentException("La data di inizio deve essere <= della data di fine");
+    return !dttest.isBefore(dtmin) && !dttest.isAfter(dtmax);
   }
 
   public static LocalDateTime min(LocalDateTime ldtMin, LocalDateTime dtTest) {

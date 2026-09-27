@@ -1,7 +1,5 @@
 package sm.clagenna.stdcla.sql;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.sql.Types;
 
 import org.apache.logging.log4j.LogManager;
@@ -24,7 +22,7 @@ import sm.clagenna.stdcla.utils.Utils;
  * <li><b>inferredDate</b>: true se la colonna è stata inferita come data</li>
  * <li><b>numeric</b>: true se la colonna è numerica</li>
  * </ul>
- * 
+ *
  * @author clagenna
  *
  */
@@ -103,17 +101,17 @@ public class DtsCol implements Cloneable {
   public Object parse(String p_szv) {
     Object obj = null;
     String sz2 = null;
+    if ( !Utils.isValue(p_szv))
+      return obj;
+    sz2 = p_szv.trim();
     try {
       switch (type) {
         case SqlTypes.SMALLINT:
         case SqlTypes.INTEGER:
-          if (null != p_szv)
-            sz2 = p_szv.trim();
-          if (null != sz2 && sz2.length() > 0)
-            obj = Integer.parseInt(sz2);
+          obj = Integer.parseInt(sz2);
           break;
         case SqlTypes.VARCHAR:
-          obj = p_szv;
+          obj = sz2;
           break;
         case SqlTypes.NUMERIC:
         case SqlTypes.DECIMAL:
@@ -121,40 +119,32 @@ public class DtsCol implements Cloneable {
         case SqlTypes.DOUBLE:
         case SqlTypes.REAL:
           obj = Double.valueOf(0);
-          if (null != p_szv) {
-            sz2 = p_szv.trim();
-            
-//            String sz16le = new String(sz2.getBytes(), StandardCharsets.UTF_16LE);
-//            String szUtf8 = new String(sz2.getBytes(), StandardCharsets.UTF_8);
-//            String sz1252 = new String(sz2.getBytes(), Charset.forName("windows-1252"));
-//            String clean = sz2.replaceAll("\\p{C}", ""); // rimuove control/non-character
-            char cc = sz2.charAt(sz2.length() - 1);
-            if ((int)cc > 65000) {
-              sz2 = sz2.substring(0, sz2.length() - 1);
-            }
+          //            String sz16le = new String(sz2.getBytes(), StandardCharsets.UTF_16LE);
+          //            String szUtf8 = new String(sz2.getBytes(), StandardCharsets.UTF_8);
+          //            String sz1252 = new String(sz2.getBytes(), Charset.forName("windows-1252"));
+          //            String clean = sz2.replaceAll("\\p{C}", ""); // rimuove control/non-character
+          char cc = sz2.charAt(sz2.length() - 1);
+          if (cc > 65000) {
+            sz2 = sz2.substring(0, sz2.length() - 1);
+          }
+          if (sz2.contains(ECurrencies.Euro.getSymbol()))
+            sz2 = sz2.replaceAll(ECurrencies.Euro.getSymbol(), "");
+          if (sz2.contains(ECurrencies.Dollar.getSymbol()))
+            sz2 = sz2.replaceAll(ECurrencies.Dollar.getSymbol(), "");
+          sz2 = sz2.trim();
 
-            if (sz2.contains(ECurrencies.Euro.getSymbol()))
-              sz2 = sz2.replaceAll(ECurrencies.Euro.getSymbol(), "");
-            if (sz2.contains(ECurrencies.Dollar.getSymbol()))
-              sz2 = sz2.replaceAll(ECurrencies.Dollar.getSymbol(), "");
-            sz2 = sz2.trim();
-
-            if (sz2.length() > 0) {
-              //            sz2 = sz2.replace(",", ".");
-              //            obj = Double.parseDouble(sz2);
-              obj = Utils.parseDouble(sz2);
-            }
+          if (sz2.length() > 0) {
+            //            sz2 = sz2.replace(",", ".");
+            //            obj = Double.parseDouble(sz2);
+            obj = Utils.parseDouble(sz2);
           }
           break;
+          
         case SqlTypes.DATE:
-          if (p_szv.startsWith("\""))
-            p_szv = p_szv.replaceAll("\"", "");
-          obj = ParseData.parseData(p_szv);
-          break;
         case SqlTypes.TIMESTAMP:
-          if (p_szv.startsWith("\""))
-            p_szv = p_szv.replaceAll("\"", "");
-          obj = ParseData.parseData(p_szv);
+          if (sz2.startsWith("\""))
+            sz2 = sz2.replace("\"", "");
+          obj = ParseData.parseData(sz2);
           break;
         default:
           s_log.error("Non interpreto tipo {} per col {}", type, name);

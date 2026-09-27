@@ -11,9 +11,7 @@ import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.sql.Statement;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.logging.log4j.Logger;
@@ -21,7 +19,6 @@ import org.apache.logging.log4j.Logger;
 import lombok.Getter;
 import lombok.Setter;
 import sm.clagenna.stdcla.utils.AppProperties;
-import sm.clagenna.stdcla.utils.ParseData;
 import sm.clagenna.stdcla.utils.Utils;
 
 public abstract class DBConn implements Closeable {
@@ -29,24 +26,22 @@ public abstract class DBConn implements Closeable {
   private static final String QRY_PATT_VIEW = "SELECT * FROM %s WHERE 1=1";
 
   @Getter @Setter
-  private String            host;
+  private String                 host;
   @Getter @Setter
-  private int               service;
+  private int                    service;
   @Getter @Setter
-  private String            dbname;
+  private String                 dbname;
   @Getter @Setter
-  private String            user;
+  private String                 user;
   @Getter @Setter
-  private String            passwd;
+  private String                 passwd;
   @Getter
-  private Connection        conn;
-  @Getter @Setter
-  private boolean           showStatement;
-  private int               stmtId;
-  private List<String>      liStmtParmeters;
-  private String            showSQLStmt;
-  private Savepoint         m_savePoint;
-  private PreparedStatement stmtLastRowId;
+  private Connection             conn;
+  private Savepoint              m_savePoint;
+  private PreparedStatement      stmtLastRowId;
+  @Getter
+  private boolean                showStatement;
+  private StmtShowQueryContainer ssqc;
 
   public DBConn() {
     //
@@ -57,7 +52,7 @@ public abstract class DBConn implements Closeable {
   public abstract String getURL();
 
   public abstract EServerId getServerId();
-  
+
   public abstract void setServerId(EServerId id);
 
   // public abstract int getLastIdentity() throws SQLException;
@@ -67,6 +62,20 @@ public abstract class DBConn implements Closeable {
   public abstract String getQueryLastRowID();
 
   public abstract String getQueryListViews();
+
+  // Getters generalizzati per i PreparedStatement
+
+  public abstract LocalDateTime getStmtDatetime(ResultSet p_res, int p_index) throws SQLException;
+
+  public abstract LocalDateTime getStmtDatetime(ResultSet p_res, String p_colName) throws SQLException;
+
+  public abstract BigDecimal getStmtImporto(ResultSet p_res, int p_index) throws SQLException;
+
+  public abstract BigDecimal getStmtImporto(ResultSet p_res, String p_colName) throws SQLException;
+
+  public abstract Double getStmtDouble(ResultSet p_res, int p_index) throws SQLException;
+
+  public abstract Double getStmtDouble(ResultSet p_res, String p_colName) throws SQLException;
 
   /**
    * La funzione serve per suplire alla (pessima) caratteristica di SQLite3 che
@@ -92,6 +101,66 @@ public abstract class DBConn implements Closeable {
   public abstract void setStmtString(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException;
 
   public abstract String addTopRecs(String qry, int qta);
+
+  /**
+   * Ritorna un PreparedStatement pronto per l'esecuzione della query
+   * p_qry.<br/>
+   * Se showStatement=true allora viene memorizzata la query per interpretare i
+   * suoi parametri posizionali per poterla visualizzare in fase di debug.
+   *
+   * @param p_qry
+   *          Query da eseguire
+   * @return PreparedStatement pronto per l'esecuzione
+   * @throws SQLException
+   */
+  public PreparedStatement prepareStatement(String p_qry) throws SQLException {
+    if (null == conn)
+      throw new SQLException("Non ho aperto il DB ad ora!");
+    PreparedStatement stmt = conn.prepareStatement(p_qry);
+    if (isShowStatement())
+      addShowStatement(stmt, p_qry);
+    return stmt;
+  }
+
+  public void setShowStatement(boolean p_show) {
+    showStatement = p_show;
+  }
+
+  private void addShowStatement(PreparedStatement stmt, String p_qry) {
+    if (null == ssqc)
+      ssqc = new StmtShowQueryContainer(this);
+    ssqc.assign(stmt, p_qry);
+  }
+
+  public void closeStmt(PreparedStatement stmt) {
+    if (null == stmt)
+      return;
+    if (null != ssqc)
+      ssqc.remove(stmt);
+    try {
+      if (stmt.isClosed())
+        return;
+      stmt.close();
+    } catch (SQLException e) {
+      getLog().error("Error closing statement, err={}", e.getMessage());
+    }
+  }
+
+  protected void setStmtParam(PreparedStatement p_stmt, int p_index, Object p_dt) {
+    if ( !isShowStatement())
+      return;
+    try {
+      ssqc.setStmtParam(p_stmt, p_index, p_dt);
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+  }
+
+  public String toString(PreparedStatement p_stmt) {
+    if ( !isShowStatement())
+      return "no show statement!";
+    return ssqc.toString(p_stmt);
+  }
 
   public Connection doConn() {
     String szUrl = getURL();
@@ -233,79 +302,95 @@ public abstract class DBConn implements Closeable {
     return bRet;
   }
 
-  // public abstract String toString(PreparedStatement stmt);
-  public String toString(PreparedStatement stmt) {
-    if ( !isShowStatement())
-      return "no show statement!";
-    StringBuilder sb = new StringBuilder(stmt.toString());
-    if (sb.indexOf(": null") > 0)
-      sb = new StringBuilder(showSQLStmt);
-    int nPos = 1;
-    int k = 0;
-    while (nPos > 0) {
-      String szPh = String.format("@P%d", k++);
-      nPos = sb.indexOf(szPh);
-      if (nPos > 0) {
-        String szVal = getStmtShowParameter(k);
-        int nPos2 = nPos + szPh.length();
-        sb.replace(nPos, nPos2, szVal);
-      }
-    }
-    return sb.toString();
-  }
+  /*
+   * SOLO SQL Server.<br/> Ritorna la query SQL del {@link PreparedStatement}
+   * con i parametri valorizzati, cosi' da poterla visualizzare in fase di debug
+   * (solo se showStatement=true)
+   */
+  //  public String toString(PreparedStatement stmt) {
+  //    if ( !isShowStatement())
+  //      return "no show statement!";
+  //    setShowSQL(stmt.toString(), stmt);
+  //    StringBuilder sb = new StringBuilder(stmt.toString());
+  //    if (sb.indexOf(": null") > 0)
+  //      sb = new StringBuilder(showSQLStmt);
+  //    int nPos = 1;
+  //    int k = 0;
+  //    while (nPos > 0) {
+  //      String szPh = String.format("@P%d", k++);
+  //      nPos = sb.indexOf(szPh);
+  //      if (nPos > 0) {
+  //        String szVal = getStmtShowParameter(k);
+  //        int nPos2 = nPos + szPh.length();
+  //        sb.replace(nPos, nPos2, szVal);
+  //      }
+  //    }
+  //    return sb.toString();
+  //  }
 
-  protected String getStmtShowParameter(int k) {
-    if ( !isShowStatement() || null == liStmtParmeters)
-      return "";
-    // RICORDA!: l'indice 'k' e' 1-based !!!
-    if (k > liStmtParmeters.size())
-      return "";
-    return liStmtParmeters.get(k - 1);
-  }
+  //
+  //  protected String getStmtShowParameter(int k) {
+  //    // RICORDA!: l'indice 'k' e' 1-based !!!
+  //    if ( !isShowStatement() || null == liStmtParmeters || (k > liStmtParmeters.size()))
+  //      return "";
+  //    return liStmtParmeters.get(k - 1);
+  //  }
 
-  protected void assignShowParameter(PreparedStatement stmt, int pIndx, Object pVal) {
-    if ( !isShowStatement())
-      return;
-    // RICORDA ! pIndx e' 1-based! 
-    if (stmtId != stmt.hashCode() || pIndx == 1)
-      liStmtParmeters = new ArrayList<String>();
-    stmtId = stmt.hashCode();
-    String szVal = "*null*";
-    while (liStmtParmeters.size() < pIndx - 1)
-      liStmtParmeters.add(szVal);
-    if (null == pVal) {
-      liStmtParmeters.add(pIndx - 1, szVal);
-      return;
-    }
+  /*
+   * Memorizza il parametro valorizzato nel PreparedStatement, cosi' da poterlo
+   * visualizzare in fase di debug (solo se showStatement=true)<br/> Viene
+   * inizializzata sel pIndx==1, cosi' da poter memorizzare i parametri della
+   * query anche se non vengono valorizzati tutti i parametri (es. se la query
+   * ha 5 parametri e ne valorizzo solo 3, gli altri 2 li vedo come *null*).
+   * @param stmt PreparedStatement
+   * @param pIndx indice del parametro (1-based)
+   * @param pVal valore del parametro
+   * @deprecated usare la StmtShowQuery
+   */
+  //  protected void assignShowParameter(PreparedStatement stmt, int pIndx, Object pVal) {
+  //    if ( !isShowStatement())
+  //      return;
+  //    // RICORDA ! pIndx e' 1-based!
+  //    if (stmtId != stmt.hashCode() || pIndx == 1)
+  //      liStmtParmeters = new ArrayList<String>();
+  //    stmtId = stmt.hashCode();
+  //    String szVal = "*null*";
+  //    // lo riempio di *null* almeno fino all'indice pIndx-1, cosi' se non viene valorizzato un parametro, lo vedo come *null*
+  //    while (liStmtParmeters.size() < pIndx - 1)
+  //      liStmtParmeters.add(szVal);
+  //    if (null == pVal) {
+  //      liStmtParmeters.add(pIndx - 1, szVal);
+  //      return;
+  //    }
+  //    // converto il parametro in stringa
+  //    szVal = switch (pVal) {
+  //      case String str -> str;
+  //      case Integer ii -> String.valueOf(ii);
+  //      case Long li -> String.valueOf(li);
+  //      case Double dbl -> Utils.formatDouble(dbl);
+  //      case BigDecimal bd -> Utils.formatDouble(bd.doubleValue());
+  //      case java.util.Date dt -> ParseData.formatDate(dt);
+  //      // case java.sql.Date dtq -> ParseData.formatDate(dt);
+  //      case LocalDateTime dtt -> ParseData.formatDate(dtt);
+  //      //
+  //      default -> szVal;
+  //    };
+  //    liStmtParmeters.add(pIndx - 1, szVal);
+  //  }
 
-    szVal = switch (pVal) {
-      case String str -> str;
-      case Integer ii -> String.valueOf(ii);
-      case Long li -> String.valueOf(li);
-      case Double dbl -> Utils.formatDouble(dbl);
-      case BigDecimal bd -> Utils.formatDouble(bd.doubleValue());
-      case java.util.Date dt -> ParseData.formatDate(dt);
-      // case java.sql.Date dtq -> ParseData.formatDate(dt);
-      case LocalDateTime dtt -> ParseData.formatDate(dtt);
-      //
-      default -> szVal;
-    };
-    liStmtParmeters.add(pIndx - 1, szVal);
-  }
-
-  public void setShowSQL(String pqry, Object pstmt) {
-    stmtId = pstmt.hashCode();
-    StringBuilder sb = new StringBuilder(pqry);
-    int k = 0;
-    int interrPoint = 0;
-    do {
-      interrPoint = sb.indexOf("?");
-      if (interrPoint >= 0) {
-        String szParm = String.format("@P%d", k++);
-        sb.replace(interrPoint, interrPoint + 1, szParm);
-      }
-    } while (interrPoint > 0);
-    showSQLStmt = sb.toString();
-  }
+  //  public void setShowSQL(String pqry, Object pstmt) {
+  //    stmtId = pstmt.hashCode();
+  //    StringBuilder sb = new StringBuilder(pqry);
+  //    int k = 0;
+  //    int interrPoint = 0;
+  //    do {
+  //      interrPoint = sb.indexOf("?");
+  //      if (interrPoint >= 0) {
+  //        String szParm = String.format("@P%d", k++);
+  //        sb.replace(interrPoint, interrPoint + 1, szParm);
+  //      }
+  //    } while (interrPoint > 0);
+  //    showSQLStmt = sb.toString();
+  //  }
 
 }
