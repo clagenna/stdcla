@@ -1,3 +1,4 @@
+@SuppressWarnings("requires-automatic")
 module stdc_pdf {
   exports sm.clagenna.stdcla.pdf;
 
@@ -9,6 +10,7 @@ module stdc_pdf {
   requires org.apache.logging.log4j;
 
   requires org.apache.pdfbox;
+  
   // requires transitive org.apache.pdfbox.io;
   requires net.sf.cssbox.pdf2dom;
   requires org.apache.commons.text;

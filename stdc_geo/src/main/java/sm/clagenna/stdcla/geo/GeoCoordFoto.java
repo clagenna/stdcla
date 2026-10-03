@@ -247,7 +247,7 @@ public class GeoCoordFoto extends GeoCoord implements Serializable {
     setSrcGeo(EGeoSrcCoord.foto);
   }
 
-  /**
+  /*
    * Questa legge lil file di foto alle sue dimensioni reali
    * 
    * @return

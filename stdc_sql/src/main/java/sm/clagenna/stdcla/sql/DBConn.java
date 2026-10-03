@@ -293,9 +293,14 @@ public abstract class DBConn implements Closeable {
     }
     szQry2 = addTopRecs(szQry2, 1);
     try (PreparedStatement stmt = conn.prepareStatement(szQry2)) {
-      try (ResultSet res = stmt.executeQuery()) {
+        ResultSet res = stmt.executeQuery();
         bRet = true;
-      }
+        // se lo metti in un try (resource) senza res.close()
+        // warning ---------------------------------^
+        // [try] auto-closeable resource res is never referenced in body of corresponding try statement
+        // se lo metti in un try (resource) con res.close() 
+        // da il warning DBConn.java:[300,11] [try] explicit call to close() on an auto-closeable resource
+        res.close();
     } catch (Exception e) {
       getLog().error("Errore Query: {}", e.getMessage());
     }

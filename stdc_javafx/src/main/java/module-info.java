@@ -2,7 +2,7 @@ module stdc_javafx {
   exports sm.clagenna.stdcla.javafx;
 
   requires javafx.base;
-  requires java.desktop;
+  requires transitive java.desktop;
   requires transitive stdc_sql;
   requires transitive stdc_utils;
   requires lombok;

@@ -1,4 +1,7 @@
+// senza quel SuppressWarnings dava warning durante la "mvn clean install"
+@SuppressWarnings("requires-automatic")
 module stdc_sql {
+  // c'era: @ SuppressWarnings("requires-transitive-automatic")
   exports sm.clagenna.stdcla.sql;
 
   requires transitive stdc_utils;
@@ -11,6 +14,9 @@ module stdc_sql {
   requires org.apache.poi.ooxml;
   requires transitive commons.math3;
   
-  requires com.opencsv;
-  requires org.xerial.sqlitejdbc;
+  // requires transitive com.opencsv;
+  // manda il warning:
+  // [exports] class CsvException in module com.opencsv is not indirectly exported using 'requires transitive'
+  requires transitive com.opencsv;
+  requires transitive org.xerial.sqlitejdbc;
 }

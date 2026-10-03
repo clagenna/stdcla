@@ -17,9 +17,11 @@
 		<compiler.plugin>3.12.1</compiler.plugin>
 		<log4j2.vers>2.24.1</log4j2.vers>
 		<slf4j.version>2.0.11</slf4j.version>
-		<maven.compiler.source>21</maven.compiler.source>
-		<maven.compiler.target>21</maven.compiler.target>
-		<lombok.version>1.18.40</lombok.version>
+		<java.version>25</java.version>
+		<maven.compiler.source>${java.version}</maven.compiler.source>
+		<maven.compiler.target>${java.version}</maven.compiler.target>
+		<maven.compiler.release>${java.version}</maven.compiler.release>
+		<lombok.version>1.18.42</lombok.version>
 		<javafx.version>25.0.2</javafx.version>
 	</properties>
 	<dependencies>

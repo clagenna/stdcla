@@ -41,6 +41,10 @@ public class CalcolaTaccheXY {
 //    return liTaccheX;
 //  }
   
+  public CalcolaTaccheXY() {
+    // niente da fare, classe statica
+  }
+  
   /**
    * Calcola la lista delle tacche da disegnare.
    *

@@ -11,6 +11,10 @@ public class FileSystemVisitatore implements IFSVisitatore {
 
   private static final Logger s_log = LogManager.getLogger(FileSystemVisitatore.class);
 
+  public FileSystemVisitatore() {
+    // niente da fare
+  }
+  
   @Override
   public void visit(FSDir p_vis) throws FileNotFoundException {
     // 2024-09-11 Tolto la dipendenza da AppProperties, FSDir indica la ricorsivita

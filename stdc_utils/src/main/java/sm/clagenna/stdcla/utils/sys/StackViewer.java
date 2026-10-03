@@ -1,6 +1,10 @@
 package sm.clagenna.stdcla.utils.sys;
 
 public class StackViewer {
+  
+  public StackViewer() {
+    // niente da fare, classe statica
+  }
 
   public static String viewStackTrace(String szId) {
     StackTraceElement[] stck = Thread.currentThread().getStackTrace();
