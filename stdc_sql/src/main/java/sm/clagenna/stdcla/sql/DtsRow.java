@@ -168,6 +168,28 @@ public class DtsRow implements Cloneable {
     ret = valori.get(ii);
     return ret;
   }
+  
+  public String getString(String col) {
+    Object ret = get(col);
+    if (null == ret)
+      return null;
+    if (ret instanceof String str)
+      return str;
+    return ret.toString();
+  }
+  
+  public Long getLong(String col) {
+    Object ret = get(col);
+    if (null == ret)
+      return null;
+    if (ret instanceof Long ll)
+      return ll;
+    if (ret instanceof Integer ii)
+      return (long) ii;
+    if (ret instanceof String str)
+      return Utils.parseLong(str);
+    return null;
+  }
 
   public double getDouble(String col) {
     Object ret = get(col);

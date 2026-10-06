@@ -17,6 +17,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import lombok.Getter;
@@ -26,6 +27,7 @@ import sm.clagenna.stdcla.sql.Dataset;
 import sm.clagenna.stdcla.sql.DtsCol;
 import sm.clagenna.stdcla.sql.DtsCols;
 import sm.clagenna.stdcla.sql.DtsRow;
+import sm.clagenna.stdcla.utils.Utils;
 
 // @ SuppressWarnings("this-escape")
 public class TableViewFiller extends Task<String> implements ITableColBuilder {
@@ -173,6 +175,71 @@ public class TableViewFiller extends Task<String> implements ITableColBuilder {
 
   private void creaTableView(Dataset p_dts) {
     DtsCols cols = p_dts.getColumns();
+    int k = 0;
+    for (DtsCol col : cols.getColumns()) {
+      final int j = k++;
+      String szColNam = col.getName();
+      if (isExcludedCol(szColNam))
+        continue;
+      String cssAlign = FX_ALIGNMENT_CENTER_LEFT;
+      switch (col.getType()) {
+        case BIGINT:
+        case DATE:
+        case DOUBLE:
+        case DECIMAL:
+        case FLOAT:
+        case INTEGER:
+        case NUMERIC:
+        case REAL: {
+          // ---------------  Colonne Numeriche -----------------
+          TableColumn<List<Object>, Number> tbcol = new TableColumn<>(szColNam);
+          cssAlign = FX_ALIGNMENT_CENTER_RIGHT;
+          // setCellValueFactory definisce cosa far vedere come valore della cella, in questo caso viene convertito in Number
+          tbcol.setCellValueFactory(obj -> {
+            SimpleObjectProperty<Number> cel = new SimpleObjectProperty<>((Number) Utils.parseDouble(obj.getValue().get(j)));
+            return cel;
+          });
+          // setCellFactory definisce come viene visualizzato il contenuto della cella, in questo caso allineato a destra e formattato come importo
+          tbcol.setCellFactory(param -> new TableCell<List<Object>, Number>() {
+            @Override
+            protected void updateItem(Number item, boolean empty) {
+              super.updateItem(item, empty);
+              setStyle(FX_ALIGNMENT_CENTER_RIGHT);
+              if (empty || null == item) {
+                setText("");
+                return;
+              }
+              setText(Utils.formatImporto(item, true));
+            }
+          });
+
+          tbcol.setId(String.format(TBCOL_MASK, szColNam.toLowerCase()));
+          // tbcol.setStyle(cssAlign);
+          // colBuilded(tbcol);
+          Platform.runLater(() -> tableview.getColumns().add(tbcol));
+        }
+          break;
+        default: {
+          // ---------------  Colonne Testuali -----------------
+          TableColumn<List<Object>, Object> tbcol = new TableColumn<>(szColNam);
+          cssAlign = FX_ALIGNMENT_CENTER_LEFT;
+          tbcol.setCellValueFactory(param -> {
+            SimpleObjectProperty<Object> cel = new SimpleObjectProperty<>(formattaCella(param.getValue().get(j)));
+            return cel;
+          });
+          tbcol.setId(String.format(TBCOL_MASK, szColNam.toLowerCase()));
+          tbcol.setStyle(cssAlign);
+          // colBuilded(tbcol);
+          Platform.runLater(() -> tableview.getColumns().add(tbcol));
+        }
+          break;
+      }
+    }
+  }
+
+  @SuppressWarnings("unused")
+  private void creaTableView_Old(Dataset p_dts) {
+    DtsCols cols = p_dts.getColumns();
     // System.out.printf("creaTableView.nCols=%d\n", cols.size());
     int k = 0;
     for (DtsCol col : cols.getColumns()) {
@@ -270,7 +337,7 @@ public class TableViewFiller extends Task<String> implements ITableColBuilder {
         if ((Float) p_o == 0)
           return "";
         // return p_o;
-        return fmtDbl.format(((Float) p_o).doubleValue());
+        return fmtDbl.format( ((Float) p_o).doubleValue());
       case "Double":
         if ((Double) p_o == 0)
           return "";
@@ -279,6 +346,25 @@ public class TableViewFiller extends Task<String> implements ITableColBuilder {
     }
     return p_o;
   }
+
+  /*
+   * Torna una stringa formattata in base al tipo di dato, oppure null
+   * @param p_o
+   * @return
+   */
+  //  private Number formattaCellaNum(Object p_o) {
+  //    if (null == p_o)
+  //      return null;
+  //
+  //    Number retVal = switch (p_o.getClass().getSimpleName()) {
+  //      case "String" -> Utils.parseDouble((String) p_o);
+  //      case "Integer" -> (Integer) p_o == 0 ? null : (Integer) p_o;
+  //      case "Float" -> (Float) p_o == 0 ? null : (Float) p_o;
+  //      case "Double" -> (Double) p_o == 0 ? null : (Double) p_o;
+  //      default -> null;
+  //    };
+  //    return retVal;
+  //  }
 
   @Override
   public void addTableColBuilderListener(ITableColBuilderListener<List<Object>, Object> liste) {

@@ -266,6 +266,11 @@ public abstract class DBConn implements Closeable {
     conn = null;
   }
 
+  /**
+   * Legge le proprietà del DB dal file di properties fornito.
+   *
+   * @param p_props
+   */
   public void readProperties(AppProperties p_props) {
     String szv = p_props.getProperty(AppProperties.CSZ_PROP_DB_name);
     setDbname(szv);

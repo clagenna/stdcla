@@ -443,6 +443,12 @@ public class Utils {
     return ii;
   }
 
+  public static String formatDouble(Number dbl) {
+    if (null == dbl)
+      return null;
+    return formatDouble(dbl.doubleValue());
+  }
+
   public static String formatDouble(Double dbl) {
     String szRet = null;
     if (null == dbl)
@@ -454,10 +460,57 @@ public class Utils {
     return szRet;
   }
 
+  public static String formatImporto(Number dbl) {
+    return formatImporto(dbl, false);
+  }
+
+  public static String formatImporto(Number dbl, boolean blankIfZero) {
+    if (null == dbl)
+      return null;
+    return formatImporto(dbl.doubleValue(), blankIfZero);
+  }
+
+  public static String formatImporto(Double dbl) {
+    return formatImporto(dbl, false);
+  }
+
+  public static String formatImporto(Double dbl, boolean blankIfZero) {
+    String szRet = "";
+    if (null == dbl || dbl.doubleValue() == 0)
+      return szRet;
+    if (null == S_LOCALE)
+      Utils.setLocale(Locale.getDefault());
+    // szRet = s_fmtDbl.format(dbl);
+    NumberFormat fmt = NumberFormat.getInstance(S_LOCALE);
+    szRet = fmt.format(dbl);
+
+    String decSep = null;
+    int qtaDec = 0;
+    if (fmt instanceof DecimalFormat df)
+      decSep = String.valueOf(df.getDecimalFormatSymbols().getDecimalSeparator());
+    if (null != decSep) {
+      int pos = szRet.lastIndexOf(decSep);
+      if (pos >= 0)
+        qtaDec = szRet.length() - pos - 1;
+      szRet += switch (qtaDec) {
+        case 0 -> decSep + "00";
+        case 1 -> "0";
+        default -> "";
+      };
+    }
+    return szRet;
+  }
+
   public static String formatLong(Long ll) {
+    return formatLong(ll, false);
+  }
+
+  public static String formatLong(Long ll, boolean blankIfZero) {
     String szRet = null;
     if (null == ll)
       return szRet;
+    if (blankIfZero && ll.longValue() == 0)
+      return "";
     if (null == S_LOCALE)
       Utils.setLocale(Locale.getDefault());
     NumberFormat fmt = NumberFormat.getInstance(S_LOCALE);

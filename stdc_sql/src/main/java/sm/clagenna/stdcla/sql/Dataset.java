@@ -51,7 +51,7 @@ import sm.clagenna.stdcla.utils.ParseData;
 import sm.clagenna.stdcla.utils.Utils;
 import sm.clagenna.stdcla.utils.sys.ex.DatasetException;
 
-public class Dataset implements Closeable {
+public class Dataset implements Closeable, Iterable<DtsRow> {
   private static final Logger s_log             = LogManager.getLogger(Dataset.class);
   private static final String DEFAULT_CSV_DELIM = ";";
   @Getter @Setter
@@ -1375,6 +1375,10 @@ public class Dataset implements Closeable {
       lim.add(mp);
     }
     return lim;
+  }
+
+  public Iterator<DtsRow> iterator() {
+    return righe.iterator();
   }
 
 }

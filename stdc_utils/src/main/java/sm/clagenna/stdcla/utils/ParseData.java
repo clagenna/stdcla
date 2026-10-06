@@ -103,6 +103,9 @@ public class ParseData {
       return null;
     @SuppressWarnings("unused") int k = 0;
     String szVal = p_sz.trim();
+    // a volte la stringa contiene il separatore 'T' ma non la 'Z' finale !!!
+    if (szVal.contains("T") && !szVal.endsWith("Z"))
+      szVal += "Z";
     for (DateTimeFormatter pat : s_arrpat) {
       try {
         dtRet = LocalDateTime.parse(szVal, pat);
@@ -258,6 +261,10 @@ public class ParseData {
     return ParseData.formatDate(ParseData.toLocalDateTime(p_ldt));
   }
 
+  public static Object formatDate(LocalDate dtSolo) {
+    return ParseData.formatDate(dtSolo.atStartOfDay());
+  }
+
   public static String formatDate(LocalDateTime p_ldt) {
     String szRet = null;
     if (null == p_ldt)
@@ -295,9 +302,29 @@ public class ParseData {
     return Timestamp.valueOf(p_ldt);
   }
 
+  /**
+   * Converte un LocalDateTime in java.util.Date
+   * 
+   * @param dt LocalDateTime da convertire
+   * @return java.util.Date corrispondente
+   */
   public static Date toDate(LocalDateTime dt) {
     Date dtRet = Date.from(dt.atZone(ZoneId.systemDefault()).toInstant());
     return dtRet;
+  }
+
+  /**
+   * Ritorna un LocalDateTime con l'orario azzerato (00:00:00) a partire da un
+   * LocalDateTime fornito
+   * 
+   * @param dt con LocalDateTime con orario non azzerato
+   * @return LocalDateTime con orario azzerato (00:00:00)
+   */
+  public static LocalDateTime toLocalDateSolo(LocalDateTime dt) {
+    if (null == dt)
+      return null;
+    LocalDate dtSolo = dt.toLocalDate();
+    return dtSolo.atStartOfDay();
   }
 
   public static LocalDateTime toLocalDateTime(Object p_ldt) {
