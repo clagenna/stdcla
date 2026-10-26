@@ -109,18 +109,18 @@ public class DoZoomPane extends StackPane {
 
   private void setupAutosize() {
     // Centra/scala inizialmente quando cambia la dimensione del contenitore
-    widthProperty().addListener((obj, ov, nv) -> fitToViewport());
-    heightProperty().addListener((obj, ov, nv) -> fitToViewport());
+    widthProperty().addListener((_, _, _) -> fitToViewport());
+    heightProperty().addListener((_, _, _) -> fitToViewport());
 
     // Se vuoi che il contenuto si ridisponga al resize del pane interno
-    drawPane.layoutBoundsProperty().addListener((obj, ov, nv) -> fitToViewport());
+    drawPane.layoutBoundsProperty().addListener((_, _, _) -> fitToViewport());
 
     // Applica una volta dopo il layout iniziale
-    sceneProperty().addListener((obj, ov, newScene) -> {
+    sceneProperty().addListener((_, _, newScene) -> {
       if (newScene != null) {
-        newScene.windowProperty().addListener((obj2, ov2, nw) -> {
+        newScene.windowProperty().addListener((_, _, nw) -> {
           if (nw != null) {
-            nw.setOnShown(ob -> fitToViewport());
+            nw.setOnShown(_ -> fitToViewport());
           }
         });
       }

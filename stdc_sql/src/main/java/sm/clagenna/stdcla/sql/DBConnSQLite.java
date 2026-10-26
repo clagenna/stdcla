@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -51,13 +52,38 @@ public class DBConnSQLite extends DBConn {
     super();
   }
 
+  public DBConnSQLite(String p_dbNam) {
+    setDbname(p_dbNam);
+  }
+
   @Override
   public String getQueryListViews() {
     return QRY_LIST_VIEWS;
   }
 
-  public DBConnSQLite(String p_dbNam) {
-    setDbname(p_dbNam);
+  /**
+   * Esegue il backup del DB SQLite in un file con suffisso data ora odierna
+   *
+   * @param pthDestDir
+   *          directory di destinazione del backup
+   * @return Path del file di backup creato, null se errore
+   */
+  public Path backupDB(Path pthDestDir) {
+    Path pthDB = Paths.get(getDbname());
+    String dbName = pthDB.getFileName().toString();
+    int i = dbName.lastIndexOf(".");
+    if (i > 0)
+      dbName = dbName.substring(0, i);
+    String szOggi = ParseData.toStringToday().replaceAll("f", "").replaceAll(" ", "_");
+    Path pthBak = Paths.get(pthDestDir.toString(), dbName + "_SQLite_" + szOggi + ".bak");
+
+    try {
+      Files.copy(Paths.get(getDbname()), pthBak);
+    } catch (Exception e) {
+      getLog().error("Errore nel backup del DB SQLite \"{}\" in \"{}\" : {}", dbName, pthBak.toString(), e.getMessage());
+      return null;
+    }
+    return pthBak;
   }
 
   @Override

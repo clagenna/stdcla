@@ -9,4 +9,5 @@ module stdc_javafx {
   requires org.apache.logging.log4j;
   requires transitive javafx.controls;
   requires transitive javafx.graphics;
+  requires transitive javafx.web;
 }

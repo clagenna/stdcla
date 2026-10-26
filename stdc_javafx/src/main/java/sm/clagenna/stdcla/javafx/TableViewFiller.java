@@ -27,16 +27,20 @@ import sm.clagenna.stdcla.sql.Dataset;
 import sm.clagenna.stdcla.sql.DtsCol;
 import sm.clagenna.stdcla.sql.DtsCols;
 import sm.clagenna.stdcla.sql.DtsRow;
+import sm.clagenna.stdcla.utils.AppProperties;
 import sm.clagenna.stdcla.utils.Utils;
 
 // @ SuppressWarnings("this-escape")
 public class TableViewFiller extends Task<String> implements ITableColBuilder {
-  private static final Logger  s_log                     = LogManager.getLogger(TableViewFiller.class);
-  public static final String   FX_ALIGNMENT_CENTER_LEFT  = "-fx-alignment: center-left;";
-  public static final String   FX_ALIGNMENT_CENTER_RIGHT = "-fx-alignment: center-right;";
-  private static final String  TBCOL_MASK                = "tbcol_%s";
+  private static final Logger s_log                     = LogManager.getLogger(TableViewFiller.class);
+  public static final String  FX_ALIGNMENT_CENTER_LEFT  = "-fx-alignment: center-left;";
+  public static final String  FX_ALIGNMENT_CENTER_RIGHT = "-fx-alignment: center-right;";
+  // property per salvare le colonne della TableView come ${prefix}.tbcol_${colname}=${index};${width};${sortorder}
+  // esempio
+  // private static final String  TBCOL_MASK                = "tbcol_%s";
+  // tolto il "tbcol_" perche' non serve a nulla, basta il nome della colonna
   @Setter
-  private static String        CSZ_NULLVAL               = "**null**";
+  private static String        CSZ_NULLVAL = "**null**";
   private static DecimalFormat fmtDbl;
 
   //  @Getter @Setter
@@ -50,6 +54,12 @@ public class TableViewFiller extends Task<String> implements ITableColBuilder {
   @Getter @Setter
   private TableView<List<Object>>                              tableview;
   @Getter @Setter
+  private String                                               propPrefix;
+  @Getter @Setter
+  private AppProperties                                        props;
+  /** Lista delle proprietà delle colonne della TableView salvate in precedenza */
+  private List<JFXUtils.TableColProp>                          liColsProps;
+  @Getter @Setter
   private DBConn                                               dbconn;
   private Dataset                                              m_dts;
   @Getter @Setter
@@ -57,7 +67,9 @@ public class TableViewFiller extends Task<String> implements ITableColBuilder {
   private List<ITableColBuilderListener<List<Object>, Object>> liBuildCol;
 
   // private List<IRigaBanca>        excludeCols;
-  private List<String> excludeCols;
+  private List<String>                 excludeCols;
+  private TableColumn<List<Object>, ?> sortCol;
+  // private TableColumn.SortType         sortType;
 
   static {
     fmtDbl = (DecimalFormat) NumberFormat.getInstance(Locale.getDefault()); // ("#,##0.00", Locale.getDefault())
@@ -85,8 +97,6 @@ public class TableViewFiller extends Task<String> implements ITableColBuilder {
         return ".. nulla da mostrare";
       }
       populateTableView();
-      //      creaTableView(m_dts);
-      //      fillTableView();
     } catch (Exception e) {
       s_log.error("Errore Task riempi table view: {}", e.getMessage(), e);
     }
@@ -114,11 +124,25 @@ public class TableViewFiller extends Task<String> implements ITableColBuilder {
   }
 
   private void populateLaterTableView() {
-    // System.out.println("TableViewFiller.populateNewTableView()");
+    saveColsProps();
     tableview.getItems().clear();
     tableview.getColumns().clear();
     creaTableView(m_dts);
     fillTableView();
+  }
+
+  /**
+   * Salva le proprietà delle colonne della TableView che comprende:
+   * <ol>
+   * <li>Index</li>
+   * <li>Col name</li>
+   * <li>width</li>
+   * <li>sort order oppure "none"</li>
+   * </ol>
+   * in modo da poterle ripristinare successivamente
+   */
+  private void saveColsProps() {
+    liColsProps = JFXUtils.saveTableviewColWidth(tableview, props, propPrefix);
   }
 
   public void setDataset(Dataset p_dt) {
@@ -174,6 +198,11 @@ public class TableViewFiller extends Task<String> implements ITableColBuilder {
   }
 
   private void creaTableView(Dataset p_dts) {
+    if (null == liColsProps || liColsProps.isEmpty())
+      liColsProps = JFXUtils.restoreTableviewColWidth(tableview, props, propPrefix);
+    List<TableColumn<List<Object>, ?>> liTbCols = new ArrayList<>();
+    sortCol = null;
+    // sortType = null;
     DtsCols cols = p_dts.getColumns();
     int k = 0;
     for (DtsCol col : cols.getColumns()) {
@@ -196,11 +225,11 @@ public class TableViewFiller extends Task<String> implements ITableColBuilder {
           cssAlign = FX_ALIGNMENT_CENTER_RIGHT;
           // setCellValueFactory definisce cosa far vedere come valore della cella, in questo caso viene convertito in Number
           tbcol.setCellValueFactory(obj -> {
-            SimpleObjectProperty<Number> cel = new SimpleObjectProperty<>((Number) Utils.parseDouble(obj.getValue().get(j)));
+            SimpleObjectProperty<Number> cel = new SimpleObjectProperty<>(Utils.parseDouble(obj.getValue().get(j)));
             return cel;
           });
           // setCellFactory definisce come viene visualizzato il contenuto della cella, in questo caso allineato a destra e formattato come importo
-          tbcol.setCellFactory(param -> new TableCell<List<Object>, Number>() {
+          tbcol.setCellFactory(_ -> new TableCell<List<Object>, Number>() {
             @Override
             protected void updateItem(Number item, boolean empty) {
               super.updateItem(item, empty);
@@ -213,10 +242,12 @@ public class TableViewFiller extends Task<String> implements ITableColBuilder {
             }
           });
 
-          tbcol.setId(String.format(TBCOL_MASK, szColNam.toLowerCase()));
+          // tbcol.setId(String.format(TBCOL_MASK, szColNam.toLowerCase()));
+          tbcol.setId(szColNam.toLowerCase());
           // tbcol.setStyle(cssAlign);
           // colBuilded(tbcol);
-          Platform.runLater(() -> tableview.getColumns().add(tbcol));
+          // Platform.runLater(() -> tableview.getColumns().add(tbcol));
+          liTbCols.add(tbcol);
         }
           break;
         default: {
@@ -227,55 +258,52 @@ public class TableViewFiller extends Task<String> implements ITableColBuilder {
             SimpleObjectProperty<Object> cel = new SimpleObjectProperty<>(formattaCella(param.getValue().get(j)));
             return cel;
           });
-          tbcol.setId(String.format(TBCOL_MASK, szColNam.toLowerCase()));
+          // tbcol.setId(String.format(TBCOL_MASK, szColNam.toLowerCase()));
+          tbcol.setId(szColNam.toLowerCase());
           tbcol.setStyle(cssAlign);
           // colBuilded(tbcol);
-          Platform.runLater(() -> tableview.getColumns().add(tbcol));
+          // Platform.runLater(() -> tableview.getColumns().add(tbcol));
+          liTbCols.add(tbcol);
         }
           break;
       }
     }
-  }
-
-  @SuppressWarnings("unused")
-  private void creaTableView_Old(Dataset p_dts) {
-    DtsCols cols = p_dts.getColumns();
-    // System.out.printf("creaTableView.nCols=%d\n", cols.size());
-    int k = 0;
-    for (DtsCol col : cols.getColumns()) {
-      final int j = k++;
-      String szColNam = col.getName();
-      if (isExcludedCol(szColNam))
-        continue;
-      String cssAlign = FX_ALIGNMENT_CENTER_LEFT;
-      switch (col.getType()) {
-        case BIGINT:
-        case DATE:
-        case DOUBLE:
-        case DECIMAL:
-        case FLOAT:
-        case INTEGER:
-        case NUMERIC:
-        case REAL:
-          cssAlign = FX_ALIGNMENT_CENTER_RIGHT;
-          break;
-        default:
-          break;
+    // ho l'elenco di tutte le TableColumn, ora le aggiungo alla TableView, se ho salvato le proprietà delle colonne le ripristino
+    List<TableColumn<List<Object>, ?>> liTbCols2 = new ArrayList<>(liTbCols.size());
+    if (null != liColsProps) {
+      for (TableColumn<List<Object>, ?> tbcol : liTbCols) {
+        String szColName = tbcol.getId();
+        for (JFXUtils.TableColProp colProp : liColsProps) {
+          if (colProp.colName().equals(szColName)) {
+            tbcol.setPrefWidth(colProp.width());
+            while (liTbCols2.size() <= colProp.index())
+              liTbCols2.add(null);
+            liTbCols2.add(colProp.index(), tbcol);
+            if ( !colProp.sortType().equals("none")) {
+              sortCol = tbcol;
+              // sortType = TableColumn.SortType.valueOf(colProp.sortType());
+            }
+            break;
+          }
+        }
       }
-
-      TableColumn<List<Object>, Object> tbcol = new TableColumn<>(szColNam);
-      //      if (j == 0)
-      //        tbcol.setCellFactory(p -> new LockedTableCell<List<Object>, Object>());
-      tbcol.setCellValueFactory(param -> {
-        SimpleObjectProperty<Object> cel = new SimpleObjectProperty<Object>(formattaCella(param.getValue().get(j)));
-        return cel;
+    } else {
+      liTbCols2.addAll(liTbCols);
+    }
+    // tolgo tutte le entry == null
+    // vedi: https://www.baeldung.com/java-remove-nulls-from-list
+    while (liTbCols2.remove(null))
+      ;
+    // le aggiungo alla TableView nell'ordine corretto, se ho salvato le proprietà delle colonne le ripristino
+    Platform.runLater(() -> {
+      tableview.getColumns().addAll(liTbCols2);
+    });
+    if (null != sortCol)
+      Platform.runLater(() -> {
+        // sortCol.setSortType(sortType);
+        tableview.getSortOrder().add(sortCol);
       });
 
-      tbcol.setId(String.format(TBCOL_MASK, szColNam.toLowerCase()));
-      tbcol.setStyle(cssAlign);
-      colBuilded(tbcol);
-      Platform.runLater(() -> tableview.getColumns().add(tbcol));
-    }
   }
 
   public void colBuilded(TableColumn<List<Object>, Object> pcol) {

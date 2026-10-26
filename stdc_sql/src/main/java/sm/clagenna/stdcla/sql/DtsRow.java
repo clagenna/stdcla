@@ -2,6 +2,7 @@ package sm.clagenna.stdcla.sql;
 
 import java.sql.ResultSet;
 import java.sql.Timestamp;
+import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,8 +49,9 @@ public class DtsRow implements Cloneable {
           case CHAR:
             val = p_res.getString(nCol);
             if (val != null && dataset.getTipoServer().isDateAsString()) {
-              val = provaSeData(val);
-              col.setInferredDate(val != null);
+              Object forseData = provaSeData(val);
+              col.setInferredDate(forseData != null);
+              val = null != forseData ? forseData : val; 
             }
             break;
 
@@ -168,7 +170,7 @@ public class DtsRow implements Cloneable {
     ret = valori.get(ii);
     return ret;
   }
-  
+
   public String getString(String col) {
     Object ret = get(col);
     if (null == ret)
@@ -177,7 +179,7 @@ public class DtsRow implements Cloneable {
       return str;
     return ret.toString();
   }
-  
+
   public Long getLong(String col) {
     Object ret = get(col);
     if (null == ret)
@@ -219,15 +221,29 @@ public class DtsRow implements Cloneable {
     valori.add(SqlTypes.defval(p_ty));
   }
 
+  /**
+   * Siccome in una colonna di SQLite i datetime sono di solito stringhe, prova
+   * a convertire una stringa in data. Se la conversione va a buon fine
+   * restituisce un oggetto Timestamp, altrimenti restituisce l'oggetto
+   * originale.
+   *
+   * @param p_val
+   *          valore da convertire
+   * @return oggetto convertito o originale
+   */
   private Object provaSeData(Object p_val) {
     if (p_val == null)
       return p_val;
     String szVal = p_val.toString();
-    LocalDateTime dt = ParseData.parseData(szVal);
-    if (dt != null) {
-      p_val = java.sql.Timestamp.valueOf(dt);
-      s_log.trace("Convertito {} in Timestamp {}", szVal, ParseData.s_fmtDtExif.format(dt));
+    // LocalDateTime dt = ParseData.parseData(szVal);
+    Date dt = null;
+    try {
+      dt = ParseData.s_fmtDtDate.parse(szVal);
+    } catch (ParseException e) {
+      return null;
     }
+    p_val = new java.sql.Timestamp(dt.getTime());
+    s_log.trace("Convertito {} in Timestamp {}", szVal, ParseData.s_fmtDtDate.format(dt));
     return p_val;
   }
 

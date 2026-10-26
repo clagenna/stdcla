@@ -363,7 +363,7 @@ public class AppProperties {
         .collect(Collectors.toMap( //
             key -> key, //
             properties::getProperty, //
-            (v1, v2) -> v1, // In caso di collisioni (non accadrà qui)
+            (v1, _) -> v1, // In caso di collisioni (non accadrà qui)
             TreeMap::new // Specifica il tipo di Map da restituire
         ));
     treeMap.forEach((k, v) -> sb.append(String.format("%30s = %s\n", k, v)));

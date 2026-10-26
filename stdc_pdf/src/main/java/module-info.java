@@ -1,4 +1,14 @@
-@SuppressWarnings("requires-automatic")
+// @ SuppressWarnings("requires-automatic")
+/**
+ * <code>SuppressWarnings("requires-automatic")</code> 
+ * sostituito con
+ * <pre>
+ *   &lt;compilerArgs&gt;
+ *      &lt;arg&gt;-Xlint:all&lt;/arg&gt;
+ *      &lt;arg&gt;-Xlint:-requires-automatic&lt;/arg&gt;
+ *      &lt;arg&gt;-Xlint:-requires-transitive-automatic&lt;/arg&gt;
+ * </pre> 
+ */
 module stdc_pdf {
   exports sm.clagenna.stdcla.pdf;
 

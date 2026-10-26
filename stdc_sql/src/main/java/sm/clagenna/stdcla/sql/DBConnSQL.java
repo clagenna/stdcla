@@ -1,9 +1,12 @@
 package sm.clagenna.stdcla.sql;
 
 import java.math.BigDecimal;
+import java.nio.file.Path;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDate;
@@ -13,6 +16,8 @@ import java.time.ZonedDateTime;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import sm.clagenna.stdcla.utils.ParseData;
 
 public class DBConnSQL extends DBConn {
   private static final Logger s_log = LogManager.getLogger(DBConnSQL.class);
@@ -63,6 +68,28 @@ public class DBConnSQL extends DBConn {
     return QRY_LIST_VIEWS;
   }
 
+  public Path backupDB(Path pthDestDir) {
+    String szDbNam = getDbname();
+    // assumo che SQL Server abbia i permessi di scrittura nella cartella di destinazione
+    // String pthTemp = System.getenv("TEMP");
+    String oggi = ParseData.toStringToday().replaceAll(" ", "_").replaceAll("f", "");
+    Path pthBakFile = Path.of(pthDestDir.toString(), String.format("%s_SQLserver_%s.bak", szDbNam, oggi)).toAbsolutePath();
+    String sql = """
+        BACKUP DATABASE [%s]
+        TO DISK = N'%s'
+        WITH COPY_ONLY, INIT, COMPRESSION, STATS = 10
+        """.formatted(szDbNam, pthBakFile.toAbsolutePath().toString());
+    Connection conn = getConn();
+    try ( Statement stmt = conn.createStatement()) {
+      stmt.execute(sql);
+      System.out.println("Backup completato.");
+    } catch (Exception e) {
+      getLog().error("Errore in backupDB DB {} su {}: {}", szDbNam, pthBakFile.toString(), e.getMessage());
+      return null;
+    }
+    return pthBakFile;
+  }
+
   @Override
   public void changePragma() {
     // per compensare al SQLite pragma date 'yyyy-MM-dd'
@@ -71,7 +98,7 @@ public class DBConnSQL extends DBConn {
   @Override
   public void setStmtInt(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
     Integer iv = null;
-    if ( isShowStatement())
+    if (isShowStatement())
       setStmtParam(p_stmt, p_index, p_dt);
     if (p_dt instanceof Integer ii) {
       iv = ii;
@@ -108,7 +135,7 @@ public class DBConnSQL extends DBConn {
   @Override
   public void setStmtDate(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
     java.sql.Timestamp dt = null;
-    if ( isShowStatement())
+    if (isShowStatement())
       setStmtParam(p_stmt, p_index, p_dt);
     try {
       if (p_dt instanceof java.sql.Date dt1) {
@@ -136,7 +163,7 @@ public class DBConnSQL extends DBConn {
   @Override
   public void setStmtDatetime(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
     java.sql.Timestamp dt = null;
-    if ( isShowStatement())
+    if (isShowStatement())
       setStmtParam(p_stmt, p_index, p_dt);
 
     if (p_dt instanceof java.sql.Timestamp pdt) {
@@ -176,7 +203,7 @@ public class DBConnSQL extends DBConn {
   @Override
   public void setStmtImporto(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
     BigDecimal bd = null;
-    if ( isShowStatement())
+    if (isShowStatement())
       setStmtParam(p_stmt, p_index, p_dt);
 
     if (p_dt instanceof Double dbl) {
@@ -217,7 +244,7 @@ public class DBConnSQL extends DBConn {
   @Override
   public void setStmtDouble(PreparedStatement p_stmt, int p_index, Object p_dt) throws SQLException {
     Double bd = null;
-    if ( isShowStatement())
+    if (isShowStatement())
       setStmtParam(p_stmt, p_index, p_dt);
 
     if (p_dt instanceof Double dbl) {
@@ -234,7 +261,7 @@ public class DBConnSQL extends DBConn {
   @Override
   public void setStmtString(PreparedStatement p_stmt, int p_index, Object p_sz) throws SQLException {
     String sz = null;
-    if ( isShowStatement())
+    if (isShowStatement())
       setStmtParam(p_stmt, p_index, p_sz);
     if (null != p_sz)
       sz = (String) p_sz;

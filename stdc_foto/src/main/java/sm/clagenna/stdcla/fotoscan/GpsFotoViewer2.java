@@ -104,7 +104,7 @@ public class GpsFotoViewer2 extends Stage //
     initModality(Modality.NONE);
     initOwner(primaryStage);
     setScene(m_scene);
-    ChangeListener<Number> stageSizeListener = (observable, oldValue, newValue) -> {
+    ChangeListener<Number> stageSizeListener = (_, _, _) -> {
       // System.out.println("Height: " + getHeight() + " Width: " + getWidth());
       m_prefSizeHe = getHeight();
       m_prefSizeWi = getWidth();

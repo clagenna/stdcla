@@ -3,6 +3,7 @@ package sm.clagenna.stdcla.sql;
 import java.io.Closeable;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -58,6 +59,8 @@ public abstract class DBConn implements Closeable {
   // public abstract int getLastIdentity() throws SQLException;
 
   public abstract void changePragma();
+  
+  public abstract Path backupDB(Path pthDestDir);
 
   public abstract String getQueryLastRowID();
 

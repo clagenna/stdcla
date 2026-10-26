@@ -1,5 +1,8 @@
 package sm.clagenna.stdcla.utils;
 
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.io.File;
 import java.math.BigInteger;
 import java.nio.file.Path;
@@ -330,6 +333,12 @@ public class Utils {
       return 0;
     if (vv instanceof Double dbl)
       return dbl;
+    if (vv instanceof Integer ii)
+      return ii.doubleValue();
+    if (vv instanceof Long ll)
+      return ll.doubleValue();
+    if (vv instanceof Float ff)
+      return ff.doubleValue();
     return Utils.parseDouble(vv.toString());
   }
 
@@ -652,6 +661,15 @@ public class Utils {
       patEmail = Pattern.compile(szPatEmail);
     Matcher mtch = patEmail.matcher(txt);
     return mtch.find();
+  }
+
+  public static void copyToClipboard(String sz) {
+    if (! isValue( sz))
+      return;
+    Clipboard clip = Toolkit.getDefaultToolkit().getSystemClipboard();
+    StringSelection szSel = new StringSelection(sz);
+    clip.setContents(szSel, null);
+    System.out.println("Copiato negli appunti: " + sz);
   }
 
 }

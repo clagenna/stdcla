@@ -21,7 +21,7 @@ public class LockedTableCell<T, S> extends TableCell<T, S> {
         ScrollBar scrollBar = (ScrollBar) getTableView().queryAccessibleAttribute(AccessibleAttribute.HORIZONTAL_SCROLLBAR);
         // set fx:id of TableColumn and get region of column header by #id
         Region headerNode = (Region) getTableView().lookup("#" + getTableColumn().getId());
-        scrollBar.valueProperty().addListener((ob, o, n) -> {
+        scrollBar.valueProperty().addListener((_, _, n) -> {
           double doubleValue = n.doubleValue();
 
           // move header and cell with translateX & bring it front

@@ -1,5 +1,8 @@
 package sm.clagenna.stdcla.javafx;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
@@ -19,12 +22,19 @@ import sm.clagenna.stdcla.utils.AppProperties;
 import sm.clagenna.stdcla.utils.Utils;
 
 public class JFXUtils {
+  private static final String S_POS_X = "%s.posX";
+  private static final String S_POS_Y = "%s.posY";
+  private static final String S_WIDTH = "%s.width";
+  private static final String S_HEIGT = "%s.heigt";
 
   public JFXUtils() {
     //
   }
 
   public record ScreenDim(int poxX, int posY, int width, int height) {
+  }
+
+  public record TableColProp(Integer index, String colName, int width, String sortType) {
   }
 
   public static ScreenDim getScreenMinMax(int posX, int posY, int wi, int he) {
@@ -39,6 +49,8 @@ public class JFXUtils {
     }
     maxWi = maxx - minx;
     maxHe = maxy - miny;
+    wi = wi < 200 ? 200 : wi;
+    he = he < 150 ? 150 : he;
     int lposX = posX < minx ? minx : posX;
     int lposY = posY < miny ? miny : posY;
     lposX = posX > maxx - wi ? maxx - wi : lposX;
@@ -56,10 +68,10 @@ public class JFXUtils {
     double dx = sce.getWindow().getWidth();
     double dy = sce.getWindow().getHeight();
 
-    String szPosX = String.format("%s.posX", prefix);
-    String szPosY = String.format("%s.posY", prefix);
-    String szwidt = String.format("%s.width", prefix);
-    String szHeig = String.format("%s.heigt", prefix);
+    String szPosX = String.format(S_POS_X, prefix);
+    String szPosY = String.format(S_POS_Y, prefix);
+    String szwidt = String.format(S_WIDTH, prefix);
+    String szHeig = String.format(S_HEIGT, prefix);
 
     props.setProperty(szPosX, (int) px);
     props.setProperty(szPosY, (int) py);
@@ -68,10 +80,10 @@ public class JFXUtils {
   }
 
   public static void readPosStage(Stage stag, AppProperties props, String prefix) {
-    String szPosX = String.format("%s.posX", prefix);
-    String szPosY = String.format("%s.posY", prefix);
-    String szwidt = String.format("%s.width", prefix);
-    String szHeig = String.format("%s.heigt", prefix);
+    String szPosX = String.format(S_POS_X, prefix);
+    String szPosY = String.format(S_POS_Y, prefix);
+    String szwidt = String.format(S_WIDTH, prefix);
+    String szHeig = String.format(S_HEIGT, prefix);
 
     int px = props.getIntProperty(szPosX);
     int py = props.getIntProperty(szPosY);
@@ -108,20 +120,140 @@ public class JFXUtils {
     stag.setY(py);
   }
 
-  public static void saveTableviewColWidth(TableView<?> tvf, AppProperties props, String prefix) {
+  /**
+   * Salva le proprietà delle colonne della TableView che comprende:
+   * <ol>
+   * <li>Col name</li>
+   * <li>Index</li>
+   * <li>width</li>
+   * <li>sort order oppure "none"</li>
+   * </ol>
+   * se prefix = "resview.col.tbcol_" allora un'esempio:
+   * 
+   * <pre>
+   * ...
+   * resview.col.tbcol_avere = 4;75;none
+   * resview.col.tbcol_cardid = 5;59;none
+   * resview.col.tbcol_descr = 6;743;ASCENDING
+   * resview.col.tbcol_codstat = 7;65;none
+   * ...
+   * </pre>
+   * 
+   * in modo da poterle ripristinare successivamente
+   */
+  public static List<TableColProp> saveTableviewColWidth(TableView<?> tvf, AppProperties props, String prefix) {
     if (null == tvf || null == props || null == prefix)
-      return;
+      return null;
+    int k = 0;
+    // Map<String, TableColProp> mapCols = new TreeMap<>();
+    List<TableColProp> liCols = new ArrayList<>();
     for (TableColumn<?, ?> col : tvf.getColumns()) {
       String szColNam = col.getId();
       if (null == szColNam)
         continue;
-      int widt = (int) col.getWidth();
-      String szKeyProp = String.format("%s.%s", prefix, szColNam);
-      props.setProperty(szKeyProp, widt);
+      int width = (int) col.getWidth();
+      String sortType = tvf.getSortOrder().contains(col) ? col.getSortType().name() : "none";
+      TableColProp tcp = new TableColProp(k++, szColNam, width, sortType);
+      // mapCols.put(tcp.colName(), tcp);
+      liCols.add(tcp);
     }
+
+    // mapCols.forEach((_, rec) -> {
+    liCols.forEach(rec -> {
+      String szKeyProp = String.format("%s.%s", prefix, rec.colName());
+      String szVal = String.format("%d;%s;%s", rec.index(), rec.width(), rec.sortType());
+      props.setProperty(szKeyProp, szVal);
+      System.out.printf(" %s = %s\n", szKeyProp, szVal);
+    });
+    return liCols;
+    //
+    //    if (tvf.getSortOrder().size() > 0) {
+    //      // prefx.sortcol.indx=name,type
+    //      // prefx.sortype.indx=name,type
+    //      for (TableColumn<?, ?> col : tvf.getSortOrder()) {
+    //        String szColNam = col.getId();
+    //        if (null == szColNam)
+    //          continue;
+    //        k++;
+    //        String szKeyProp = String.format("%s.sortcol.%d", prefix, k);
+    //        String szKeyType = String.format("%s.sortype.%d", prefix, k);
+    //        props.setProperty(szKeyProp, szColNam);
+    //        props.setProperty(szKeyType, col.getSortType().name());
+    //      }
+    //    }
+    //    for (TableColumn<?, ?> col : tvf.getColumns()) {
+    //      String szColNam = col.getId();
+    //      if (null == szColNam)
+    //        continue;
+    //      int widt = (int) col.getWidth();
+    //      String szKeyProp = String.format("%s.%s", prefix, szColNam);
+    //      props.setProperty(szKeyProp, widt);
+    //      System.out.printf("saveTableviewColWidth: %d) %s = %d%n", k++, szKeyProp, widt);
+    //    }
   }
 
-  public static void restoreTableviewColWidth(TableView<?> tvf, AppProperties props, String prefix) {
+  public static List<TableColProp> restoreTableviewColWidth(TableView<?> tvf, AppProperties props, String prefix) {
+    List<TableColProp> liCols = new ArrayList<>();
+    if (null == tvf || null == props || null == prefix)
+      return liCols;
+
+    props.getProperties().forEach((key, value) -> {
+      String szKey = key.toString();
+
+      if (szKey.startsWith(prefix)) {
+        String szColNam = szKey.substring(prefix.length() + 1);
+        String szVal = value.toString();
+        String[] parts = szVal.split(";");
+        Integer index = null;
+        Integer width = null;
+        String sortType = null;
+        // se index, width, sortType non sono presenti, ignora la proprietà
+        switch (parts.length) {
+          case 0:
+            System.err.printf("Error: missing column Index for %s\n", szColNam);
+            break;
+          case 1:
+            System.err.printf("Error: missing width for %s\n", szColNam);
+            break;
+          case 2:
+            index = Integer.parseInt(parts[0]);
+            width = Integer.parseInt(parts[1]);
+            sortType = "none"; // default sort type
+            break;
+          case 3:
+            index = Integer.parseInt(parts[0]);
+            width = Integer.parseInt(parts[1]);
+            sortType = parts[2];
+            break;
+          default:
+            break;
+        }
+        if (index != null && width != null) {
+          TableColProp tcp = new TableColProp(index, szColNam, width, sortType);
+          liCols.add(tcp);
+        }
+      }
+    });
+    for (TableColumn<?, ?> col : tvf.getColumns()) {
+      String szColNam = col.getId();
+      if (null == szColNam)
+        continue;
+      for (TableColProp tcp : liCols) {
+        if (tcp.colName().equals(szColNam)) {
+          col.setPrefWidth(tcp.width());
+          if (!"none".equals(tcp.sortType())) {
+            col.setSortType(TableColumn.SortType.valueOf(tcp.sortType()));
+            // tvf.getSortOrder().add(col);
+          }
+          break;
+        }
+      }
+    }
+
+    return liCols;
+  }
+
+  public static void restoreTableviewColWidth_OLD(TableView<?> tvf, AppProperties props, String prefix) {
     if (null == tvf || null == props || null == prefix)
       return;
 
@@ -133,6 +265,8 @@ public class JFXUtils {
       int widt = props.getIntProperty(szKeyProp, 60);
       if (widt > 0)
         col.setPrefWidth(widt);
+      else
+        col.setPrefWidth(50);
     }
   }
 

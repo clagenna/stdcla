@@ -75,6 +75,10 @@ public class DtsCol implements Cloneable {
     return ret;
   }
 
+  /**
+   * Imposta il flag di data inferita. La prima data valida inferisce la colonna
+   * come data.
+   */
   public void setInferredDate(boolean bv) {
     // la prima data valida inferisce
     inferredDate |= bv;
@@ -139,7 +143,7 @@ public class DtsCol implements Cloneable {
             obj = Utils.parseDouble(sz2);
           }
           break;
-          
+
         case SqlTypes.DATE:
         case SqlTypes.TIMESTAMP:
           if (sz2.startsWith("\""))

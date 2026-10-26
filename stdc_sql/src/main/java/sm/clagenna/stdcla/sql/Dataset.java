@@ -793,6 +793,15 @@ public class Dataset implements Closeable, Iterable<DtsRow> {
     return columns.size();
   }
 
+  public String getColName(int k) throws DatasetException {
+    if ( k < 0 || k >= columns.size())
+      throw new DatasetException("Col index " + k + " out of bound");
+    DtsCol col = columns.getCol(k);
+    if (null != col)
+      return col.getName();
+    return null;
+  }
+
   public Object getVal(int p_row, int p_col) throws DatasetException {
     if (null == righe || p_row >= righe.size())
       throw new DatasetException("Row index " + p_row + " out of bound");

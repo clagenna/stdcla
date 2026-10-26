@@ -8,4 +8,6 @@ module stdc_utils {
   requires transitive org.apache.logging.log4j.core;
   requires java.sql;
   requires lombok;
+  requires java.desktop;
+  requires java.datatransfer;
 }
